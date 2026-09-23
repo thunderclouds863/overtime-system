@@ -14,8 +14,14 @@ function requireAdmin(req, res, next) {
 router.get('/users', requireAuth, requireAdmin, async (req, res) => {
   try {
     const result = await query(
-      `SELECT id, email, full_name, role, department, is_active, created_at 
-       FROM users ORDER BY created_at DESC`
+      `SELECT u.id, u.email, u.full_name, u.role, u.department, u.level, 
+              u.is_active, u.created_at, u.approver_ids,
+              COALESCE(
+                (SELECT json_agg(json_build_object('id', a.id, 'full_name', a.full_name, 'level', a.level))
+                 FROM users a WHERE a.id = ANY(u.approver_ids)),
+                '[]'::json
+              ) as approvers
+       FROM users u ORDER BY u.created_at DESC`
     );
     res.json(result.rows);
   } catch (err) {
@@ -24,7 +30,7 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
 });
 
 router.post('/users', requireAuth, requireAdmin, async (req, res) => {
-  const { email, password, full_name, role, department } = req.body;
+  const { email, password, full_name, role, department, level, approver_ids } = req.body;
 
   if (!email || !password || !full_name || !role) {
     return res.status(400).json({ error: 'Semua field wajib' });
@@ -47,10 +53,10 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
 
     const hash = hashPassword(password);
     const result = await query(
-      `INSERT INTO users (email, password_hash, full_name, role, department, created_by)
-       VALUES ($1, $2, $3, $4, $5, $6)
-       RETURNING id, email, full_name, role, department, is_active, created_at`,
-      [email, hash, full_name, role, department || null, req.user.id]
+      `INSERT INTO users (email, password_hash, full_name, role, department, level, approver_ids, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, email, full_name, role, department, level, approver_ids, is_active, created_at`,
+      [email, hash, full_name, role, department || null, level || null, approver_ids || [], req.user.id]
     );
 
     res.json(result.rows[0]);
@@ -61,38 +67,27 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
 
 router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { full_name, role, department, is_active, password } = req.body;
+  const { full_name, role, department, is_active, password, level, approver_ids } = req.body;
 
   try {
     let sql = `UPDATE users SET updated_at = NOW()`;
     const params = [];
     let idx = 1;
 
-    if (full_name) {
-      sql += `, full_name = $${idx++}`;
-      params.push(full_name);
-    }
+    if (full_name) { sql += `, full_name = $${idx++}`; params.push(full_name); }
     if (role) {
       if (!['employee', 'manager', 'admin'].includes(role)) {
         return res.status(400).json({ error: 'Role tidak valid' });
       }
-      sql += `, role = $${idx++}`;
-      params.push(role);
+      sql += `, role = $${idx++}`; params.push(role);
     }
-    if (department !== undefined) {
-      sql += `, department = $${idx++}`;
-      params.push(department);
-    }
-    if (is_active !== undefined) {
-      sql += `, is_active = $${idx++}`;
-      params.push(is_active);
-    }
-    if (password) {
-      sql += `, password_hash = $${idx++}`;
-      params.push(hashPassword(password));
-    }
+    if (department !== undefined) { sql += `, department = $${idx++}`; params.push(department); }
+    if (is_active !== undefined) { sql += `, is_active = $${idx++}`; params.push(is_active); }
+    if (password) { sql += `, password_hash = $${idx++}`; params.push(hashPassword(password)); }
+    if (level !== undefined) { sql += `, level = $${idx++}`; params.push(level); }
+    if (approver_ids !== undefined) { sql += `, approver_ids = $${idx++}`; params.push(approver_ids); }
 
-    sql += ` WHERE id = $${idx} RETURNING id, email, full_name, role, department, is_active`;
+    sql += ` WHERE id = $${idx} RETURNING id, email, full_name, role, department, level, approver_ids, is_active`;
     params.push(id);
 
     const result = await query(sql, params);
@@ -105,14 +100,26 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
 
 router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
-
   if (parseInt(id) === req.user.id) {
     return res.status(400).json({ error: 'Tidak bisa hapus akun sendiri' });
   }
-
   try {
     await query('DELETE FROM users WHERE id = $1', [id]);
     res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Ambil daftar user untuk dropdown approver
+router.get('/approvers', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT id, email, full_name, level, role FROM users 
+       WHERE is_active = true AND role IN ('manager', 'admin')
+       ORDER BY level DESC NULLS LAST, full_name`
+    );
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -123,7 +130,7 @@ router.get('/records', requireAuth, requireAdmin, async (req, res) => {
 
   try {
     let sql = `
-      SELECT r.*, u.email as employee_email, u.department
+      SELECT r.*, u.email as employee_email, u.department, u.level as employee_level
       FROM overtime_records r
       LEFT JOIN users u ON u.id = r.employee_id
       WHERE 1=1
@@ -131,22 +138,10 @@ router.get('/records', requireAuth, requireAdmin, async (req, res) => {
     const params = [];
     let idx = 1;
 
-    if (status) {
-      sql += ` AND r.status = $${idx++}`;
-      params.push(status);
-    }
-    if (start_date) {
-      sql += ` AND r.date >= $${idx++}`;
-      params.push(start_date);
-    }
-    if (end_date) {
-      sql += ` AND r.date <= $${idx++}`;
-      params.push(end_date);
-    }
-    if (employee_id) {
-      sql += ` AND r.employee_id = $${idx++}`;
-      params.push(employee_id);
-    }
+    if (status) { sql += ` AND r.status = $${idx++}`; params.push(status); }
+    if (start_date) { sql += ` AND r.date >= $${idx++}`; params.push(start_date); }
+    if (end_date) { sql += ` AND r.date <= $${idx++}`; params.push(end_date); }
+    if (employee_id) { sql += ` AND r.employee_id = $${idx++}`; params.push(employee_id); }
 
     sql += ` ORDER BY r.date DESC, r.created_at DESC LIMIT $${idx}`;
     params.push(parseInt(limit));
