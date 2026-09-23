@@ -44,7 +44,6 @@ export async function sendEmail({ to, subject, html }) {
   }
 }
 
-// Helper tombol CTA
 const btn = (text, url, bgColor) => `
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto">
     <tr>
@@ -55,7 +54,7 @@ const btn = (text, url, bgColor) => `
   </table>
 `;
 
-const btnGroup = (buttons) => `
+const btnGroup = (buttons, note = '') => `
   <div style="margin:24px 0;padding:20px;background:#f8fafc;border-radius:16px;border:1px solid #e2e8f0;text-align:center">
     <p style="margin:0 0 14px;font-size:12px;color:#64748b;font-weight:600;text-transform:uppercase;letter-spacing:0.5px">Aksi Cepat</p>
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto">
@@ -63,7 +62,7 @@ const btnGroup = (buttons) => `
         ${buttons.map(b => `<td style="padding:0 6px">${btn(b.text, b.url, b.color)}</td>`).join('')}
       </tr>
     </table>
-    ${buttons.some(b => b.note) ? `<p style="margin:14px 0 0;font-size:11px;color:#94a3b8">${buttons.find(b => b.note)?.note || ''}</p>` : ''}
+    ${note ? `<p style="margin:14px 0 0;font-size:11px;color:#94a3b8">${note}</p>` : ''}
   </div>
 `;
 
@@ -107,10 +106,9 @@ export const templates = {
         { text: '✓ Setujui', url: d.approveUrl, color: '#10b981' },
         { text: '✕ Tolak', url: d.rejectUrl, color: '#ef4444' },
         { text: '🔍 Buka Sistem', url: APP_URL + '/manager.html', color: '#6366f1' }
-      ]) : btnGroup([
+      ], 'Setujui/Tolak berlaku 24 jam · Satu kali pakai') : btnGroup([
         { text: '🔍 Buka Sistem', url: APP_URL + '/manager.html', color: '#6366f1' }
       ])}
-      <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.5">Link Setujui/Tolak berlaku 24 jam · Satu kali pakai. Untuk review lengkap dengan catatan, buka sistem.</p>
     `)
   }),
 
