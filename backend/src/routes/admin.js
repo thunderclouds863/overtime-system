@@ -1,0 +1,205 @@
+import { Router } from 'express';
+import { query } from '../db.js';
+import { hashPassword, requireAuth } from '../auth.js';
+
+const router = Router();
+
+// Middleware: hanya admin
+function requireAdmin(req, res, next) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Akses hanya untuk admin' });
+  }
+  next();
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
+
+// Ambil semua users
+router.get('/users', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT id, email, full_name, role, department, is_active, created_at 
+       FROM users ORDER BY created_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Tambah user baru
+router.post('/users', requireAuth, requireAdmin, async (req, res) => {
+  const { email, password, full_name, role, department } = req.body;
+
+  if (!email || !password || !full_name || !role) {
+    return res.status(400).json({ error: 'Semua field wajib' });
+  }
+
+  if (!['employee', 'manager', 'admin'].includes(role)) {
+    return res.status(400).json({ error: 'Role tidak valid' });
+  }
+
+  const domain = email.split('@')[1]?.toLowerCase();
+  if (!['gmail.com', 'cimory.com'].includes(domain)) {
+    return res.status(400).json({ error: 'Domain email tidak diizinkan' });
+  }
+
+  try {
+    const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
+    if (existing.rows.length > 0) {
+      return res.status(400).json({ error: 'Email sudah terdaftar' });
+    }
+
+    const hash = hashPassword(password);
+    const result = await query(
+      `INSERT INTO users (email, password_hash, full_name, role, department, created_by)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id, email, full_name, role, department, is_active, created_at`,
+      [email, hash, full_name, role, department || null, req.user.id]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Update user
+router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { full_name, role, department, is_active, password } = req.body;
+
+  try {
+    let sql = `UPDATE users SET updated_at = NOW()`;
+    const params = [];
+    let idx = 1;
+
+    if (full_name) {
+      sql += `, full_name = $${idx++}`;
+      params.push(full_name);
+    }
+    if (role) {
+      if (!['employee', 'manager', 'admin'].includes(role)) {
+        return res.status(400).json({ error: 'Role tidak valid' });
+      }
+      sql += `, role = $${idx++}`;
+      params.push(role);
+    }
+    if (department !== undefined) {
+      sql += `, department = $${idx++}`;
+      params.push(department);
+    }
+    if (is_active !== undefined) {
+      sql += `, is_active = $${idx++}`;
+      params.push(is_active);
+    }
+    if (password) {
+      sql += `, password_hash = $${idx++}`;
+      params.push(hashPassword(password));
+    }
+
+    sql += ` WHERE id = $${idx} RETURNING id, email, full_name, role, department, is_active`;
+    params.push(id);
+
+    const result = await query(sql, params);
+    if (!result.rows[0]) return res.status(404).json({ error: 'User tidak ditemukan' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Hapus user
+router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  const { id } = req.params;
+
+  if (parseInt(id) === req.user.id) {
+    return res.status(400).json({ error: 'Tidak bisa hapus akun sendiri' });
+  }
+
+  try {
+    await query('DELETE FROM users WHERE id = $1', [id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// MONITORING ALL RECORDS
+// ============================================
+
+// Ambil semua record (semua karyawan)
+router.get('/records', requireAuth, requireAdmin, async (req, res) => {
+  const { status, start_date, end_date, employee_id, limit = 500 } = req.query;
+
+  try {
+    let sql = `
+      SELECT r.*, u.email as employee_email, u.department
+      FROM overtime_records r
+      LEFT JOIN users u ON u.id = r.employee_id
+      WHERE 1=1
+    `;
+    const params = [];
+    let idx = 1;
+
+    if (status) {
+      sql += ` AND r.status = $${idx++}`;
+      params.push(status);
+    }
+    if (start_date) {
+      sql += ` AND r.date >= $${idx++}`;
+      params.push(start_date);
+    }
+    if (end_date) {
+      sql += ` AND r.date <= $${idx++}`;
+      params.push(end_date);
+    }
+    if (employee_id) {
+      sql += ` AND r.employee_id = $${idx++}`;
+      params.push(employee_id);
+    }
+
+    sql += ` ORDER BY r.date DESC, r.created_at DESC LIMIT $${idx}`;
+    params.push(parseInt(limit));
+
+    const result = await query(sql, params);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// DASHBOARD STATS
+// ============================================
+router.get('/stats', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const totalUsers = await query('SELECT COUNT(*) FROM users WHERE is_active = true');
+    const totalRecords = await query('SELECT COUNT(*) FROM overtime_records');
+    const activeNow = await query("SELECT COUNT(*) FROM overtime_records WHERE status = 'active'");
+    const pendingApproval = await query("SELECT COUNT(*) FROM overtime_records WHERE status = 'pending'");
+    const pendingVerify = await query("SELECT COUNT(*) FROM overtime_records WHERE status = 'pending_verification'");
+    const completedMonth = await query(`
+      SELECT COALESCE(SUM(EXTRACT(EPOCH FROM actual_duration))/3600, 0) as total_hours
+      FROM overtime_records
+      WHERE status = 'completed'
+        AND date_trunc('month', date) = date_trunc('month', CURRENT_DATE)
+    `);
+
+    res.json({
+      total_users: parseInt(totalUsers.rows[0].count),
+      total_records: parseInt(totalRecords.rows[0].count),
+      active_now: parseInt(activeNow.rows[0].count),
+      pending_approval: parseInt(pendingApproval.rows[0].count),
+      pending_verify: parseInt(pendingVerify.rows[0].count),
+      hours_this_month: parseFloat(completedMonth.rows[0].total_hours).toFixed(1)
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+export default router;

@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login — Sistem Lembur</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'] },
+      colors: {
+        brand: {50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a'},
+        ink: {900:'#0b1220',800:'#131c31',700:'#1e293b',600:'#334155'}
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+  .modal-in { animation: modalIn 0.3s cubic-bezier(.2,.9,.3,1); }
+  @keyframes modalIn { from {opacity:0; transform: scale(0.96);} to {opacity:1; transform:scale(1);} }
+</style>
+</head>
+<body class="bg-gradient-to-br from-ink-900 via-slate-900 to-brand-900 min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md modal-in">
+  <!-- Logo -->
+  <div class="text-center mb-8">
+    <div class="w-16 h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center font-extrabold text-lg text-white mx-auto shadow-2xl shadow-brand-900/50 mb-4">OT</div>
+    <h1 class="text-2xl font-extrabold text-white tracking-tight">Sistem Monitoring Lembur</h1>
+    <p class="text-sm text-slate-400 mt-1">Enterprise Suite</p>
+  </div>
+
+  <!-- Card Login -->
+  <div class="bg-white rounded-2xl shadow-2xl p-8">
+    <h2 class="text-xl font-extrabold text-slate-800 mb-1">Masuk ke Akun Anda</h2>
+    <p class="text-sm text-slate-500 mb-6">Gunakan email @cimory.com atau @gmail.com</p>
+
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <div class="mb-4">
+        <label class="text-xs font-bold text-slate-600 uppercase tracking-wide">Email</label>
+        <input type="email" id="email" required
+          class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:outline-none bg-slate-50 focus:bg-white transition"
+          placeholder="nama@cimory.com">
+      </div>
+      <div class="mb-6">
+        <label class="text-xs font-bold text-slate-600 uppercase tracking-wide">Password</label>
+        <input type="password" id="password" required
+          class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:outline-none bg-slate-50 focus:bg-white transition"
+          placeholder="••••••••">
+      </div>
+
+      <div id="errorMsg" class="hidden bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+        <p class="text-xs text-red-700" id="errorText"></p>
+      </div>
+
+      <button type="submit" id="loginBtn"
+        class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-600/25 text-sm">
+        Masuk
+      </button>
+    </form>
+
+    <div class="mt-6 pt-6 border-t border-slate-100">
+      <p class="text-[11px] text-slate-400 text-center leading-relaxed">
+        Belum punya akun? Hubungi <strong class="text-slate-600">admin@cimory.com</strong><br>
+        untuk didaftarkan oleh administrator.
+      </p>
+    </div>
+  </div>
+
+  <p class="text-center text-xs text-slate-500 mt-6">© 2026 Cimory — Overtime Management System</p>
+</div>
+
+<script>
+// GANTI INI dengan URL backend Anda
+const API_URL = 'https://overtime-backend.onrender.com';
+
+async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('loginBtn');
+  const errBox = document.getElementById('errorMsg');
+  const errText = document.getElementById('errorText');
+
+  errBox.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Memproses...';
+
+  try {
+    const res = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      errText.textContent = data.error || 'Login gagal';
+      errBox.classList.remove('hidden');
+      return;
+    }
+
+    // Simpan token & user
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+
+    // Redirect berdasarkan role
+    if (data.user.role === 'admin') {
+      window.location.href = 'admin.html';
+    } else if (data.user.role === 'manager') {
+      window.location.href = 'manager.html';
+    } else {
+      window.location.href = 'employee.html';
+    }
+  } catch (err) {
+    errText.textContent = 'Tidak dapat terhubung ke server';
+    errBox.classList.remove('hidden');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Masuk';
+  }
+}
+
+// Cek kalau sudah login
+const token = localStorage.getItem('token');
+const user = JSON.parse(localStorage.getItem('user') || 'null');
+if (token && user) {
+  if (user.role === 'admin') window.location.href = 'admin.html';
+  else if (user.role === 'manager') window.location.href = 'manager.html';
+  else window.location.href = 'employee.html';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Sistem Lembur</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      fontFamily: { sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'] },
+      colors: {
+        brand: {50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a'},
+        ink: {900:'#0b1220',800:'#131c31',700:'#1e293b',600:'#334155'}
+      }
+    }
+  }
+}
+</script>
+<style>
+  * { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
+  .nav-item { transition: all 0.18s ease; }
+  .nav-item.active { background: linear-gradient(90deg, rgba(59,130,246,0.15), transparent); color:#fff; }
+  .modal-in { animation: modalIn 0.22s cubic-bezier(.2,.9,.3,1); }
+  @keyframes modalIn { from {opacity:0; transform: scale(0.94);} to {opacity:1; transform:scale(1);} }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+</style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
+
+<!-- TOP BAR -->
+<header class="fixed top-0 left-0 right-0 h-16 bg-ink-900 text-white z-40 border-b border-slate-800">
+  <div class="h-full px-5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 bg-gradient-to-br from-brand-500 to-brand-700 rounded-lg flex items-center justify-center font-extrabold text-xs">OT</div>
+      <div>
+        <p class="text-sm font-bold">Admin Panel</p>
+        <p class="text-[10px] text-slate-400">Sistem Monitoring Lembur</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 pl-3 border-l border-slate-800">
+        <div class="text-right hidden sm:block">
+          <p class="text-xs font-semibold" id="adminName">Admin</p>
+          <p class="text-[10px] text-amber-400 font-bold">ADMINISTRATOR</p>
+        </div>
+        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center font-bold text-xs">AD</div>
+      </div>
+      <button onclick="logout()" class="text-xs bg-red-600/20 hover:bg-red-600/40 border border-red-500/40 text-red-300 px-3 py-1.5 rounded-md transition">
+        Logout
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<aside class="fixed top-16 left-0 bottom-0 w-60 bg-ink-900 text-slate-400 z-30 flex flex-col border-r border-slate-800">
+  <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
+    <p class="text-[10px] uppercase text-slate-500 px-3 pt-2 pb-1 font-bold tracking-wider">Admin</p>
+    <a onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
+      <span>📊</span> Dashboard
+    </a>
+    <a onclick="switchTab('users')" data-tab="users" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
+      <span>👥</span> Manajemen User
+    </a>
+    <a onclick="switchTab('records')" data-tab="records" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
+      <span>📋</span> Semua Lembur
+    </a>
+    <a onclick="switchTab('rekap')" data-tab="rekap" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
+      <span>📥</span> Download Rekap
+    </a>
+  </nav>
+  <div class="p-4 border-t border-slate-800">
+    <p class="text-[10px] text-slate-500">Login sebagai</p>
+    <p class="text-xs text-slate-300 font-semibold" id="adminEmail">-</p>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="ml-60 pt-20 pb-8 px-6 max-w-[1500px]">
+
+  <!-- TAB: DASHBOARD -->
+  <section id="tab-dashboard" class="tab-content space-y-5">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-800">Dashboard Admin</h1>
+      <p class="text-sm text-slate-500 mt-1">Ringkasan sistem monitoring lembur</p>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <p class="text-[10px] text-slate-500 font-bold uppercase">Total User</p>
+        <p class="text-2xl font-extrabold text-slate-800 mt-2" id="statUsers">0</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <p class="text-[10px] text-slate-500 font-bold uppercase">Total Record</p>
+        <p class="text-2xl font-extrabold text-slate-800 mt-2" id="statRecords">0</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <p class="text-[10px] text-emerald-600 font-bold uppercase">Aktif Sekarang</p>
+        <p class="text-2xl font-extrabold text-emerald-600 mt-2" id="statActive">0</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <p class="text-[10px] text-amber-600 font-bold uppercase">Pending Approval</p>
+        <p class="text-2xl font-extrabold text-amber-600 mt-2" id="statPending">0</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <p class="text-[10px] text-orange-600 font-bold uppercase">Pending Verify</p>
+        <p class="text-2xl font-extrabold text-orange-600 mt-2" id="statVerify">0</p>
+      </div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <p class="text-[10px] text-brand-600 font-bold uppercase">Jam Bulan Ini</p>
+        <p class="text-2xl font-extrabold text-brand-600 mt-2" id="statHours">0</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <h2 class="font-bold text-slate-800 mb-4">Aktivitas Terbaru</h2>
+      <div id="recentActivity" class="space-y-2">
+        <div class="text-center py-8 text-slate-400 text-sm">Memuat...</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: USERS -->
+  <section id="tab-users" class="tab-content hidden space-y-5">
+    <div class="flex items-center justify-between flex-wrap gap-3">
+      <div>
+        <h1 class="text-2xl font-extrabold text-slate-800">Manajemen User</h1>
+        <p class="text-sm text-slate-500 mt-1">Tambah, edit, dan kelola akun pengguna</p>
+      </div>
+      <button onclick="openUserModal()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-brand-600/25 transition">
+        + Tambah User
+      </button>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
+            <tr>
+              <th class="text-left px-4 py-3.5 font-bold">Nama</th>
+              <th class="text-left px-4 py-3.5 font-bold">Email</th>
+              <th class="text-left px-4 py-3.5 font-bold">Role</th>
+              <th class="text-left px-4 py-3.5 font-bold">Departemen</th>
+              <th class="text-left px-4 py-3.5 font-bold">Status</th>
+              <th class="text-left px-4 py-3.5 font-bold">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="usersTable" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: RECORDS -->
+  <section id="tab-records" class="tab-content hidden space-y-5">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-800">Semua Record Lembur</h1>
+      <p class="text-sm text-slate-500 mt-1">Monitor semua aktivitas lembur karyawan</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
+      <div class="grid md:grid-cols-4 gap-3">
+        <div>
+          <label class="text-[10px] font-bold text-slate-600 uppercase">Status</label>
+          <select id="filterStatus" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm">
+            <option value="">Semua</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="active">Aktif</option>
+            <option value="pending_verification">Menunggu Verifikasi</option>
+            <option value="completed">Selesai</option>
+            <option value="rejected">Ditolak</option>
+            <option value="cancelled">Dibatalkan</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-slate-600 uppercase">Dari Tanggal</label>
+          <input type="date" id="filterStart" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div>
+          <label class="text-[10px] font-bold text-slate-600 uppercase">Sampai Tanggal</label>
+          <input type="date" id="filterEnd" class="w-full mt-1 border border-slate-200 rounded-lg px-3 py-2 text-sm">
+        </div>
+        <div class="flex items-end gap-2">
+          <button onclick="loadRecords()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm py-2 rounded-lg transition">Filter</button>
+          <button onclick="resetFilter()" class="flex-1 border border-slate-200 text-slate-600 font-medium text-sm py-2 rounded-lg hover:bg-slate-50 transition">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
+            <tr>
+              <th class="text-left px-4 py-3.5 font-bold">Karyawan</th>
+              <th class="text-left px-4 py-3.5 font-bold">Tanggal</th>
+              <th class="text-left px-4 py-3.5 font-bold">Jam</th>
+              <th class="text-left px-4 py-3.5 font-bold">Durasi</th>
+              <th class="text-left px-4 py-3.5 font-bold">Status</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTable" class="divide-y divide-slate-100"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TAB: REKAP -->
+  <section id="tab-rekap" class="tab-content hidden space-y-5">
+    <div>
+      <h1 class="text-2xl font-extrabold text-slate-800">Download Rekap</h1>
+      <p class="text-sm text-slate-500 mt-1">Export data lembur ke Excel berdasarkan periode</p>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-2xl">
+      <div class="bg-brand-50 border border-brand-100 rounded-xl p-4 mb-5">
+        <p class="text-xs text-brand-800">
+          <strong>💡 Cara pakai:</strong> Pilih periode dan filter, klik Download. File Excel akan otomatis ter-download dengan kolom: Nama, Email, Tanggal, Jam Mulai, Jam Selesai, Durasi, Status, Rating, Catatan.
+        </p>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-4">
+        <div>
+          <label class="text-xs font-bold text-slate-600 uppercase">Dari Tanggal</label>
+          <input type="date" id="rekapStart" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 uppercase">Sampai Tanggal</label>
+          <input type="date" id="rekapEnd" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 uppercase">Status</label>
+          <select id="rekapStatus" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+            <option value="">Semua Status</option>
+            <option value="completed">Selesai (Approved)</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="active">Aktif</option>
+            <option value="pending_verification">Menunggu Verifikasi</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 uppercase">Karyawan</label>
+          <select id="rekapEmployee" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+            <option value="">Semua Karyawan</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex gap-3 mt-6">
+        <button onclick="downloadRekap()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-600/25">
+          📥 Download Excel
+        </button>
+        <button onclick="previewRekap()" class="flex-1 border border-brand-200 text-brand-700 hover:bg-brand-50 font-bold py-3 rounded-xl transition">
+          👁 Preview Data
+        </button>
+      </div>
+
+      <div id="rekapPreview" class="mt-5 hidden">
+        <p class="text-xs font-bold text-slate-600 uppercase mb-2">Preview (<span id="previewCount">0</span> record)</p>
+        <div class="bg-slate-50 rounded-lg p-4 text-xs text-slate-700 max-h-60 overflow-y-auto" id="previewContent"></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- MODAL: TAMBAH/EDIT USER -->
+<div id="userModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 modal-in">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-extrabold text-slate-800 text-lg" id="userModalTitle">Tambah User</h3>
+      <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <input type="hidden" id="userId">
+    <div class="space-y-3">
+      <div>
+        <label class="text-xs font-bold text-slate-600 uppercase">Nama Lengkap</label>
+        <input type="text" id="userFullName" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+      </div>
+      <div>
+        <label class="text-xs font-bold text-slate-600 uppercase">Email</label>
+        <input type="email" id="userEmail" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="nama@cimory.com">
+      </div>
+      <div>
+        <label class="text-xs font-bold text-slate-600 uppercase">Password</label>
+        <input type="password" id="userPassword" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Minimal 6 karakter">
+      </div>
+      <div>
+        <label class="text-xs font-bold text-slate-600 uppercase">Role</label>
+        <select id="userRole" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+          <option value="employee">Karyawan</option>
+          <option value="manager">Atasan</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div>
+        <label class="text-xs font-bold text-slate-600 uppercase">Departemen</label>
+        <input type="text" id="userDept" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Contoh: Keuangan">
+      </div>
+    </div>
+    <div class="flex gap-2 mt-5">
+      <button onclick="closeUserModal()" class="flex-1 border border-slate-200 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-50">Batal</button>
+      <button onclick="saveUser()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white py-2.5 rounded-xl text-sm font-bold">Simpan</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="fixed bottom-6 right-6 bg-ink-900 text-white px-4 py-3 rounded-xl text-sm hidden z-[60] shadow-2xl max-w-xs"></div>
+
+<script>
+const API_URL = 'https://overtime-backend.onrender.com';
+const token = localStorage.getItem('token');
+const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+if (!token || !user || user.role !== 'admin') {
+  window.location.href = 'index.html';
+}
+
+document.getElementById('adminName').textContent = user.full_name;
+document.getElementById('adminEmail').textContent = user.email;
+
+function toast(msg, color='bg-ink-900') {
+  const t = document.getElementById('toast');
+  t.className = `fixed bottom-6 right-6 ${color} text-white px-4 py-3 rounded-xl text-sm z-[60] shadow-2xl max-w-xs`;
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.add('hidden'), 3200);
+}
+
+function logout() {
+  localStorage.clear();
+  window.location.href = 'index.html';
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(`${API_URL}${path}`, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...(opts.headers || {})
+    }
+  });
+  if (res.status === 401) { logout(); return; }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request gagal');
+  return data;
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
+  document.getElementById('tab-' + tab)?.classList.remove('hidden');
+  document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+  document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
+
+  if (tab === 'dashboard') loadStats();
+  if (tab === 'users') loadUsers();
+  if (tab === 'records') loadRecords();
+  if (tab === 'rekap') loadRekapEmployees();
+}
+
+// ============================================
+// DASHBOARD
+// ============================================
+async function loadStats() {
+  try {
+    const s = await api('/api/admin/stats');
+    document.getElementById('statUsers').textContent = s.total_users;
+    document.getElementById('statRecords').textContent = s.total_records;
+    document.getElementById('statActive').textContent = s.active_now;
+    document.getElementById('statPending').textContent = s.pending_approval;
+    document.getElementById('statVerify').textContent = s.pending_verify;
+    document.getElementById('statHours').textContent = s.hours_this_month + 'j';
+
+    const records = await api('/api/admin/records?limit=10');
+    const el = document.getElementById('recentActivity');
+    if (records.length === 0) {
+      el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Belum ada aktivitas</div>';
+      return;
+    }
+    el.innerHTML = records.slice(0, 10).map(r => `
+      <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition">
+        <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-sm">📋</div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-semibold text-slate-800 truncate">${r.employee_name} — ${r.reason}</p>
+          <p class="text-xs text-slate-500">${new Date(r.date).toLocaleDateString('id-ID')} · ${r.start_time} · ${statusLabel(r.status)}</p>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    toast(err.message, 'bg-red-600');
+  }
+}
+
+function statusLabel(s) {
+  const map = {
+    pending: 'PENDING', approved: 'DISETUJUI', rejected: 'DITOLAK', revision: 'REVISI',
+    active: 'AKTIF', cancelled: 'DIBATALKAN', pending_verification: 'VERIFIKASI',
+    proof_revision: 'REVISI BUKTI', verify_rejected: 'HASIL DITOLAK', completed: 'SELESAI'
+  };
+  return map[s] || s;
+}
+
+// ============================================
+// USERS
+// ============================================
+async function loadUsers() {
+  try {
+    const users = await api('/api/admin/users');
+    const el = document.getElementById('usersTable');
+    if (users.length === 0) {
+      el.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400 text-sm">Belum ada user</td></tr>';
+      return;
+    }
+    el.innerHTML = users.map(u => `
+      <tr class="hover:bg-slate-50 transition">
+        <td class="px-4 py-3 font-semibold text-slate-800">${u.full_name}</td>
+        <td class="px-4 py-3 text-slate-600 text-xs">${u.email}</td>
+        <td class="px-4 py-3">
+          <span class="text-[10px] font-bold px-2 py-1 rounded-full ${
+            u.role === 'admin' ? 'bg-amber-100 text-amber-700' :
+            u.role === 'manager' ? 'bg-brand-100 text-brand-700' :
+            'bg-slate-100 text-slate-600'
+          }">${u.role.toUpperCase()}</span>
+        </td>
+        <td class="px-4 py-3 text-slate-600 text-xs">${u.department || '-'}</td>
+        <td class="px-4 py-3">
+          <span class="text-[10px] font-bold px-2 py-1 rounded-full ${u.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
+            ${u.is_active ? 'AKTIF' : 'NONAKTIF'}
+          </span>
+        </td>
+        <td class="px-4 py-3">
+          <button onclick="editUser(${u.id})" class="text-brand-600 hover:text-brand-800 text-xs font-bold mr-3">Edit</button>
+          <button onclick="deleteUser(${u.id})" class="text-red-600 hover:text-red-800 text-xs font-bold">Hapus</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    toast(err.message, 'bg-red-600');
+  }
+}
+
+let editingUser = null;
+
+function openUserModal(editData = null) {
+  editingUser = editData;
+  document.getElementById('userModalTitle').textContent = editData ? 'Edit User' : 'Tambah User';
+  document.getElementById('userId').value = editData?.id || '';
+  document.getElementById('userFullName').value = editData?.full_name || '';
+  document.getElementById('userEmail').value = editData?.email || '';
+  document.getElementById('userPassword').value = '';
+  document.getElementById('userRole').value = editData?.role || 'employee';
+  document.getElementById('userDept').value = editData?.department || '';
+  document.getElementById('userEmail').disabled = !!editData;
+  document.getElementById('userModal').classList.remove('hidden');
+  document.getElementById('userModal').classList.add('flex');
+}
+
+function closeUserModal() {
+  document.getElementById('userModal').classList.add('hidden');
+  document.getElementById('userModal').classList.remove('flex');
+}
+
+async function saveUser() {
+  const id = document.getElementById('userId').value;
+  const full_name = document.getElementById('userFullName').value.trim();
+  const email = document.getElementById('userEmail').value.trim();
+  const password = document.getElementById('userPassword').value;
+  const role = document.getElementById('userRole').value;
+  const department = document.getElementById('userDept').value.trim();
+
+  if (!full_name) return toast('Nama wajib', 'bg-red-600');
+
+  try {
+    if (id) {
+      const payload = { full_name, role, department };
+      if (password) payload.password = password;
+      await api(`/api/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      toast('User diupdate', 'bg-emerald-600');
+    } else {
+      if (!email || !password) return toast('Email & password wajib', 'bg-red-600');
+      await api('/api/admin/users', { method: 'POST', body: JSON.stringify({ email, password, full_name, role, department }) });
+      toast('User ditambahkan', 'bg-emerald-600');
+    }
+    closeUserModal();
+    loadUsers();
+  } catch (err) {
+    toast(err.message, 'bg-red-600');
+  }
+}
+
+async function editUser(id) {
+  const users = await api('/api/admin/users');
+  const u = users.find(x => x.id === id);
+  if (u) openUserModal(u);
+}
+
+async function deleteUser(id) {
+  if (!confirm('Hapus user ini?')) return;
+  try {
+    await api(`/api/admin/users/${id}`, { method: 'DELETE' });
+    toast('User dihapus', 'bg-emerald-600');
+    loadUsers();
+  } catch (err) {
+    toast(err.message, 'bg-red-600');
+  }
+}
+
+// ============================================
+// RECORDS
+// ============================================
+async function loadRecords() {
+  const params = new URLSearchParams();
+  const status = document.getElementById('filterStatus').value;
+  const start = document.getElementById('filterStart').value;
+  const end = document.getElementById('filterEnd').value;
+  if (status) params.set('status', status);
+  if (start) params.set('start_date', start);
+  if (end) params.set('end_date', end);
+
+  try {
+    const records = await api('/api/admin/records?' + params.toString());
+    const el = document.getElementById('recordsTable');
+    if (records.length === 0) {
+      el.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>';
+      return;
+    }
+    el.innerHTML = records.map(r => `
+      <tr class="hover:bg-slate-50 transition">
+        <td class="px-4 py-3 font-semibold text-slate-800 text-sm">${r.employee_name}</td>
+        <td class="px-4 py-3 text-slate-600 text-sm">${new Date(r.date).toLocaleDateString('id-ID')}</td>
+        <td class="px-4 py-3 text-slate-600 text-xs">${r.start_time}${r.actual_end ? ' — ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
+        <td class="px-4 py-3 text-slate-600 text-sm">${r.actual_duration ? Math.round(r.actual_duration.split(':')[0] * 60 + parseInt(r.actual_duration.split(':')[1])) + 'm' : (r.planned_duration || '-')}</td>
+        <td class="px-4 py-3">
+          <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">${statusLabel(r.status)}</span>
+        </td>
+      </tr>
+    `).join('');
+  } catch (err) {
+    toast(err.message, 'bg-red-600');
+  }
+}
+
+function resetFilter() {
+  document.getElementById('filterStatus').value = '';
+  document.getElementById('filterStart').value = '';
+  document.getElementById('filterEnd').value = '';
+  loadRecords();
+}
+
+// ============================================
+// REKAP
+// ============================================
+async function loadRekapEmployees() {
+  try {
+    const users = await api('/api/admin/users');
+    const sel = document.getElementById('rekapEmployee');
+    sel.innerHTML = '<option value="">Semua Karyawan</option>' +
+      users.filter(u => u.role !== 'admin').map(u => `<option value="${u.id}">${u.full_name}</option>`).join('');
+  } catch (err) { console.error(err); }
+}
+
+async function fetchRekapData() {
+  const params = new URLSearchParams();
+  const start = document.getElementById('rekapStart').value;
+  const end = document.getElementById('rekapEnd').value;
+  const status = document.getElementById('rekapStatus').value;
+  const emp = document.getElementById('rekapEmployee').value;
+  if (start) params.set('start_date', start);
+  if (end) params.set('end_date', end);
+  if (status) params.set('status', status);
+  if (emp) params.set('employee_id', emp);
+  params.set('limit', '1000');
+
+  return await api('/api/admin/records?' + params.toString());
+}
+
+async function previewRekap() {
+  try {
+    const data = await fetchRekapData();
+    document.getElementById('rekapPreview').classList.remove('hidden');
+    document.getElementById('previewCount').textContent = data.length;
+    if (data.length === 0) {
+      document.getElementById('previewContent').innerHTML = '<p class="text-center text-slate-400">Tidak ada data</p>';
+      return;
+    }
+    document.getElementById('previewContent').innerHTML = `
+      <table class="w-full">
+        <thead class="text-slate-500 text-[10px] uppercase">
+          <tr>
+            <th class="text-left py-1">Nama</th>
+            <th class="text-left py-1">Tanggal</th>
+            <th class="text-left py-1">Jam</th>
+            <th class="text-left py-1">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${data.slice(0, 20).map(r => `
+            <tr class="border-t border-slate-200">
+              <td class="py-1.5">${r.employee_name}</td>
+              <td class="py-1.5">${new Date(r.date).toLocaleDateString('id-ID')}</td>
+              <td class="py-1.5">${r.start_time}</td>
+              <td class="py-1.5">${statusLabel(r.status)}</td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+      ${data.length > 20 ? `<p class="text-center mt-2 text-slate-400">...dan ${data.length - 20} lainnya</p>` : ''}
+    `;
+  } catch (err) {
+    toast(err.message, 'bg-red-600');
+  }
+}
+
+async function downloadRekap() {
+  try {
+    const data = await fetchRekapData();
+
+    if (data.length === 0) {
+      return toast('Tidak ada data untuk di-download', 'bg-amber-600');
+    }
+
+    // Format data untuk Excel
+    const rows = data.map(r => {
+      const start = r.actual_start ? new Date(r.actual_start) : null;
+      const end = r.actual_end ? new Date(r.actual_end) : null;
+      let durationStr = '-';
+      if (start && end) {
+        const diffMs = end - start;
+        const h = Math.floor(diffMs / 3600000);
+        const m = Math.floor((diffMs % 3600000) / 60000);
+        durationStr = `${h}j ${m}m`;
+      }
+
+      return {
+        'Nama': r.employee_name,
+        'Email': r.employee_email || '-',
+        'Departemen': r.department || '-',
+        'Tanggal': new Date(r.date).toLocaleDateString('id-ID'),
+        'Jam Mulai': r.start_time || '-',
+        'Jam Selesai': end ? end.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}) : '-',
+        'Durasi Aktual': durationStr,
+        'Durasi Rencana': r.planned_duration || '-',
+        'Kategori': r.reason,
+        'Deskripsi': r.description,
+        'Sumber': r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan',
+        'Status': statusLabel(r.status),
+        'Rating': r.verify_rating || '-',
+        'Catatan Atasan': r.verify_note || r.approval_note || '-',
+        'Bukti': r.proof_text || '-'
+      };
+    });
+
+    // Buat workbook
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Rekap Lembur');
+
+    // Set column width
+    ws['!cols'] = [
+      { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
+      { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 15 },
+      { wch: 8 }, { wch: 25 }, { wch: 30 }
+    ];
+
+    // Filename dengan periode
+    const start = document.getElementById('rekapStart').value || 'awal';
+    const end = document.getElementById('rekapEnd').value || 'akhir';
+    const filename = `Rekap-Lembur_${start}_${end}.xlsx`;
+
+    XLSX.writeFile(wb, filename);
+    toast(`✓ Downloaded: ${data.length} record`, 'bg-emerald-600');
+  } catch (err) {
+    toast(err.message, 'bg-red-600');
+  }
+}
+
+// ============================================
+// INIT
+// ============================================
+const today = new Date();
+const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+document.getElementById('rekapStart').valueAsDate = firstDay;
+document.getElementById('rekapEnd').valueAsDate = today;
+
+switchTab('dashboard');
+</script>
+</body>
+</html>
