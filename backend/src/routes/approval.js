@@ -1,11 +1,11 @@
 import { Router } from 'express';
+import jwt from 'jsonwebtoken';
 import { query } from '../db.js';
 import { requireAuth, requireManager } from '../auth.js';
 import { sendEmail, templates } from '../mailer.js';
 
 const router = Router();
 
-// Helper: kirim email ke user
 async function notifyUser(userId, templateName, data) {
   try {
     const result = await query('SELECT email FROM users WHERE id = $1', [userId]);
@@ -19,8 +19,181 @@ async function notifyUser(userId, templateName, data) {
   }
 }
 
+function renderEmailActionPage(type, message) {
+  const colors = {
+    success: { bg: '#10b981,#059669', emoji: '✅', title: 'Berhasil Disetujui' },
+    rejected: { bg: '#ef4444,#dc2626', emoji: '❌', title: 'Pengajuan Ditolak' },
+    info: { bg: '#6366f1,#8b5cf6', emoji: 'ℹ️', title: 'Info' },
+    error: { bg: '#64748b,#475569', emoji: '⚠️', title: 'Terjadi Kesalahan' }
+  };
+  const c = colors[type] || colors.info;
+
+  return `<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${c.title} — Sistem Lembur Cimory</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #0f0f1e, #1a1a2e, #312e81);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: white;
+    border-radius: 24px;
+    max-width: 420px;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    text-align: center;
+    animation: slideUp 0.5s cubic-bezier(.2,.9,.3,1);
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .header {
+    background: linear-gradient(135deg, ${c.bg});
+    padding: 40px 24px 32px;
+    color: white;
+  }
+  .emoji { font-size: 64px; margin-bottom: 12px; }
+  .title { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  .body { padding: 32px 24px; }
+  .message { font-size: 15px; color: #475569; line-height: 1.6; margin-bottom: 24px; }
+  .btn {
+    display: inline-block;
+    padding: 14px 32px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    text-decoration: none;
+    border-radius: 14px;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .footer {
+    background: #f8fafc;
+    padding: 16px;
+    font-size: 11px;
+    color: #94a3b8;
+    border-top: 1px solid #e2e8f0;
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="emoji">${c.emoji}</div>
+      <div class="title">${c.title}</div>
+    </div>
+    <div class="body">
+      <p class="message">${message}</p>
+      <a href="https://overtime-system.desi-arr863.workers.dev/manager.html" class="btn">Buka Sistem →</a>
+    </div>
+    <div class="footer">Sistem Monitoring Lembur Cimory</div>
+  </div>
+</body>
+</html>`;
+}
+
 // ============================================
-// POST /:id/approve-schedule — Approve jadwal
+// GET /email-action?token=xxx — approve/reject via email
+// ============================================
+router.get('/email-action', async (req, res) => {
+  const { token } = req.query;
+
+  if (!token) {
+    return res.status(400).send(renderEmailActionPage('error', 'Token tidak ada'));
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(token, process.env.JWT_SECRET);
+  } catch (err) {
+    return res.status(400).send(renderEmailActionPage('error', 'Token tidak valid atau sudah kedaluwarsa (maks 24 jam)'));
+  }
+
+  const { recordId, action, managerId } = payload;
+
+  if (!['approve', 'reject'].includes(action)) {
+    return res.status(400).send(renderEmailActionPage('error', 'Aksi tidak valid'));
+  }
+
+  try {
+    const recordResult = await query('SELECT * FROM overtime_records WHERE id = $1', [recordId]);
+    const record = recordResult.rows[0];
+
+    if (!record) {
+      return res.send(renderEmailActionPage('error', 'Record tidak ditemukan'));
+    }
+
+    if (record.status !== 'pending') {
+      return res.send(renderEmailActionPage('info', `Pengajuan ${record.employee_name} sudah diproses sebelumnya (status: ${record.status})`));
+    }
+
+    const managerResult = await query('SELECT full_name FROM users WHERE id = $1', [managerId]);
+    const managerName = managerResult.rows[0]?.full_name || 'Atasan';
+
+    if (action === 'approve') {
+      await query(
+        `UPDATE overtime_records
+         SET status = 'approved', approved_by = $1, approved_at = NOW(),
+             approval_note = $2, updated_at = NOW()
+         WHERE id = $3`,
+        [managerId, `Disetujui via email oleh ${managerName}`, recordId]
+      );
+
+      const empResult = await query('SELECT email FROM users WHERE id = $1', [record.employee_id]);
+      if (empResult.rows[0]?.email) {
+        await sendEmail({
+          to: empResult.rows[0].email,
+          ...templates.approved({
+            date: record.date,
+            startTime: record.start_time
+          })
+        });
+      }
+
+      console.log(`✅ Record ${recordId} DISETUJUI via email oleh ${managerName}`);
+      return res.send(renderEmailActionPage('success', `Pengajuan <strong>${record.employee_name}</strong> (${record.date} · ${record.start_time}) berhasil <strong>DISETUJUI</strong>.<br><br>Karyawan akan menerima notifikasi.`));
+    } else {
+      await query(
+        `UPDATE overtime_records
+         SET status = 'rejected', approval_note = $1, updated_at = NOW()
+         WHERE id = $2`,
+        [`Ditolak via email oleh ${managerName}`, recordId]
+      );
+
+      const empResult = await query('SELECT email FROM users WHERE id = $1', [record.employee_id]);
+      if (empResult.rows[0]?.email) {
+        await sendEmail({
+          to: empResult.rows[0].email,
+          ...templates.rejected({
+            date: record.date,
+            startTime: record.start_time,
+            note: `Ditolak via email oleh ${managerName}`
+          })
+        });
+      }
+
+      console.log(`❌ Record ${recordId} DITOLAK via email oleh ${managerName}`);
+      return res.send(renderEmailActionPage('rejected', `Pengajuan <strong>${record.employee_name}</strong> (${record.date} · ${record.start_time}) telah <strong>DITOLAK</strong>.<br><br>Karyawan akan menerima notifikasi.`));
+    }
+  } catch (err) {
+    console.error('email-action error:', err.message);
+    return res.status(500).send(renderEmailActionPage('error', 'Gagal memproses: ' + err.message));
+  }
+});
+
+// ============================================
+// POST /:id/approve-schedule — Approve via sistem
 // ============================================
 router.post('/:id/approve-schedule', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
@@ -50,7 +223,7 @@ router.post('/:id/approve-schedule', requireAuth, requireManager, async (req, re
 });
 
 // ============================================
-// POST /:id/reject — Reject pengajuan
+// POST /:id/reject — Reject via sistem
 // ============================================
 router.post('/:id/reject', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
