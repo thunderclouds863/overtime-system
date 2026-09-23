@@ -1,15 +1,12 @@
 import { Router } from 'express';
 import { query } from '../db.js';
-import { hashPassword, requireAuth } from '../auth.js';
+import { hashPassword, requireAuth, requireAdmin, requireReviewer } from '../auth.js';
 
 const router = Router();
 
-function requireAdmin(req, res, next) {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Akses hanya untuk admin' });
-  }
-  next();
-}
+// ============================================
+// USER MANAGEMENT (hanya admin)
+// ============================================
 
 router.get('/users', requireAuth, requireAdmin, async (req, res) => {
   try {
@@ -36,7 +33,7 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Semua field wajib' });
   }
 
-  if (!['employee', 'manager', 'admin'].includes(role)) {
+  if (!['employee', 'manager', 'admin', 'reviewer'].includes(role)) {
     return res.status(400).json({ error: 'Role tidak valid' });
   }
 
@@ -76,7 +73,7 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
 
     if (full_name) { sql += `, full_name = $${idx++}`; params.push(full_name); }
     if (role) {
-      if (!['employee', 'manager', 'admin'].includes(role)) {
+      if (!['employee', 'manager', 'admin', 'reviewer'].includes(role)) {
         return res.status(400).json({ error: 'Role tidak valid' });
       }
       sql += `, role = $${idx++}`; params.push(role);
@@ -124,7 +121,10 @@ router.get('/approvers', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-router.get('/records', requireAuth, requireAdmin, async (req, res) => {
+// ============================================
+// RECORDS — admin & reviewer bisa akses
+// ============================================
+router.get('/records', requireAuth, requireReviewer, async (req, res) => {
   const { status, start_date, end_date, employee_id, limit = 500 } = req.query;
 
   try {
@@ -157,17 +157,23 @@ router.get('/records', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-router.get('/stats', requireAuth, requireAdmin, async (req, res) => {
+// ============================================
+// STATS — admin & reviewer bisa akses
+// ============================================
+router.get('/stats', requireAuth, requireReviewer, async (req, res) => {
   try {
     const totalUsers = await query('SELECT COUNT(*) FROM users WHERE is_active = true');
     const totalRecords = await query('SELECT COUNT(*) FROM overtime_records');
     const activeNow = await query("SELECT COUNT(*) FROM overtime_records WHERE status = 'active'");
     const pendingApproval = await query("SELECT COUNT(*) FROM overtime_records WHERE status = 'pending'");
     const pendingVerify = await query("SELECT COUNT(*) FROM overtime_records WHERE status = 'pending_verification'");
+    
+    // Total jam bulan ini — dari completed + pending_verification (yang sudah ada durasi aktual)
     const completedMonth = await query(`
       SELECT COALESCE(SUM(EXTRACT(EPOCH FROM actual_duration))/3600, 0) as total_hours
       FROM overtime_records
-      WHERE status = 'completed'
+      WHERE status IN ('completed', 'pending_verification')
+        AND actual_duration IS NOT NULL
         AND date_trunc('month', date) = date_trunc('month', CURRENT_DATE)
     `);
 
@@ -179,6 +185,20 @@ router.get('/stats', requireAuth, requireAdmin, async (req, res) => {
       pending_verify: parseInt(pendingVerify.rows[0].count),
       hours_this_month: parseFloat(completedMonth.rows[0].total_hours).toFixed(1)
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// REVIEWER LIST (untuk dropdown)
+// ============================================
+router.get('/reviewers', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT id, email, full_name FROM users WHERE role = 'reviewer' AND is_active = true ORDER BY full_name`
+    );
+    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
