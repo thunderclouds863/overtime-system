@@ -808,7 +808,7 @@ function renderVerifyList() {
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
         <div class="min-w-0">
           <p class="font-bold text-slate-800 text-sm md:text-base">${r.employee} (${r.employeeLevel}) ${r.isHoliday ? '🏖' : '💼'}</p>
-          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · ${r.start ? fmtTime(r.start) : '-'} — ${r.end ? fmtTime(r.end) : '-'} · ${fmtDurShort(r.duration)}</p>
+          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · ${r.start ? fmtTime(r.start) : '-'} — ${r.end ? fmtTime(r.end) : '-'} · <strong>${r.actualHours.toFixed(1)} jam</strong></p>
         </div>
         ${statusBadge(r.status)}
       </div>
