@@ -1,4 +1,4 @@
-import * as brevo from '@getbrevo/brevo';
+import { BrevoClient } from '@getbrevo/brevo';
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -7,16 +7,14 @@ const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'hrdcimory1@gmail.com';
 const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Sistem Lembur Cimory';
 
 console.log('📧 Mailer config:', {
-  provider: 'Brevo API',
+  provider: 'Brevo API v6',
   apiKey: BREVO_API_KEY ? '✓ set' : '✗ MISSING',
   sender: SENDER_EMAIL
 });
 
-let emailApi = null;
+let brevo = null;
 if (BREVO_API_KEY) {
-  const apiInstance = new brevo.TransactionalEmailsApi();
-  apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, BREVO_API_KEY);
-  emailApi = apiInstance;
+  brevo = new BrevoClient({ apiKey: BREVO_API_KEY });
   console.log('✅ Brevo API siap');
 } else {
   console.error('❌ BREVO_API_KEY tidak di-set!');
@@ -27,21 +25,21 @@ export async function sendEmail({ to, subject, html }) {
     console.warn('⚠️ sendEmail: alamat email kosong, skip');
     return { success: false, error: 'no recipient' };
   }
-  if (!emailApi) {
+  if (!brevo) {
     console.warn('⚠️ sendEmail: Brevo tidak siap, skip');
     return { success: false, error: 'no api key' };
   }
 
   try {
     console.log(`📧 Mengirim email ke ${to}...`);
-    const sendSmtpEmail = new brevo.SendSmtpEmail();
-    sendSmtpEmail.sender = { email: SENDER_EMAIL, name: SENDER_NAME };
-    sendSmtpEmail.to = [{ email: to }];
-    sendSmtpEmail.subject = subject;
-    sendSmtpEmail.htmlContent = html;
+    const result = await brevo.transactionalEmails.sendTransacEmail({
+      sender: { email: SENDER_EMAIL, name: SENDER_NAME },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html
+    });
 
-    const result = await emailApi.sendTransacEmail(sendSmtpEmail);
-    console.log(`✅ Email terkirim ke ${to}: ${result.messageId}`);
+    console.log(`✅ Email terkirim ke ${to}:`, result.messageId);
     return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error(`❌ Email GAGAL ke ${to}:`, error.message);
@@ -49,7 +47,6 @@ export async function sendEmail({ to, subject, html }) {
   }
 }
 
-// Template sama seperti versi sebelumnya, tidak perlu diubah
 const wrap = (title, color, content) => `
   <div style="font-family:'Segoe UI',system-ui,sans-serif;max-width:600px;margin:auto;background:#f7f7fb;padding:20px">
     <div style="background:white;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
