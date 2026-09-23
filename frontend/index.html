@@ -227,6 +227,7 @@ async function handleLogin(e) {
 
     if (data.user.role === 'admin') window.location.href = 'admin.html';
     else if (data.user.role === 'manager') window.location.href = 'manager.html';
+    else if (data.user.role === 'reviewer') window.location.href = 'reviewer.html';
     else window.location.href = 'employee.html';
   } catch (err) {
     clearTimeout(slowTimer);
@@ -245,6 +246,7 @@ const user = JSON.parse(localStorage.getItem('user') || 'null');
 if (token && user) {
   if (user.role === 'admin') window.location.href = 'admin.html';
   else if (user.role === 'manager') window.location.href = 'manager.html';
+  else if (user.role === 'reviewer') window.location.href = 'reviewer.html';
   else window.location.href = 'employee.html';
 }
 </script>
