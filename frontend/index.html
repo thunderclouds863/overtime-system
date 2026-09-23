@@ -2,76 +2,150 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f1e">
 <title>Login — Sistem Lembur</title>
 <link rel="icon" type="image/png" href="logo-cimory.png">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
   theme: {
     extend: {
-      fontFamily: { sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'] },
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        display: ['Space Grotesk', 'system-ui', 'sans-serif']
+      },
       colors: {
-        brand: {50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a'},
-        ink: {900:'#0b1220',800:'#131c31',700:'#1e293b',600:'#334155'}
+        brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'},
+        ink: {900:'#0f0f1e',800:'#1a1a2e',700:'#25253d',600:'#33334f'},
+        neon: {pink:'#ec4899',violet:'#8b5cf6',cyan:'#06b6d4',lime:'#84cc16'}
+      },
+      animation: {
+        'gradient': 'gradient 8s ease infinite',
+        'float': 'float 3s ease-in-out infinite',
+        'glow': 'glow 2s ease-in-out infinite alternate'
+      },
+      keyframes: {
+        gradient: {
+          '0%,100%': { 'background-position': '0% 50%' },
+          '50%': { 'background-position': '100% 50%' }
+        },
+        float: {
+          '0%,100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-10px)' }
+        },
+        glow: {
+          'from': { boxShadow: '0 0 20px rgba(139,92,246,0.4)' },
+          'to': { boxShadow: '0 0 40px rgba(236,72,153,0.6)' }
+        }
       }
     }
   }
 }
 </script>
 <style>
-  * { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
-  .modal-in { animation: modalIn 0.3s cubic-bezier(.2,.9,.3,1); }
-  @keyframes modalIn { from {opacity:0; transform: scale(0.96);} to {opacity:1; transform:scale(1);} }
+  * { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+  .font-display { font-family: 'Space Grotesk', system-ui, sans-serif; }
+  body {
+    background: linear-gradient(-45deg, #0f0f1e, #1a1a2e, #312e81, #4c1d95);
+    background-size: 400% 400%;
+    animation: gradient 15s ease infinite;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+  .mesh-bg::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(139, 92, 246, 0.3), transparent 40%),
+      radial-gradient(circle at 80% 80%, rgba(236, 72, 153, 0.25), transparent 40%),
+      radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.15), transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .glass {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .input-glow:focus {
+    box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15), 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+  .btn-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-shine::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+  }
+  .btn-shine:hover::before { left: 100%; }
+  .modal-in { animation: modalIn 0.4s cubic-bezier(.2,.9,.3,1); }
+  @keyframes modalIn { from {opacity:0; transform: scale(0.94) translateY(10px);} to {opacity:1; transform:scale(1) translateY(0);} }
+  .float { animation: float 3s ease-in-out infinite; }
 </style>
 </head>
-<body class="bg-gradient-to-br from-ink-900 via-slate-900 to-brand-900 min-h-screen flex items-center justify-center p-4">
+<body class="mesh-bg flex items-center justify-center p-4">
 
-<div class="w-full max-w-md modal-in">
-  <div class="text-center mb-8">
-    <img src="logo-cimory.png" alt="Cimory" class="w-24 h-24 mx-auto mb-4 object-contain">
-    <h1 class="text-2xl font-extrabold text-white tracking-tight">Sistem Monitoring Lembur</h1>
-    <p class="text-sm text-slate-400 mt-1">Enterprise Suite</p>
+<div class="w-full max-w-md relative z-10 modal-in">
+  <div class="text-center mb-6 md:mb-8">
+    <div class="relative inline-block">
+      <div class="absolute inset-0 bg-gradient-to-r from-neon-violet to-neon-pink blur-2xl opacity-50 rounded-full"></div>
+      <img src="logo-cimory.png" alt="Cimory" class="relative w-20 h-20 md:w-24 md:h-24 object-contain bg-white rounded-2xl p-2 shadow-2xl float">
+    </div>
+    <h1 class="text-2xl md:text-3xl font-extrabold text-white tracking-tight mt-4 font-display">Overtime Management</h1>
+    <p class="text-sm text-violet-200/80 mt-1">✨ Sistem Monitoring Lembur · v7</p>
   </div>
 
-  <div class="bg-white rounded-2xl shadow-2xl p-8">
-    <h2 class="text-xl font-extrabold text-slate-800 mb-1">Masuk ke Akun Anda</h2>
-    <p class="text-sm text-slate-500 mb-6">Gunakan email yang sudah didaftarkan admin</p>
+  <div class="glass rounded-3xl shadow-2xl p-6 md:p-8 border border-white/40">
+    <h2 class="text-xl md:text-2xl font-extrabold text-slate-800 mb-1">Welcome back 👋</h2>
+    <p class="text-sm text-slate-500 mb-6">Login pakai email kantor kamu</p>
 
     <form id="loginForm" onsubmit="handleLogin(event)">
       <div class="mb-4">
         <label class="text-xs font-bold text-slate-600 uppercase tracking-wide">Email</label>
-        <input type="email" id="email" required
-          class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:outline-none bg-slate-50 focus:bg-white transition"
-          placeholder="nama@cimory.com">
+        <div class="relative mt-1.5">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">📧</span>
+          <input type="email" id="email" required
+            class="w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:outline-none bg-slate-50/50 focus:bg-white transition input-glow"
+            placeholder="nama@cimory.com">
+        </div>
       </div>
       <div class="mb-6">
         <label class="text-xs font-bold text-slate-600 uppercase tracking-wide">Password</label>
-        <input type="password" id="password" required
-          class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-3 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:outline-none bg-slate-50 focus:bg-white transition"
-          placeholder="••••••••">
+        <div class="relative mt-1.5">
+          <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">🔒</span>
+          <input type="password" id="password" required
+            class="w-full pl-11 pr-4 py-3.5 border border-slate-200 rounded-2xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 focus:outline-none bg-slate-50/50 focus:bg-white transition input-glow"
+            placeholder="••••••••">
+        </div>
       </div>
 
-      <div id="errorMsg" class="hidden bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
-        <p class="text-xs text-red-700" id="errorText"></p>
+      <div id="errorMsg" class="hidden bg-red-50 border border-red-200 rounded-2xl p-3 mb-4">
+        <p class="text-xs text-red-700 font-medium" id="errorText"></p>
       </div>
 
       <button type="submit" id="loginBtn"
-        class="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-600/25 text-sm">
-        Masuk
+        class="btn-shine w-full bg-gradient-to-r from-neon-violet via-brand-600 to-neon-pink hover:from-brand-600 hover:to-neon-violet text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-violet-500/40 text-sm active:scale-[0.98]">
+        Masuk Sekarang 🚀
       </button>
     </form>
 
     <div class="mt-6 pt-6 border-t border-slate-100">
-      <p class="text-[11px] text-slate-400 text-center leading-relaxed">
-        Belum punya akun? Hubungi <strong class="text-slate-600">admin@cimory.com</strong><br>
-        untuk didaftarkan oleh administrator.
+      <p class="text-xs text-slate-400 text-center leading-relaxed">
+        Belum punya akun? Kontak <strong class="text-slate-600">admin@cimory.com</strong>
       </p>
     </div>
   </div>
 
-  <p class="text-center text-xs text-slate-500 mt-6">© 2026 Cimory — Overtime Management System</p>
+  <p class="text-center text-xs text-violet-200/60 mt-6">© 2026 Cimory · Made with 💜</p>
 </div>
 
 <script>
@@ -87,7 +161,7 @@ async function handleLogin(e) {
 
   errBox.classList.add('hidden');
   btn.disabled = true;
-  btn.textContent = 'Memproses...';
+  btn.textContent = '⏳ Memproses...';
 
   try {
     const res = await fetch(`${API_URL}/api/auth/login`, {
@@ -111,11 +185,11 @@ async function handleLogin(e) {
     else if (data.user.role === 'manager') window.location.href = 'manager.html';
     else window.location.href = 'employee.html';
   } catch (err) {
-    errText.textContent = 'Tidak dapat terhubung ke server. Tunggu 30 detik lalu coba lagi.';
+    errText.textContent = 'Tidak dapat terhubung. Tunggu 30 detik lalu coba lagi.';
     errBox.classList.remove('hidden');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Masuk';
+    btn.textContent = 'Masuk Sekarang 🚀';
   }
 }
 
