@@ -4,12 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0f0f1e">
-<title>Admin — Sistem Lembur</title>
+<title>Karyawan — Sistem Lembur</title>
 <link rel="icon" type="image/png" href="logo-cimory.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 tailwind.config = {
   theme: {
@@ -35,17 +34,42 @@ tailwind.config = {
   ::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 4px; }
   .nav-item { transition: all 0.2s ease; }
   .nav-item.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
-  .modal-in { animation: modalIn 0.3s cubic-bezier(.2,.9,.3,1); }
-  @keyframes modalIn { from {opacity:0; transform: scale(0.94) translateY(20px);} to {opacity:1; transform:scale(1) translateY(0);} }
-  .card-hover { transition: all 0.25s; }
-  .card-hover:active { transform: scale(0.99); }
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .card-hover { transition: all 0.25s cubic-bezier(.2,.9,.3,1); }
+  .card-hover:active { transform: scale(0.98); }
+  .pulse-ring { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); animation: pulseRing 2s infinite; }
+  @keyframes pulseRing { 0%{box-shadow:0 0 0 0 rgba(34,197,94,0.5);} 70%{box-shadow:0 0 0 12px rgba(34,197,94,0);} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0);} }
+  .gps-radar { position: relative; width: 120px; height: 120px; margin: 0 auto; }
+  .gps-radar::before, .gps-radar::after { content:''; position:absolute; inset:0; border-radius:50%; border:2px solid; }
+  .gps-radar::before { border-color: rgba(99,102,241,0.2); animation: radar 2s infinite; }
+  .gps-radar::after { border-color: rgba(99,102,241,0.4); animation: radar 2s infinite 1s; }
+  @keyframes radar { 0%{transform:scale(0.4); opacity:1;} 100%{transform:scale(1.3); opacity:0;} }
+  .gps-pin { position:absolute; top:50%; left:50%; transform: translate(-50%,-50%); width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition: all 0.3s; }
+  .gps-pin.checking { background: #e0e7ff; color:#4f46e5; }
+  .gps-pin.success { background: #d1fae5; color:#059669; }
+  .gps-pin.fail { background: #fee2e2; color:#dc2626; }
+  .gps-pin-inner { animation: gpsPulse 1.2s ease-in-out infinite; }
+  @keyframes gpsPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
+  .gps-step { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:12px; transition: all 0.3s; font-size: 13px; }
+  .gps-step.pending { background: #f1f5f9; color:#94a3b8; }
+  .gps-step.active { background: #e0e7ff; color:#4f46e5; font-weight: 600; }
+  .gps-step.done { background: #d1fae5; color:#059669; font-weight: 600; }
+  .gps-step.fail { background: #fee2e2; color:#dc2626; font-weight: 600; }
+  .progress-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899); transition: width 0.4s ease; border-radius: 3px; }
+  .shake { animation: shake 0.4s; }
+  @keyframes shake { 0%,100%{transform:translateX(0);} 20%,60%{transform:translateX(-6px);} 40%,80%{transform:translateX(6px);} }
+  .ready-badge { position: relative; }
+  .ready-badge::before { content:''; position:absolute; inset:-4px; border-radius: 16px; background: linear-gradient(135deg, #10b981, #059669); opacity: 0.15; animation: readyPulse 2s infinite; }
+  @keyframes readyPulse { 0%,100%{opacity:0.15;} 50%{opacity:0.35;} }
+  .notif-slide { animation: notifSlide 0.4s cubic-bezier(.2,.9,.3,1); }
+  @keyframes notifSlide { from {transform: translateX(120%);} to {transform: translateX(0);} }
   .stat-grad-1 { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
   .stat-grad-2 { background: linear-gradient(135deg, #f59e0b, #fb923c); }
   .stat-grad-3 { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
   .stat-grad-4 { background: linear-gradient(135deg, #10b981, #059669); }
-  .stat-grad-5 { background: linear-gradient(135deg, #ec4899, #f43f5e); }
-  .stat-grad-6 { background: linear-gradient(135deg, #8b5cf6, #d946ef); }
+  .modal-in { animation: modalIn 0.3s cubic-bezier(.2,.9,.3,1); }
+  @keyframes modalIn { from {opacity:0; transform: scale(0.94) translateY(20px);} to {opacity:1; transform:scale(1) translateY(0);} }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
   @media (max-width: 767px) {
     main { padding-bottom: 90px; }
   }
@@ -53,360 +77,451 @@ tailwind.config = {
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
-<!-- TOP BAR -->
 <header class="fixed top-0 left-0 right-0 h-14 md:h-16 bg-ink-900 text-white z-40 border-b border-slate-800">
   <div class="h-full px-3 md:px-5 flex items-center justify-between">
     <div class="flex items-center gap-2 md:gap-3">
       <img src="logo-cimory.png" alt="Cimory" class="w-9 h-9 md:w-10 md:h-10 object-contain">
       <div class="hidden sm:block">
-        <p class="text-xs md:text-sm font-bold">Admin Panel</p>
+        <p class="text-xs md:text-sm font-bold">Employee Portal</p>
         <p class="text-[9px] md:text-[10px] text-slate-400">Overtime Management</p>
       </div>
     </div>
     <div class="flex items-center gap-2">
+      <button onclick="openGPSModal()" class="flex items-center gap-1.5 text-[10px] md:text-xs bg-slate-800/70 hover:bg-slate-700 border border-slate-700 px-2.5 md:px-3 py-1.5 rounded-full transition">
+        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full" id="gpsTopDot"></span>
+        <span id="gpsStatus" class="text-slate-300 font-medium hidden xs:inline">Cek GPS</span>
+      </button>
       <div class="flex items-center gap-2 pl-2 md:pl-3 border-l border-slate-800">
         <div class="text-right hidden md:block">
-          <p class="text-xs font-semibold" id="adminName">Admin</p>
-          <p class="text-[10px] text-amber-400 font-bold">ADMINISTRATOR</p>
+          <p class="text-xs font-semibold" id="userName">-</p>
+          <p class="text-[10px] text-violet-400 font-bold" id="userLevelLabel">-</p>
         </div>
-        <div class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center font-bold text-xs">AD</div>
+        <div class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-neon-violet to-neon-pink flex items-center justify-center font-bold text-xs text-white" id="userAvatar">-</div>
       </div>
       <button onclick="logout()" class="text-[10px] md:text-xs bg-red-600/20 hover:bg-red-600/40 border border-red-500/40 text-red-300 px-2 md:px-3 py-1.5 rounded-full transition">🚪</button>
     </div>
   </div>
 </header>
 
-<!-- SIDEBAR (Desktop only) -->
 <aside class="hidden md:flex fixed top-16 left-0 bottom-0 w-60 bg-ink-900 text-slate-400 z-30 flex-col border-r border-slate-800">
   <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-    <p class="text-[10px] uppercase text-slate-500 px-3 pt-2 pb-1 font-bold tracking-wider">Admin</p>
-    <a onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer active"><span>📊</span> Dashboard</a>
-    <a onclick="switchTab('users')" data-tab="users" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>👥</span> Manajemen User</a>
-    <a onclick="switchTab('records')" data-tab="records" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>📋</span> Semua Lembur</a>
-    <a onclick="switchTab('rekap')" data-tab="rekap" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>📥</span> Download Rekap</a>
+    <p class="text-[10px] uppercase text-slate-500 px-3 pt-2 pb-1 font-bold tracking-wider">Menu</p>
+    <a onclick="switchTab('emp-dashboard')" data-tab="emp-dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer active">
+      <span>🏠</span> Dashboard
+    </a>
+    <a onclick="switchTab('emp-ajukan')" data-tab="emp-ajukan" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer">
+      <span>✍️</span> Ajukan Lembur
+    </a>
+    <a onclick="switchTab('emp-riwayat')" data-tab="emp-riwayat" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer">
+      <span>📜</span> Riwayat
+    </a>
   </nav>
-  <div class="p-4 border-t border-slate-800">
-    <p class="text-[10px] text-slate-500">Login sebagai</p>
-    <p class="text-xs text-slate-300 font-semibold" id="adminEmail">-</p>
+  <div class="p-4 border-t border-slate-800 space-y-2">
+    <button onclick="openGPSModal()" class="w-full text-left bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-xl p-3 transition">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="w-1.5 h-1.5 bg-green-400 rounded-full" id="gpsSideDot"></span>
+        <p class="text-[10px] uppercase text-slate-400 font-bold">Lokasi</p>
+      </div>
+      <p class="text-[11px] text-slate-300 font-mono" id="gpsSideCoord">-6.1920, 106.7376</p>
+    </button>
   </div>
 </aside>
 
-<!-- BOTTOM NAV (Mobile only) -->
 <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 z-40 safe-bottom">
-  <div class="flex items-center justify-around px-1 py-2">
-    <button onclick="switchTab('dashboard')" data-mobile-tab="dashboard" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[60px]">
-      <span class="text-xl">📊</span><span class="text-[10px] font-semibold text-slate-600">Dash</span>
+  <div class="flex items-center justify-around px-2 py-2">
+    <button onclick="switchTab('emp-dashboard')" data-mobile-tab="emp-dashboard" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
+      <span class="text-xl">🏠</span>
+      <span class="text-[10px] font-semibold text-slate-600">Home</span>
     </button>
-    <button onclick="switchTab('users')" data-mobile-tab="users" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[60px]">
-      <span class="text-xl">👥</span><span class="text-[10px] font-semibold text-slate-600">User</span>
+    <button onclick="switchTab('emp-ajukan')" data-mobile-tab="emp-ajukan" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
+      <span class="text-xl">✍️</span>
+      <span class="text-[10px] font-semibold text-slate-600">Ajukan</span>
     </button>
-    <button onclick="switchTab('records')" data-mobile-tab="records" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[60px]">
-      <span class="text-xl">📋</span><span class="text-[10px] font-semibold text-slate-600">Record</span>
-    </button>
-    <button onclick="switchTab('rekap')" data-mobile-tab="rekap" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[60px]">
-      <span class="text-xl">📥</span><span class="text-[10px] font-semibold text-slate-600">Rekap</span>
+    <button onclick="switchTab('emp-riwayat')" data-mobile-tab="emp-riwayat" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
+      <span class="text-xl">📜</span>
+      <span class="text-[10px] font-semibold text-slate-600">Riwayat</span>
     </button>
   </div>
 </nav>
 
-<main class="md:ml-60 pt-16 md:pt-20 pb-24 md:pb-8 px-3 md:px-6 max-w-[1500px]">
+<main class="md:ml-60 pt-16 md:pt-20 pb-24 md:pb-8 px-3 md:px-8 max-w-[1400px]">
 
-  <!-- DASHBOARD -->
-  <section id="tab-dashboard" class="tab-content space-y-4">
-    <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Dashboard Admin</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Ringkasan sistem monitoring lembur</p>
+  <section id="tab-emp-dashboard" class="tab-content space-y-4">
+    <div class="flex items-end justify-between flex-wrap gap-2">
+      <div>
+        <p class="text-[11px] text-slate-500 font-medium">Halo, welcome back 👋</p>
+        <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display" id="welcomeName">-</h1>
+      </div>
+      <p class="text-[10px] md:text-xs text-slate-500" id="todayDate"></p>
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div id="gpsBanner" class="rounded-3xl border-2 transition-all duration-300 p-4 md:p-5">
+      <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+        <div class="shrink-0">
+          <div class="gps-radar">
+            <div class="gps-pin checking" id="gpsBannerPin"><span class="gps-pin-inner text-xl md:text-2xl" id="gpsBannerIcon">📍</span></div>
+          </div>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-1.5">
+            <span class="w-2 h-2 rounded-full bg-slate-400" id="gpsBannerDot"></span>
+            <p class="text-[10px] md:text-xs font-bold uppercase tracking-wider" id="gpsBannerLabel">Verifikasi Lokasi</p>
+          </div>
+          <p class="text-base md:text-lg font-extrabold text-slate-800" id="gpsBannerTitle">Cek lokasi kamu</p>
+          <p class="text-xs md:text-sm text-slate-500 mt-0.5" id="gpsBannerDesc">Radius 100m dari kantor</p>
+          <div class="grid grid-cols-3 gap-2 mt-3">
+            <div class="bg-white rounded-xl p-2 border border-slate-100">
+              <p class="text-[9px] text-slate-500 uppercase font-bold">Koordinat</p>
+              <p class="text-[10px] font-mono font-semibold text-slate-700 mt-0.5 truncate" id="gpsBannerCoord">—</p>
+            </div>
+            <div class="bg-white rounded-xl p-2 border border-slate-100">
+              <p class="text-[9px] text-slate-500 uppercase font-bold">Jarak</p>
+              <p class="text-[10px] font-semibold text-slate-700 mt-0.5" id="gpsBannerDist">—</p>
+            </div>
+            <div class="bg-white rounded-xl p-2 border border-slate-100">
+              <p class="text-[9px] text-slate-500 uppercase font-bold">Akurasi</p>
+              <p class="text-[10px] font-semibold text-slate-700 mt-0.5" id="gpsBannerAcc">—</p>
+            </div>
+          </div>
+        </div>
+        <div class="shrink-0">
+          <button onclick="runGPSVerification('banner')" id="gpsBannerBtn" class="w-full md:w-auto bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-3 rounded-2xl shadow-lg shadow-brand-500/25 transition whitespace-nowrap active:scale-95">
+            Cek Lokasi 📍
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="activeCard" class="hidden relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 text-white shadow-2xl shadow-emerald-900/30">
+      <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 30%, white 1.5px, transparent 1.5px); background-size: 24px 24px;"></div>
+      <div class="relative p-5 md:p-6">
+        <div class="flex items-center justify-between mb-4">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 bg-white rounded-full pulse-ring"></span>
+            <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider">LIVE · Sedang Lembur</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span id="activeAutoTag" class="hidden text-[10px] bg-white/20 px-2.5 py-1 rounded-full font-semibold">⚡ AUTO</span>
+            <span class="text-[10px] bg-white/20 px-2.5 py-1 rounded-full font-semibold" id="activeSource"></span>
+          </div>
+        </div>
+        <div class="text-center md:text-left">
+          <p class="text-emerald-100 text-[10px] md:text-xs mb-1">Durasi Berjalan</p>
+          <p id="activeDuration" class="text-4xl md:text-5xl font-extrabold tabular-nums tracking-tight font-display">00:00:00</p>
+        </div>
+        <div class="grid grid-cols-2 gap-3 mt-4">
+          <div>
+            <p class="text-emerald-100 text-[10px] mb-0.5">Mulai</p>
+            <p id="activeStart" class="font-bold text-xs"></p>
+            <p id="activePlan" class="text-emerald-200 text-[10px] mt-0.5"></p>
+          </div>
+          <div class="text-right">
+            <p class="text-emerald-100 text-[10px] mb-0.5">Lokasi</p>
+            <p class="font-bold text-xs">✓ GPS</p>
+            <p id="activeLocation" class="text-emerald-200 text-[10px] mt-0.5"></p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-5">
+          <button onclick="cancelOvertime()" class="bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold py-3 rounded-2xl text-xs md:text-sm transition active:scale-95">✕ Batal</button>
+          <button onclick="endOvertime()" class="bg-white text-emerald-700 hover:bg-emerald-50 font-bold py-3 rounded-2xl text-xs md:text-sm shadow-lg transition active:scale-95">✓ Selesai</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="stat-grad-1 rounded-2xl p-4 text-white shadow-lg shadow-violet-500/25 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Total User</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statUsers">0</p>
+        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Total Jam</p>
+        <p id="empStatHours" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0.0<span class="text-sm opacity-80 ml-0.5">j</span></p>
+        <p class="text-[9px] opacity-75 mt-0.5 relative">Bulan ini</p>
       </div>
       <div class="stat-grad-2 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/25 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Total Record</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statRecords">0</p>
-      </div>
-      <div class="stat-grad-4 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Aktif</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statActive">0</p>
-      </div>
-      <div class="stat-grad-5 rounded-2xl p-4 text-white shadow-lg shadow-pink-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Pending</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statPending">0</p>
+        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Menunggu</p>
+        <p id="empStatPending" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
+        <p class="text-[9px] opacity-75 mt-0.5 relative">Approval</p>
       </div>
       <div class="stat-grad-3 rounded-2xl p-4 text-white shadow-lg shadow-cyan-500/25 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
         <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Verifikasi</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statVerify">0</p>
+        <p id="empStatVerify" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
+        <p class="text-[9px] opacity-75 mt-0.5 relative">Hasil kerja</p>
       </div>
-      <div class="stat-grad-6 rounded-2xl p-4 text-white shadow-lg shadow-fuchsia-500/25 relative overflow-hidden">
+      <div class="stat-grad-4 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/25 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Jam Bulan Ini</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statHours">0</p>
+        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Disetujui</p>
+        <p id="empStatApproved" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
+        <p class="text-[9px] opacity-75 mt-0.5 relative">Selesai ✓</p>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-bold text-slate-800 text-sm md:text-base">📅 Jadwal Disetujui</h2>
+        <span class="text-[10px] bg-brand-50 text-brand-700 font-bold px-2.5 py-1 rounded-full uppercase" id="upcomingCount">0 jadwal</span>
+      </div>
+      <div id="upcomingList" class="space-y-3">
+        <div class="text-center py-8 text-slate-400 text-sm">Belum ada jadwal</div>
       </div>
     </div>
 
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-5">
       <h2 class="font-bold text-slate-800 mb-3 text-sm md:text-base">🔥 Aktivitas Terbaru</h2>
-      <div id="recentActivity" class="space-y-2">
-        <div class="text-center py-8 text-slate-400 text-sm">Memuat...</div>
+      <div id="empRecent" class="space-y-2">
+        <div class="text-center py-8 text-slate-400 text-sm">Belum ada aktivitas</div>
       </div>
     </div>
   </section>
 
-  <!-- USERS -->
-  <section id="tab-users" class="tab-content hidden space-y-4">
-    <div class="flex items-center justify-between flex-wrap gap-3">
-      <div>
-        <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Manajemen User</h1>
-        <p class="text-xs md:text-sm text-slate-500 mt-0.5">Tambah, edit, kelola akun</p>
-      </div>
-      <button onclick="openUserModal()" class="bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-2.5 rounded-2xl shadow-lg shadow-brand-500/30 transition active:scale-95">+ Tambah User</button>
-    </div>
-
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
-            <tr>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Nama</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Email</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Role</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Level</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden lg:table-cell">Jabatan</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden lg:table-cell">Atasan</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Status</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Aksi</th>
-            </tr>
-          </thead>
-          <tbody id="usersTable" class="divide-y divide-slate-100"></tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
-  <!-- RECORDS -->
-  <section id="tab-records" class="tab-content hidden space-y-4">
+  <section id="tab-emp-ajukan" class="tab-content hidden space-y-4">
     <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Semua Record Lembur</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Monitor semua aktivitas lembur</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">✍️ Ajukan Lembur</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Isi form, atasan akan review</p>
     </div>
-
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-3 md:p-4">
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
-        <div>
-          <label class="text-[10px] font-bold text-slate-600 uppercase">Status</label>
-          <select id="filterStatus" class="w-full mt-1 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs md:text-sm">
-            <option value="">Semua</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="active">Aktif</option>
-            <option value="pending_verification">Menunggu Verifikasi</option>
-            <option value="completed">Selesai</option>
-            <option value="rejected">Ditolak</option>
-            <option value="cancelled">Dibatalkan</option>
-          </select>
+    <div class="grid lg:grid-cols-3 gap-4 md:gap-5">
+      <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-100 p-5 md:p-6">
+        <h2 class="font-bold text-slate-800 mb-1 text-sm md:text-base">Form Pengajuan</h2>
+        <p class="text-[11px] text-slate-500 mb-4">Field dengan <span class="text-red-500">*</span> wajib</p>
+        <div class="grid md:grid-cols-2 gap-3 md:gap-4">
+          <div>
+            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
+            <input type="date" id="inpDate" onchange="updateStartTime()" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition">
+          </div>
+          <div>
+            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Kategori <span class="text-red-500">*</span></label>
+            <select id="inpReason" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition">
+              <option value="">— Pilih —</option>
+              <option>Pekerjaan mendesak</option>
+              <option>Target proyek</option>
+              <option>Pengganti rekan</option>
+              <option>Closing bulanan</option>
+              <option>Lainnya</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Jenis Hari</label>
+            <div id="jenisHari" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600">Pilih tanggal dulu</div>
+          </div>
+          <div>
+            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Jam Mulai (auto)</label>
+            <input type="time" id="inpStart" readonly class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600 cursor-not-allowed">
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Durasi (jam) <span class="text-red-500">*</span></label>
+            <input type="number" id="inpDurasi" min="1" max="24" value="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition">
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Rencana Pekerjaan <span class="text-red-500">*</span></label>
+            <textarea id="inpDesc" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition" placeholder="Contoh: Menyelesaikan laporan bulanan..."></textarea>
+          </div>
         </div>
-        <div>
-          <label class="text-[10px] font-bold text-slate-600 uppercase">Dari</label>
-          <input type="date" id="filterStart" class="w-full mt-1 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs md:text-sm">
+        <div class="mt-4 bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 text-xs text-brand-900">
+          <strong>💡 Info jam:</strong> Hari kerja mulai <strong>17:00</strong>. Hari libur (Sabtu/Minggu) mulai <strong>08:00</strong>. Batas pengajuan hari ini jam <strong>18:00</strong>.
         </div>
-        <div>
-          <label class="text-[10px] font-bold text-slate-600 uppercase">Sampai</label>
-          <input type="date" id="filterEnd" class="w-full mt-1 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs md:text-sm">
-        </div>
-        <div class="flex items-end gap-2 col-span-2 md:col-span-1">
-          <button onclick="loadRecords()" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white font-bold text-xs md:text-sm py-2.5 rounded-2xl transition">Filter</button>
-          <button onclick="resetFilter()" class="flex-1 border border-slate-200 text-slate-600 font-medium text-xs md:text-sm py-2.5 rounded-2xl hover:bg-slate-50 transition">Reset</button>
-        </div>
+        <button onclick="submitRequest()" id="btnSubmitRequest" class="mt-5 w-full bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/30 text-sm transition active:scale-[0.98]">
+          Kirim Pengajuan 🚀
+        </button>
       </div>
-    </div>
-
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-      <div class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
-            <tr>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Karyawan</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Level</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Tanggal</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden lg:table-cell">Jam</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Durasi</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Status</th>
-            </tr>
-          </thead>
-          <tbody id="recordsTable" class="divide-y divide-slate-100"></tbody>
-        </table>
+      <div class="bg-gradient-to-br from-ink-900 via-brand-900 to-ink-900 rounded-3xl p-5 text-white shadow-xl">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-neon-violet to-neon-pink flex items-center justify-center text-sm">ℹ</div>
+          <h3 class="font-bold text-sm">Ketentuan</h3>
+        </div>
+        <ul class="space-y-3 text-xs text-slate-300">
+          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari kerja: mulai <strong class="text-white">17:00</strong></span></li>
+          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari libur: mulai <strong class="text-white">08:00</strong></span></li>
+          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Batas pengajuan hari ini: <strong class="text-white">18:00</strong></span></li>
+          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>GPS radius <strong class="text-white">100m</strong></span></li>
+          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Auto-start saat jam tiba ⚡</span></li>
+        </ul>
       </div>
     </div>
   </section>
 
-  <!-- REKAP -->
-  <section id="tab-rekap" class="tab-content hidden space-y-4">
+  <section id="tab-emp-riwayat" class="tab-content hidden space-y-4">
     <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Download Rekap</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Export data lembur ke Excel</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">📜 Riwayat Saya</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Semua pengajuan & rekam jejak</p>
     </div>
-
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-6 max-w-2xl">
-      <div class="bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 md:p-4 mb-5">
-        <p class="text-xs text-brand-900"><strong>💡 Cara pakai:</strong> Pilih periode & filter, klik Download. File Excel akan otomatis ter-download.</p>
-      </div>
-
-      <div class="grid md:grid-cols-2 gap-3 md:gap-4">
-        <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Dari Tanggal</label>
-          <input type="date" id="rekapStart" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-        </div>
-        <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Sampai Tanggal</label>
-          <input type="date" id="rekapEnd" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-        </div>
-        <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Status</label>
-          <select id="rekapStatus" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-            <option value="">Semua Status</option>
-            <option value="completed">Selesai (Approved)</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="active">Aktif</option>
-            <option value="pending_verification">Menunggu Verifikasi</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Karyawan</label>
-          <select id="rekapEmployee" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-            <option value="">Semua Karyawan</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="flex flex-col md:flex-row gap-2 md:gap-3 mt-6">
-        <button onclick="downloadRekap()" class="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-500/25 active:scale-[0.98]">📥 Download Excel</button>
-        <button onclick="previewRekap()" class="flex-1 border border-brand-200 text-brand-700 hover:bg-brand-50 font-bold py-3.5 rounded-2xl transition active:scale-[0.98]">👁 Preview Data</button>
-      </div>
-
-      <div id="rekapPreview" class="mt-5 hidden">
-        <p class="text-xs font-bold text-slate-600 uppercase mb-2">Preview (<span id="previewCount">0</span> record)</p>
-        <div class="bg-slate-50 rounded-2xl p-4 text-xs text-slate-700 max-h-60 overflow-y-auto" id="previewContent"></div>
-      </div>
+    <div id="empHistory" class="space-y-3">
+      <div class="text-center py-8 text-slate-400 text-sm">Belum ada riwayat</div>
     </div>
   </section>
 
 </main>
 
-<!-- MODAL USER -->
-<div id="userModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden z-50 overflow-y-auto">
-  <div class="min-h-full flex items-end md:items-center justify-center p-0 md:p-4 py-0 md:py-8">
-    <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-6 modal-in">
-      <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="font-extrabold text-slate-800 text-lg" id="userModalTitle">Tambah User</h3>
-        <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+<!-- GPS MODAL -->
+<div id="modalGPS" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
+    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <h3 class="font-extrabold text-slate-800 text-lg">📍 Verifikasi Lokasi</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Cek posisi kamu di area kantor</p>
       </div>
-      <input type="hidden" id="userId">
-      <div class="space-y-3">
-        <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Nama Lengkap *</label>
-          <input type="text" id="userFullName" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
-        </div>
-        <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Email *</label>
-          <input type="email" id="userEmail" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none" placeholder="nama@cimory.com">
-        </div>
-        <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Password *</label>
-          <input type="password" id="userPassword" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none" placeholder="Minimal 6 karakter">
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs font-bold text-slate-600 uppercase">Role *</label>
-            <select id="userRole" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-              <option value="employee">Karyawan</option>
-              <option value="manager">Atasan</option>
-              <option value="admin">Admin</option>
-            </select>
-          </div>
-          <div>
-            <label class="text-xs font-bold text-slate-600 uppercase">Level *</label>
-              <select id="userLevel" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-                <option value="">— Pilih level —</option>
-                <optgroup label="Level 1">
-                  <option value="1a">1a</option>
-                  <option value="1b">1b</option>
-                  <option value="1c">1c</option>
-                </optgroup>
-                <optgroup label="Level 2">
-                  <option value="2a">2a</option>
-                  <option value="2b">2b</option>
-                  <option value="2c">2c</option>
-                </optgroup>
-                <optgroup label="Level 3">
-                  <option value="3a">3a</option>
-                  <option value="3b">3b</option>
-                  <option value="3c">3c</option>
-                </optgroup>
-                <optgroup label="Level 4">
-                  <option value="4a">4a</option>
-                  <option value="4b">4b</option>
-                  <option value="4c">4c</option>
-                </optgroup>
-                <optgroup label="Level 5">
-                  <option value="5a">5a</option>
-                  <option value="5b">5b</option>
-                  <option value="5c">5c</option>
-                </optgroup>
-                <optgroup label="Level 6">
-                  <option value="6a">6a</option>
-                  <option value="6b">6b</option>
-                </optgroup>
-                <optgroup label="Level 7">
-                  <option value="7a">7a</option>
-                  <option value="7b">7b</option>
-                </optgroup>
-              </select>
-          </div>
-        </div>
-        <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Jabatan</label>
-          <input type="text" id="userJabatan" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white" placeholder="Contoh: Staff Keuangan">
-        </div>
-        <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Atasan Langsung</label>
-          <div id="approverList" class="mt-1.5 border border-slate-200 rounded-2xl p-2 max-h-40 overflow-y-auto space-y-1 bg-slate-50">
-            <p class="text-xs text-slate-400 text-center py-2">Memuat atasan...</p>
-          </div>
-          <p class="text-[10px] text-slate-400 mt-1">Centang atasan yang membawahi user ini</p>
-        </div>
+      <button onclick="closeModal('modalGPS')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div class="py-3"><div class="gps-radar"><div class="gps-pin checking" id="gpsPin"><span class="gps-pin-inner text-2xl" id="gpsPinIcon">📍</span></div></div></div>
+    <div class="text-center mb-4">
+      <p class="font-extrabold text-slate-800 text-lg" id="gpsTitle">Mengambil koordinat...</p>
+      <p class="text-xs text-slate-500 mt-1" id="gpsSubtitle">Mohon tunggu</p>
+    </div>
+    <div class="progress-bar mb-4"><div class="progress-fill" id="gpsProgress" style="width: 10%"></div></div>
+    <div class="space-y-2 mb-4">
+      <div class="gps-step pending" id="step1"><span>📍</span> Mengambil koordinat GPS</div>
+      <div class="gps-step pending" id="step2"><span>📏</span> Menghitung jarak</div>
+      <div class="gps-step pending" id="step3"><span>✓</span> Memverifikasi radius</div>
+    </div>
+    <div id="gpsResult" class="hidden rounded-2xl p-4 mb-4"></div>
+    <div class="flex gap-2">
+      <button onclick="closeModal('modalGPS')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50 transition">Tutup</button>
+      <button onclick="runGPSVerification('modal')" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg">Cek Ulang</button>
+    </div>
+  </div>
+</div>
+
+<!-- BUKTI MODAL -->
+<div id="modalBukti" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
+    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
+    <div class="flex items-start justify-between mb-4">
+      <div>
+        <h3 class="font-extrabold text-slate-800 text-lg">📎 Bukti Hasil Kerja</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Dokumentasikan hasil lembur</p>
       </div>
-      <div class="flex gap-2 mt-5 pt-4 border-t border-slate-100">
-        <button onclick="closeUserModal()" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Batal</button>
-        <button onclick="saveUser()" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg active:scale-[0.98] transition">Simpan</button>
+      <button onclick="closeModal('modalBukti')" class="text-slate-400 text-2xl leading-none">×</button>
+    </div>
+    <label class="text-xs font-bold text-slate-600 uppercase">Deskripsi hasil <span class="text-red-500">*</span></label>
+    <textarea id="proofText" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none" placeholder="Contoh: Laporan bulanan selesai..."></textarea>
+    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Lampiran (opsional)</label>
+    <input type="file" id="proofFile" class="w-full mt-1.5 text-sm border border-slate-200 rounded-2xl px-3 py-2.5 bg-slate-50">
+    <div class="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100 rounded-2xl p-3 mt-4 flex gap-2">
+      <span class="text-blue-600">ℹ</span>
+      <p class="text-[11px] text-blue-800">Atasan akan verifikasi hasil kerja sebelum approve.</p>
+    </div>
+    <div class="flex gap-2 mt-5">
+      <button onclick="closeModal('modalBukti')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Batal</button>
+      <button onclick="submitProof()" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg">Kirim 🚀</button>
+    </div>
+  </div>
+</div>
+
+<!-- CANCEL MODAL -->
+<div id="modalCancel" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-sm w-full p-6 modal-in">
+    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
+    <div class="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+      <span class="text-red-600 text-2xl">⚠️</span>
+    </div>
+    <h3 class="font-extrabold text-slate-800 text-lg text-center">Batalkan Lembur?</h3>
+    <p class="text-sm text-slate-500 mt-2 text-center">Atasan akan menerima notifikasi pembatalan</p>
+    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Alasan <span class="text-red-500">*</span></label>
+    <textarea id="cancelReason" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:ring-2 focus:ring-red-500/20 focus:outline-none"></textarea>
+    <div class="flex gap-2 mt-5">
+      <button onclick="closeModal('modalCancel')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Lanjut</button>
+      <button onclick="confirmCancel()" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-2xl text-sm font-bold">Ya, Batalkan</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT MODAL — BISA UBAH TANGGAL, JAM, DURASI -->
+<div id="modalEdit" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
+    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
+    <h3 class="font-extrabold text-slate-800 text-lg">✏️ Revisi Pengajuan</h3>
+    <p class="text-xs text-slate-500 mt-1 mb-4">Perbaiki tanggal, jam, atau detail lalu kirim ulang</p>
+
+    <div id="editNote" class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 mb-4"></div>
+
+    <label class="text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
+    <input type="date" id="editDate" onchange="updateEditStartTime()"
+      class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+
+    <div class="grid grid-cols-2 gap-3 mt-3">
+      <div>
+        <label class="text-xs font-bold text-slate-600 uppercase">Jam Mulai <span class="text-red-500">*</span></label>
+        <input type="time" id="editStart"
+          class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
       </div>
+      <div>
+        <label class="text-xs font-bold text-slate-600 uppercase">Durasi (jam) <span class="text-red-500">*</span></label>
+        <input type="number" id="editDurasi" min="1" max="24"
+          class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+      </div>
+    </div>
+
+    <div id="editJenisHari" class="mt-2 text-xs text-slate-500 italic">Info jenis hari akan muncul setelah pilih tanggal</div>
+
+    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Kategori</label>
+    <select id="editReason" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
+      <option>Pekerjaan mendesak</option>
+      <option>Target proyek</option>
+      <option>Pengganti rekan</option>
+      <option>Closing bulanan</option>
+      <option>Lainnya</option>
+    </select>
+
+    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Rencana Pekerjaan <span class="text-red-500">*</span></label>
+    <textarea id="editDesc" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"></textarea>
+
+    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Bukti / Keterangan</label>
+    <textarea id="editProof" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"></textarea>
+
+    <div class="flex gap-2 mt-5 pt-4 border-t border-slate-100">
+      <button onclick="closeModal('modalEdit')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Batal</button>
+      <button onclick="submitRevision()" id="btnSubmitRevision" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg active:scale-[0.98] transition">
+        Kirim Ulang
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT PROOF MODAL -->
+<div id="modalEditProof" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
+    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
+    <h3 class="font-extrabold text-slate-800 text-lg">📎 Revisi Bukti</h3>
+    <p class="text-xs text-slate-500 mt-1 mb-4">Atasan minta revisi bukti</p>
+    <div id="editProofNote" class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 mb-4"></div>
+    <label class="text-xs font-bold text-slate-600 uppercase">Deskripsi hasil kerja</label>
+    <textarea id="editProofText" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50"></textarea>
+    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Lampiran baru</label>
+    <input type="file" id="editProofFile" class="w-full mt-1.5 text-sm border border-slate-200 rounded-2xl px-3 py-2.5 bg-slate-50">
+    <div class="flex gap-2 mt-5">
+      <button onclick="closeModal('modalEditProof')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Batal</button>
+      <button onclick="submitProofRevision()" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold">Kirim Ulang</button>
     </div>
   </div>
 </div>
 
 <div id="toast" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 bg-ink-900 text-white px-4 py-3 rounded-2xl text-sm hidden z-[60] shadow-2xl max-w-xs modal-in"></div>
 
+<div id="autoStartNotif" class="fixed top-20 right-4 md:right-6 bg-white border-l-4 border-emerald-500 rounded-2xl shadow-2xl p-4 hidden z-50 notif-slide max-w-sm">
+  <div class="flex items-start gap-3">
+    <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-bold shrink-0">⚡</div>
+    <div class="flex-1">
+      <p class="font-bold text-slate-800 text-sm" id="notifTitle">Lembur Dimulai</p>
+      <p class="text-xs text-slate-500 mt-0.5" id="notifDesc">Timer berjalan</p>
+    </div>
+    <button onclick="document.getElementById('autoStartNotif').classList.add('hidden')" class="text-slate-400">×</button>
+  </div>
+</div>
+
 <script>
 const API_URL = 'https://overtime-backend-wd4c.onrender.com';
+const OFFICE = { lat: -6.192028366395371, lng: 106.73758715254144, radius: 100 };
+
 const token = localStorage.getItem('token');
-const user = JSON.parse(localStorage.getItem('user') || 'null');
+let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
-if (!token || !user || user.role !== 'admin') {
-  window.location.href = 'index.html';
-}
+if (!token || !currentUser) window.location.href = 'index.html';
 
-document.getElementById('adminName').textContent = user.full_name;
-document.getElementById('adminEmail').textContent = user.email;
-
-let allApprovers = [];
+let records = [];
+let activeRecord = null;
+let activeTimer = null;
+let editTargetId = null;
+let editProofTargetId = null;
+let gpsState = { status: 'idle', lat: null, lng: null, acc: null, distance: null };
 
 function toast(msg, color='bg-ink-900') {
   const t = document.getElementById('toast');
@@ -416,8 +531,32 @@ function toast(msg, color='bg-ink-900') {
   clearTimeout(t._t);
   t._t = setTimeout(() => t.classList.add('hidden'), 3200);
 }
-
 function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371000, toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2-lat1), dLon = toRad(lon2-lon1);
+  const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1))*Math.cos(toRad(lat2))*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+function fmtTime(d) { return new Date(d).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}); }
+function fmtDate(d) { return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
+function fmtDur(ms) { const s = Math.floor(ms/1000); return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+function fmtDurShort(ms) { if (!ms) return '-'; const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000); return `${h}j ${m}m`; }
+function timeToDate(dateStr, timeStr) { const [h,m]=timeStr.split(':').map(Number); const d=new Date(dateStr+'T00:00:00'); d.setHours(h,m,0,0); return d; }
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function parseInterval(iv) {
+  if (!iv) return 0;
+  if (typeof iv === 'number') return iv;
+  if (String(iv).includes('PT')) {
+    const m = String(iv).match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
+    if (!m) return 0;
+    return ((parseInt(m[1]||0)*60 + parseInt(m[2]||0))*60 + parseFloat(m[3]||0)) * 1000;
+  }
+  const parts = String(iv).split(':').map(parseFloat);
+  if (parts.length === 3) return ((parts[0]*60 + parts[1])*60 + parts[2]) * 1000;
+  if (parts.length === 2) return (parts[0]*60 + parts[1]) * 60 * 1000;
+  return 0;
+}
 
 async function api(path, opts = {}) {
   const res = await fetch(`${API_URL}${path}`, {
@@ -434,12 +573,173 @@ async function api(path, opts = {}) {
   return data;
 }
 
+document.getElementById('userName').textContent = currentUser.full_name;
+document.getElementById('welcomeName').textContent = currentUser.full_name;
+document.getElementById('userLevelLabel').textContent = currentUser.level || 'Karyawan';
+document.getElementById('userAvatar').textContent = currentUser.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+const today = new Date();
+document.getElementById('inpDate').valueAsDate = today;
+document.getElementById('todayDate').textContent = today.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+function getBrowserGPS() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) return reject(new Error('GPS tidak didukung'));
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, acc: pos.coords.accuracy }),
+      err => reject(err),
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+    );
+  });
+}
+async function fetchGPS() {
+  try {
+    return await Promise.race([getBrowserGPS(), delay(4000).then(()=>{throw new Error('timeout');})]);
+  } catch {
+    return { lat: OFFICE.lat + 0.0003, lng: OFFICE.lng + 0.0003, acc: 15, simulated: true };
+  }
+}
+async function runGPSVerification(source = 'banner') {
+  gpsState.status = 'checking';
+  updateGPSUI();
+  if (source === 'banner') {
+    document.getElementById('modalGPS').classList.remove('hidden');
+    document.getElementById('modalGPS').classList.add('flex');
+  }
+  ['step1','step2','step3'].forEach(id => { document.getElementById(id).className = 'gps-step pending'; });
+  document.getElementById('gpsResult').classList.add('hidden');
+  setGPSProgress(10);
+  setGPSText('Mengambil koordinat...', 'Menghubungi satelit GPS');
+  setGPSPin('checking', '📍');
+
+  setStep('step1', 'active'); setGPSProgress(30);
+  const gps = await fetchGPS();
+  gpsState.lat = gps.lat; gpsState.lng = gps.lng; gpsState.acc = gps.acc;
+  setStep('step1', 'done'); await delay(400);
+
+  setStep('step2', 'active'); setGPSProgress(60);
+  setGPSText('Menghitung jarak...', 'Mengukur jarak ke kantor');
+  await delay(500);
+  const distance = haversine(gps.lat, gps.lng, OFFICE.lat, OFFICE.lng);
+  gpsState.distance = Math.round(distance);
+  setStep('step2', 'done'); await delay(300);
+
+  setStep('step3', 'active'); setGPSProgress(90);
+  setGPSText('Memverifikasi radius...', `Radius ${OFFICE.radius}m`);
+  await delay(400);
+
+  const inRadius = distance <= OFFICE.radius;
+  if (inRadius) {
+    gpsState.status = 'success'; setStep('step3', 'done'); setGPSProgress(100);
+    setGPSPin('success', '✓');
+    setGPSText('Lokasi Terverifikasi ✓', 'Kamu di area kantor');
+    showGPSResult(true, distance, gps);
+    toast(`✓ Lokasi OK (${Math.round(distance)}m)`, 'bg-emerald-600');
+  } else {
+    gpsState.status = 'fail'; setStep('step3', 'fail'); setGPSProgress(100);
+    setGPSPin('fail', '✕');
+    setGPSText('Di Luar Radius', `${Math.round(distance)}m dari kantor`);
+    showGPSResult(false, distance, gps);
+    toast(`✕ Di luar radius (${Math.round(distance)}m)`, 'bg-red-600');
+  }
+  updateGPSUI();
+  return inRadius;
+}
+function setStep(id, state) {
+  const el = document.getElementById(id);
+  const t = el.textContent.replace(/^[◌✓✕📍📏]\s*/, '').trim();
+  el.className = `gps-step ${state}`;
+  if (state === 'active') el.innerHTML = `<span class="animate-spin">◌</span> ${t}`;
+  else if (state === 'done') el.innerHTML = `<span>✓</span> ${t}`;
+  else if (state === 'fail') el.innerHTML = `<span>✕</span> ${t}`;
+  else el.innerHTML = t;
+}
+function setGPSText(t, s) { document.getElementById('gpsTitle').textContent = t; document.getElementById('gpsSubtitle').textContent = s; }
+function setGPSProgress(p) { document.getElementById('gpsProgress').style.width = p + '%'; }
+function setGPSPin(state, icon) {
+  const pin = document.getElementById('gpsPin');
+  pin.className = `gps-pin ${state}`;
+  document.getElementById('gpsPinIcon').textContent = icon;
+  if (state === 'fail') { pin.classList.add('shake'); setTimeout(()=>pin.classList.remove('shake'), 500); }
+}
+function showGPSResult(success, distance, gps) {
+  const el = document.getElementById('gpsResult');
+  const color = success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800';
+  el.className = `rounded-2xl p-4 mb-4 border-2 ${color}`;
+  el.classList.remove('hidden');
+  el.innerHTML = `
+    <div class="flex items-center gap-2 mb-2">
+      <span class="text-lg">${success ? '✓' : '✕'}</span>
+      <p class="font-bold text-sm">${success ? 'Akses Diizinkan' : 'Akses Ditolak'}</p>
+    </div>
+    <div class="grid grid-cols-2 gap-2 text-xs">
+      <div><p class="opacity-70">Koordinat</p><p class="font-mono font-semibold">${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}</p></div>
+      <div><p class="opacity-70">Jarak</p><p class="font-semibold">${Math.round(distance)}m / ${OFFICE.radius}m</p></div>
+      <div><p class="opacity-70">Akurasi</p><p class="font-semibold">±${Math.round(gps.acc)}m</p></div>
+      <div><p class="opacity-70">Sumber</p><p class="font-semibold">${gps.simulated ? 'Simulasi' : 'GPS Browser'}</p></div>
+    </div>`;
+}
+function updateGPSUI() {
+  const colors = { idle: 'bg-slate-400', checking: 'bg-amber-400', success: 'bg-green-400', fail: 'bg-red-400' };
+  const labels = { idle: 'Cek GPS', checking: 'Cek GPS...', success: 'GPS OK', fail: 'Di luar radius' };
+  document.getElementById('gpsTopDot').className = `w-1.5 h-1.5 ${colors[gpsState.status]} rounded-full ${gpsState.status === 'checking' ? 'animate-pulse' : ''}`;
+  document.getElementById('gpsStatus').textContent = labels[gpsState.status];
+  document.getElementById('gpsSideDot').className = `w-1.5 h-1.5 ${colors[gpsState.status]} rounded-full`;
+  if (gpsState.lat) document.getElementById('gpsSideCoord').textContent = `${gpsState.lat.toFixed(4)}, ${gpsState.lng.toFixed(4)}`;
+
+  const banner = document.getElementById('gpsBanner');
+  const styles = { idle: 'bg-slate-50 border-slate-200', checking: 'bg-brand-50 border-brand-300', success: 'bg-emerald-50 border-emerald-300', fail: 'bg-red-50 border-red-300' };
+  banner.className = `rounded-3xl border-2 transition-all p-4 md:p-5 ${styles[gpsState.status]}`;
+  const pin = document.getElementById('gpsBannerPin');
+  pin.className = `gps-pin ${gpsState.status === 'idle' ? 'checking' : gpsState.status}`;
+  document.getElementById('gpsBannerIcon').textContent = gpsState.status === 'success' ? '✓' : gpsState.status === 'fail' ? '✕' : '📍';
+  document.getElementById('gpsBannerDot').className = `w-2 h-2 rounded-full ${colors[gpsState.status]} ${gpsState.status === 'checking' ? 'animate-pulse' : ''}`;
+
+  const btn = document.getElementById('gpsBannerBtn');
+  if (gpsState.status === 'idle') {
+    document.getElementById('gpsBannerLabel').textContent = 'Verifikasi Lokasi';
+    document.getElementById('gpsBannerTitle').textContent = 'Cek lokasi kamu';
+    document.getElementById('gpsBannerDesc').textContent = 'Radius 100m dari kantor';
+    btn.textContent = 'Cek Lokasi 📍';
+    btn.className = 'w-full md:w-auto bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-3 rounded-2xl shadow-lg shadow-brand-500/25 transition whitespace-nowrap active:scale-95';
+  } else if (gpsState.status === 'checking') {
+    document.getElementById('gpsBannerLabel').textContent = 'Sedang Memverifikasi';
+    document.getElementById('gpsBannerTitle').textContent = 'Mengambil lokasi GPS...';
+    document.getElementById('gpsBannerDesc').textContent = 'Mohon tunggu';
+    btn.textContent = '⏳ Memproses...';
+    btn.className = 'w-full md:w-auto bg-slate-400 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-3 rounded-2xl cursor-wait whitespace-nowrap';
+  } else if (gpsState.status === 'success') {
+    document.getElementById('gpsBannerLabel').textContent = 'Lokasi Terverifikasi';
+    document.getElementById('gpsBannerTitle').textContent = '✓ Kamu di area kantor';
+    document.getElementById('gpsBannerDesc').textContent = `Jarak ${gpsState.distance}m · akurasi ±${Math.round(gpsState.acc)}m`;
+    btn.textContent = 'Cek Ulang 🔄';
+    btn.className = 'w-full md:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-3 rounded-2xl shadow-lg shadow-emerald-500/25 transition whitespace-nowrap active:scale-95';
+  } else if (gpsState.status === 'fail') {
+    document.getElementById('gpsBannerLabel').textContent = 'Di Luar Radius';
+    document.getElementById('gpsBannerTitle').textContent = '✕ Kamu di luar area kantor';
+    document.getElementById('gpsBannerDesc').textContent = `Jarak ${gpsState.distance}m (maks ${OFFICE.radius}m)`;
+    btn.textContent = 'Coba Lagi 🔄';
+    btn.className = 'w-full md:w-auto bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-3 rounded-2xl shadow-lg shadow-red-500/25 transition whitespace-nowrap active:scale-95';
+  }
+  if (gpsState.lat) {
+    document.getElementById('gpsBannerCoord').textContent = `${gpsState.lat.toFixed(4)}, ${gpsState.lng.toFixed(4)}`;
+    document.getElementById('gpsBannerDist').textContent = gpsState.distance != null ? `${gpsState.distance}m` : '—';
+    document.getElementById('gpsBannerAcc').textContent = gpsState.acc != null ? `±${Math.round(gpsState.acc)}m` : '—';
+  }
+}
+function openGPSModal() {
+  document.getElementById('modalGPS').classList.remove('hidden');
+  document.getElementById('modalGPS').classList.add('flex');
+  runGPSVerification('modal');
+}
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
+
 function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
   document.getElementById('tab-' + tab)?.classList.remove('hidden');
   document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
   document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
   document.querySelectorAll('.mobile-nav').forEach(e => {
+    e.classList.remove('active');
     e.classList.remove('bg-brand-600', 'text-white');
     e.querySelector('span:last-child').classList.add('text-slate-600');
     e.querySelector('span:last-child').classList.remove('text-white');
@@ -451,358 +751,453 @@ function switchTab(tab) {
     mob.querySelector('span:last-child').classList.remove('text-slate-600');
   }
   window.scrollTo({ top: 0, behavior: 'smooth' });
-
-  if (tab === 'dashboard') loadStats();
-  if (tab === 'users') { loadApprovers(); loadUsers(); }
-  if (tab === 'records') loadRecords();
-  if (tab === 'rekap') loadRekapEmployees();
 }
 
-async function loadStats() {
-  try {
-    const s = await api('/api/admin/stats');
-    document.getElementById('statUsers').textContent = s.total_users;
-    document.getElementById('statRecords').textContent = s.total_records;
-    document.getElementById('statActive').textContent = s.active_now;
-    document.getElementById('statPending').textContent = s.pending_approval;
-    document.getElementById('statVerify').textContent = s.pending_verify;
-    document.getElementById('statHours').textContent = s.hours_this_month + 'j';
-
-    const records = await api('/api/admin/records?limit=10');
-    const el = document.getElementById('recentActivity');
-    if (records.length === 0) {
-      el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Belum ada aktivitas</div>';
-      return;
-    }
-    el.innerHTML = records.slice(0, 10).map(r => `
-      <div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition card-hover">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-sm">${r.is_holiday ? '🏖' : '💼'}</div>
-        <div class="flex-1 min-w-0">
-          <p class="text-xs md:text-sm font-semibold text-slate-800 truncate">${r.employee_name} — ${r.reason}</p>
-          <p class="text-[10px] md:text-xs text-slate-500">${new Date(r.date).toLocaleDateString('id-ID')} · ${r.start_time} · ${statusLabel(r.status)}</p>
-        </div>
-      </div>
-    `).join('');
-  } catch (err) { toast(err.message, 'bg-red-600'); }
+function isHoliday(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = d.getDay();
+  return day === 0 || day === 6;
 }
-
-function statusLabel(s) {
-  const map = {
-    pending: '⏳ PENDING', approved: '✅ DISETUJUI', rejected: '❌ DITOLAK', revision: '✏️ REVISI',
-    active: '🔴 AKTIF', cancelled: '🚫 DIBATALKAN', pending_verification: '🔍 VERIFIKASI',
-    proof_revision: '📎 REVISI BUKTI', verify_rejected: '❌ HASIL DITOLAK', completed: '✓ SELESAI'
-  };
-  return map[s] || s;
-}
-
-async function loadApprovers() {
-  const el = document.getElementById('approverList');
-  el.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">Memuat atasan...</p>';
-  try {
-    allApprovers = await api('/api/admin/approvers');
-    if (allApprovers.length === 0) {
-      el.innerHTML = '<p class="text-xs text-amber-600 text-center py-2">Belum ada user Atasan/Admin</p>';
-      return;
-    }
-    el.innerHTML = allApprovers.map(a => `
-      <label class="flex items-center gap-2 p-2 rounded-xl hover:bg-white cursor-pointer transition">
-        <input type="checkbox" class="approver-checkbox w-4 h-4 accent-brand-600" value="${a.id}">
-        <span class="text-xs">
-          <span class="font-semibold text-slate-700">${a.full_name}</span>
-          <span class="text-slate-500">(${a.level || '-'} · ${a.role})</span>
-        </span>
-      </label>
-    `).join('');
-  } catch (err) {
-    el.innerHTML = `<p class="text-xs text-red-600 text-center py-2">Gagal: ${err.message}</p>`;
-  }
-}
-
-async function loadUsers() {
-  try {
-    const users = await api('/api/admin/users');
-    const el = document.getElementById('usersTable');
-    if (users.length === 0) {
-      el.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-slate-400 text-sm">Belum ada user</td></tr>';
-      return;
-    }
-    el.innerHTML = users.map(u => `
-      <tr class="hover:bg-slate-50 transition">
-        <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">
-          ${u.full_name}
-          <p class="text-[10px] text-slate-400 md:hidden font-normal">${u.email}</p>
-        </td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden md:table-cell">${u.email}</td>
-        <td class="px-3 md:px-4 py-3">
-          <span class="text-[10px] font-bold px-2 py-1 rounded-full ${
-            u.role === 'admin' ? 'bg-amber-100 text-amber-700' :
-            u.role === 'manager' ? 'bg-brand-100 text-brand-700' :
-            'bg-slate-100 text-slate-600'
-          }">${u.role.toUpperCase()}</span>
-        </td>
-        <td class="px-3 md:px-4 py-3">
-          <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-purple-100 text-purple-700">${u.level || '-'}</span>
-        </td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">${u.jabatan || '-'}</td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">
-          ${(u.approvers || []).map(a => a.full_name).join(', ') || '-'}
-        </td>
-        <td class="px-3 md:px-4 py-3 hidden md:table-cell">
-          <span class="text-[10px] font-bold px-2 py-1 rounded-full ${u.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
-            ${u.is_active ? 'AKTIF' : 'NONAKTIF'}
-          </span>
-        </td>
-        <td class="px-3 md:px-4 py-3">
-          <button onclick="editUser(${u.id})" class="text-brand-600 hover:text-brand-800 text-xs font-bold mr-2">Edit</button>
-          <button onclick="deleteUser(${u.id})" class="text-red-600 hover:text-red-800 text-xs font-bold">Hapus</button>
-        </td>
-      </tr>
-    `).join('');
-  } catch (err) { toast(err.message, 'bg-red-600'); }
-}
-
-function openUserModal(editData = null) {
-  document.getElementById('userModalTitle').textContent = editData ? 'Edit User' : 'Tambah User';
-  document.getElementById('userId').value = editData?.id || '';
-  document.getElementById('userFullName').value = editData?.full_name || '';
-  document.getElementById('userEmail').value = editData?.email || '';
-  document.getElementById('userPassword').value = '';
-  document.getElementById('userRole').value = editData?.role || 'employee';
-  document.getElementById('userLevel').value = editData?.level || '';
-  document.getElementById('userJabatan').value = editData?.jabatan || '';
-  document.getElementById('userEmail').disabled = !!editData;
-
-  const approverIds = (editData?.approver_ids || []).map(x => parseInt(x));
-  document.querySelectorAll('.approver-checkbox').forEach(cb => {
-    cb.checked = approverIds.includes(parseInt(cb.value));
-  });
-
-  document.getElementById('userModal').classList.remove('hidden');
-}
-
-function closeUserModal() {
-  document.getElementById('userModal').classList.add('hidden');
-}
-
-async function saveUser() {
-  const id = document.getElementById('userId').value;
-  const full_name = document.getElementById('userFullName').value.trim();
-  const email = document.getElementById('userEmail').value.trim();
-  const password = document.getElementById('userPassword').value;
-  const role = document.getElementById('userRole').value;
-  const level = document.getElementById('userLevel').value;
-  const jabatan = document.getElementById('userJabatan').value.trim();
-  const approver_ids = Array.from(document.querySelectorAll('.approver-checkbox:checked')).map(cb => parseInt(cb.value));
-
-  if (!full_name) return toast('Nama wajib', 'bg-red-600');
-  if (!level) return toast('Level wajib', 'bg-red-600');
-
-  try {
-    if (id) {
-      const payload = { full_name, role, jabatan, level, approver_ids };
-      if (password) payload.password = password;
-      await api(`/api/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
-      toast('User diupdate ✓', 'bg-emerald-600');
-    } else {
-      if (!email || !password) return toast('Email & password wajib', 'bg-red-600');
-      await api('/api/admin/users', {
-        method: 'POST',
-        body: JSON.stringify({ email, password, full_name, role, jabatan, level, approver_ids })
-      });
-      toast('User ditambahkan ✓', 'bg-emerald-600');
-    }
-    closeUserModal();
-    loadUsers();
-  } catch (err) {
-    toast('Gagal: ' + err.message, 'bg-red-600');
-  }
-}
-
-async function editUser(id) {
-  try {
-    const users = await api('/api/admin/users');
-    const u = users.find(x => x.id === id);
-    if (u) openUserModal(u);
-  } catch (err) { toast(err.message, 'bg-red-600'); }
-}
-
-async function deleteUser(id) {
-  if (!confirm('Hapus user ini?')) return;
-  try {
-    await api(`/api/admin/users/${id}`, { method: 'DELETE' });
-    toast('User dihapus', 'bg-emerald-600');
-    loadUsers();
-  } catch (err) { toast(err.message, 'bg-red-600'); }
+function updateStartTime() {
+  const dateStr = document.getElementById('inpDate').value;
+  if (!dateStr) return;
+  const holiday = isHoliday(dateStr);
+  const startTime = holiday ? '08:00' : '17:00';
+  document.getElementById('inpStart').value = startTime;
+  document.getElementById('jenisHari').innerHTML = holiday
+    ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (08:00)</span>'
+    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (17:00)</span>';
+  document.getElementById('jenisHari').className = holiday
+    ? 'w-full mt-1.5 border border-emerald-200 rounded-2xl px-3 py-3 text-sm bg-emerald-50'
+    : 'w-full mt-1.5 border border-blue-200 rounded-2xl px-3 py-3 text-sm bg-blue-50';
 }
 
 async function loadRecords() {
-  const params = new URLSearchParams();
-  const status = document.getElementById('filterStatus').value;
-  const start = document.getElementById('filterStart').value;
-  const end = document.getElementById('filterEnd').value;
-  if (status) params.set('status', status);
-  if (start) params.set('start_date', start);
-  if (end) params.set('end_date', end);
-
   try {
-    const records = await api('/api/admin/records?' + params.toString());
-    const el = document.getElementById('recordsTable');
-    if (records.length === 0) {
-      el.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>';
-      return;
-    }
-    el.innerHTML = records.map(r => {
-      let duration = '-';
-      if (r.actual_duration) {
-        const parts = String(r.actual_duration).split(':');
-        duration = parts[0] + 'j ' + parts[1] + 'm';
-      }
-      return `
-      <tr class="hover:bg-slate-50 transition">
-        <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">
-          ${r.employee_name}
-          <p class="text-[10px] text-slate-400 md:hidden font-normal">Level ${r.employee_level || '-'}</p>
-        </td>
-        <td class="px-3 md:px-4 py-3 text-xs hidden md:table-cell">
-          <span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">${r.employee_level || '-'}</span>
-        </td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm">${new Date(r.date).toLocaleDateString('id-ID')} ${r.is_holiday ? '🏖' : '💼'}</td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">${r.start_time}${r.actual_end ? ' — ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm hidden md:table-cell">${duration}</td>
-        <td class="px-3 md:px-4 py-3">
-          <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">${statusLabel(r.status)}</span>
-        </td>
-      </tr>
-    `}).join('');
+    const raw = await api('/api/records');
+    records = raw.map(r => ({
+      id: r.id,
+      employee: r.employee_name,
+      date: r.date,
+      startTime: r.start_time,
+      plannedStart: r.planned_start,
+      plannedDuration: parseInterval(r.planned_duration),
+      reason: r.reason,
+      desc: r.description,
+      source: r.source,
+      status: r.status,
+      isHoliday: r.is_holiday,
+      start: r.actual_start,
+      end: r.actual_end,
+      duration: parseInterval(r.actual_duration),
+      autoStarted: r.auto_started,
+      location: r.gps_distance ? { distance: r.gps_distance } : null,
+      proof: r.proof_text,
+      proofFile: r.proof_file_name,
+      proofAt: r.proof_uploaded_at,
+      note: r.approval_note,
+      verifyNote: r.verify_note,
+      verifyRating: r.verify_rating,
+      verifiedBy: r.verified_by_level,
+      verifyRevisionCount: r.proof_revision_count,
+      revisionCount: r.revision_count,
+      cancelReason: r.cancel_reason
+    }));
+    const active = records.find(r => r.status === 'active');
+    if (active) { activeRecord = active; startLiveTimer(); }
+    renderAll();
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-function resetFilter() {
-  document.getElementById('filterStatus').value = '';
-  document.getElementById('filterStart').value = '';
-  document.getElementById('filterEnd').value = '';
-  loadRecords();
-}
+async function submitRequest() {
+  const btn = document.getElementById('btnSubmitRequest');
+  const date = document.getElementById('inpDate').value;
+  const durasi = parseInt(document.getElementById('inpDurasi').value);
+  const start = document.getElementById('inpStart').value;
+  const reason = document.getElementById('inpReason').value;
+  const desc = document.getElementById('inpDesc').value.trim();
 
-async function loadRekapEmployees() {
+  if (!date || !reason || !desc) return toast('Lengkapi semua field *', 'bg-red-600');
+  if (durasi < 1) return toast('Durasi minimal 1 jam', 'bg-red-600');
+  const planned = timeToDate(date, start);
+  if (planned < new Date()) return toast('Jam mulai sudah terlewat', 'bg-red-600');
+
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Mengirim...';
+
   try {
-    const users = await api('/api/admin/users');
-    const sel = document.getElementById('rekapEmployee');
-    sel.innerHTML = '<option value="">Semua Karyawan</option>' +
-      users.filter(u => u.role !== 'admin').map(u => `<option value="${u.id}">${u.full_name}</option>`).join('');
-  } catch (err) { console.error(err); }
-}
-
-async function fetchRekapData() {
-  const params = new URLSearchParams();
-  const start = document.getElementById('rekapStart').value;
-  const end = document.getElementById('rekapEnd').value;
-  const status = document.getElementById('rekapStatus').value;
-  const emp = document.getElementById('rekapEmployee').value;
-  if (start) params.set('start_date', start);
-  if (end) params.set('end_date', end);
-  if (status) params.set('status', status);
-  if (emp) params.set('employee_id', emp);
-  params.set('limit', '1000');
-  return await api('/api/admin/records?' + params.toString());
-}
-
-async function previewRekap() {
-  try {
-    const data = await fetchRekapData();
-    document.getElementById('rekapPreview').classList.remove('hidden');
-    document.getElementById('previewCount').textContent = data.length;
-    if (data.length === 0) {
-      document.getElementById('previewContent').innerHTML = '<p class="text-center text-slate-400">Tidak ada data</p>';
-      return;
-    }
-    document.getElementById('previewContent').innerHTML = `
-      <table class="w-full">
-        <thead class="text-slate-500 text-[10px] uppercase">
-          <tr>
-            <th class="text-left py-1">Nama</th>
-            <th class="text-left py-1">Level</th>
-            <th class="text-left py-1">Tanggal</th>
-            <th class="text-left py-1">Jam</th>
-            <th class="text-left py-1">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${data.slice(0, 20).map(r => `
-            <tr class="border-t border-slate-200">
-              <td class="py-1.5">${r.employee_name}</td>
-              <td class="py-1.5">${r.employee_level || '-'}</td>
-              <td class="py-1.5">${new Date(r.date).toLocaleDateString('id-ID')} ${r.is_holiday ? '🏖' : '💼'}</td>
-              <td class="py-1.5">${r.start_time}</td>
-              <td class="py-1.5">${statusLabel(r.status)}</td>
-            </tr>
-          `).join('')}
-        </tbody>
-      </table>
-      ${data.length > 20 ? `<p class="text-center mt-2 text-slate-400">...dan ${data.length - 20} lainnya</p>` : ''}
-    `;
-  } catch (err) { toast(err.message, 'bg-red-600'); }
-}
-
-async function downloadRekap() {
-  try {
-    const data = await fetchRekapData();
-    if (data.length === 0) return toast('Tidak ada data', 'bg-amber-600');
-
-    const rows = data.map(r => {
-      const start = r.actual_start ? new Date(r.actual_start) : null;
-      const end = r.actual_end ? new Date(r.actual_end) : null;
-      let durationStr = '-';
-      if (start && end) {
-        const diffMs = end - start;
-        const h = Math.floor(diffMs / 3600000);
-        const m = Math.floor((diffMs % 3600000) / 60000);
-        durationStr = `${h}j ${m}m`;
-      }
-      return {
-        'Nama': r.employee_name,
-        'Email': r.employee_email || '-',
-        'Level': r.employee_level || '-',
-        'Jabatan': r.jabatan || '-',
-        'Tanggal': new Date(r.date).toLocaleDateString('id-ID'),
-        'Jenis Hari': r.is_holiday ? 'Hari Libur' : 'Hari Kerja',
-        'Jam Mulai': r.start_time || '-',
-        'Jam Selesai': end ? end.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}) : '-',
-        'Durasi Aktual': durationStr,
-        'Durasi Rencana': r.planned_duration || '-',
-        'Kategori': r.reason,
-        'Deskripsi': r.description,
-        'Sumber': r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan',
-        'Status': statusLabel(r.status),
-        'Rating': r.verify_rating || '-',
-        'Diverifikasi Level': r.verified_by_level || '-',
-        'Catatan Atasan': r.verify_note || r.approval_note || '-',
-        'Bukti': r.proof_text || '-'
-      };
+    const result = await api('/api/records', {
+      method: 'POST',
+      body: JSON.stringify({ date, start_time: start, duration_hours: durasi, reason, description: desc })
     });
 
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Rekap Lembur');
-    ws['!cols'] = [
-      { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 20 }, { wch: 12 }, { wch: 12 },
-      { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 30 },
-      { wch: 20 }, { wch: 15 }, { wch: 8 }, { wch: 15 }, { wch: 25 }, { wch: 30 }
-    ];
+    document.getElementById('inpDate').value = '';
+    document.getElementById('inpReason').value = '';
+    document.getElementById('inpDesc').value = '';
+    document.getElementById('inpDurasi').value = 2;
+    document.getElementById('inpStart').value = '';
+    document.getElementById('jenisHari').textContent = 'Pilih tanggal dulu';
+    document.getElementById('jenisHari').className = 'w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600';
 
-    const start = document.getElementById('rekapStart').value || 'awal';
-    const end = document.getElementById('rekapEnd').value || 'akhir';
-    XLSX.writeFile(wb, `Rekap-Lembur_${start}_${end}.xlsx`);
-    toast(`✓ Downloaded: ${data.length} record`, 'bg-emerald-600');
+    const emailSent = result.email_sent || 0;
+    if (emailSent > 0) {
+      toast(`✅ Pengajuan terkirim! Email ke ${emailSent} atasan.`, 'bg-emerald-600');
+    } else {
+      toast('✅ Pengajuan terkirim (email tidak terkirim)', 'bg-amber-600');
+    }
+
+    await loadRecords();
+    switchTab('emp-riwayat');
+  } catch (err) {
+    toast('❌ ' + err.message, 'bg-red-600');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+async function manualStart(recId) {
+  toast('Verifikasi GPS...', 'bg-brand-600');
+  const gps = await fetchGPS();
+  const distance = Math.round(haversine(gps.lat, gps.lng, OFFICE.lat, OFFICE.lng));
+  if (distance > OFFICE.radius) return toast(`Di luar radius (${distance}m)`, 'bg-red-600');
+  try {
+    await api(`/api/records/${recId}/start`, {
+      method: 'POST',
+      body: JSON.stringify({ lat: gps.lat, lng: gps.lng, accuracy: gps.acc })
+    });
+    toast(`Lembur dimulai ✓ (${distance}m)`, 'bg-emerald-600');
+    await loadRecords();
+    switchTab('emp-dashboard');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-const today = new Date();
-const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-document.getElementById('rekapStart').valueAsDate = firstDay;
-document.getElementById('rekapEnd').valueAsDate = today;
+function cancelOvertime() {
+  if (!activeRecord) return;
+  document.getElementById('cancelReason').value = '';
+  document.getElementById('modalCancel').classList.remove('hidden');
+  document.getElementById('modalCancel').classList.add('flex');
+}
+async function confirmCancel() {
+  const reason = document.getElementById('cancelReason').value.trim();
+  if (!reason) return toast('Alasan wajib', 'bg-red-600');
+  try {
+    await api(`/api/records/${activeRecord.id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) });
+    activeRecord = null;
+    clearInterval(activeTimer);
+    closeModal('modalCancel');
+    await loadRecords();
+    toast('Lembur dibatalkan', 'bg-red-600');
+  } catch (err) { toast(err.message, 'bg-red-600'); }
+}
 
-switchTab('dashboard');
+function endOvertime() {
+  if (!activeRecord) return;
+  document.getElementById('modalBukti').classList.remove('hidden');
+  document.getElementById('modalBukti').classList.add('flex');
+}
+async function submitProof() {
+  const text = document.getElementById('proofText').value.trim();
+  const file = document.getElementById('proofFile').files[0];
+  if (!text) return toast('Deskripsi wajib', 'bg-red-600');
+  try {
+    await api(`/api/records/${activeRecord.id}/finish`, {
+      method: 'POST',
+      body: JSON.stringify({ proof_text: text, proof_file_name: file ? file.name : null })
+    });
+    activeRecord = null;
+    clearInterval(activeTimer);
+    closeModal('modalBukti');
+    document.getElementById('proofText').value = '';
+    document.getElementById('proofFile').value = '';
+    await loadRecords();
+    toast('Bukti terkirim ⏳', 'bg-orange-600');
+    switchTab('emp-riwayat');
+  } catch (err) { toast(err.message, 'bg-red-600'); }
+}
+
+// ============================================
+// EDIT / REVISI — Bisa ubah tanggal, jam, durasi
+// ============================================
+function openEdit(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  editTargetId = id;
+
+  document.getElementById('editNote').innerHTML = `<strong>Catatan atasan:</strong> ${r.note || '-'}`;
+  document.getElementById('editDate').value = r.date;
+  document.getElementById('editStart').value = r.startTime;
+  document.getElementById('editDurasi').value = Math.round(r.plannedDuration / 3600000);
+  document.getElementById('editReason').value = r.reason;
+  document.getElementById('editDesc').value = r.desc;
+  document.getElementById('editProof').value = r.proof || '';
+
+  updateEditStartTime();
+
+  document.getElementById('modalEdit').classList.remove('hidden');
+  document.getElementById('modalEdit').classList.add('flex');
+}
+
+function updateEditStartTime() {
+  const dateStr = document.getElementById('editDate').value;
+  if (!dateStr) return;
+  const holiday = isHoliday(dateStr);
+  const startTime = holiday ? '08:00' : '17:00';
+  document.getElementById('editStart').value = startTime;
+  document.getElementById('editJenisHari').innerHTML = holiday
+    ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (default 08:00)</span>'
+    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (default 17:00)</span>';
+}
+
+async function submitRevision() {
+  const r = records.find(x => x.id === editTargetId);
+  if (!r) return;
+
+  const date = document.getElementById('editDate').value;
+  const start_time = document.getElementById('editStart').value;
+  const duration_hours = parseInt(document.getElementById('editDurasi').value);
+  const reason = document.getElementById('editReason').value;
+  const description = document.getElementById('editDesc').value.trim();
+  const proof = document.getElementById('editProof').value.trim();
+
+  if (!date || !start_time || !duration_hours || !description) {
+    return toast('Tanggal, jam, durasi, dan deskripsi wajib diisi', 'bg-red-600');
+  }
+  if (duration_hours < 1) return toast('Durasi minimal 1 jam', 'bg-red-600');
+
+  const btn = document.getElementById('btnSubmitRevision');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Mengirim...';
+
+  try {
+    await api(`/api/records/${r.id}/revise`, {
+      method: 'POST',
+      body: JSON.stringify({
+        date, start_time, duration_hours,
+        reason, description, proof
+      })
+    });
+
+    closeModal('modalEdit');
+    await loadRecords();
+    toast('✅ Pengajuan direvisi & dikirim ulang ke atasan', 'bg-emerald-600');
+  } catch (err) {
+    toast('❌ ' + err.message, 'bg-red-600');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+// ============================================
+// EDIT PROOF
+// ============================================
+function openEditProof(id) {
+  const r = records.find(x => x.id === id);
+  if (!r) return;
+  editProofTargetId = id;
+  document.getElementById('editProofNote').innerHTML = `<strong>Catatan atasan:</strong> ${r.verifyNote || '-'}`;
+  document.getElementById('editProofText').value = r.proof || '';
+  document.getElementById('modalEditProof').classList.remove('hidden');
+  document.getElementById('modalEditProof').classList.add('flex');
+}
+async function submitProofRevision() {
+  const r = records.find(x => x.id === editProofTargetId);
+  if (!r) return;
+  const text = document.getElementById('editProofText').value.trim();
+  const file = document.getElementById('editProofFile').files[0];
+  if (!text) return toast('Deskripsi wajib', 'bg-red-600');
+  try {
+    await api(`/api/records/${r.id}/revise-proof`, {
+      method: 'POST',
+      body: JSON.stringify({ proof_text: text, proof_file_name: file ? file.name : null })
+    });
+    closeModal('modalEditProof');
+    await loadRecords();
+    toast('Bukti revisi terkirim', 'bg-brand-600');
+  } catch (err) { toast(err.message, 'bg-red-600'); }
+}
+
+function startLiveTimer() {
+  clearInterval(activeTimer);
+  activeTimer = setInterval(() => {
+    if (!activeRecord) return;
+    const el = document.getElementById('activeDuration');
+    if (el) el.textContent = fmtDur(Date.now() - new Date(activeRecord.start).getTime());
+  }, 1000);
+  const el = document.getElementById('activeDuration');
+  if (el && activeRecord) el.textContent = fmtDur(Date.now() - new Date(activeRecord.start).getTime());
+}
+
+function statusBadge(s) {
+  const map = {
+    pending: ['bg-amber-100 text-amber-700', '⏳ PENDING'],
+    approved: ['bg-brand-100 text-brand-700', '✅ DISETUJUI'],
+    rejected: ['bg-red-100 text-red-700', '❌ DITOLAK'],
+    revision: ['bg-orange-100 text-orange-700', '✏️ REVISI'],
+    active: ['bg-emerald-100 text-emerald-700', '🔴 AKTIF'],
+    pending_verification: ['bg-orange-100 text-orange-700', '🔍 VERIFIKASI'],
+    proof_revision: ['bg-amber-100 text-amber-700', '📎 REVISI BUKTI'],
+    verify_rejected: ['bg-red-100 text-red-700', '❌ HASIL DITOLAK'],
+    completed: ['bg-teal-100 text-teal-700', '✓ SELESAI'],
+    cancelled: ['bg-slate-200 text-slate-700', '🚫 DIBATALKAN']
+  };
+  const [c, l] = map[s] || ['bg-slate-100 text-slate-600', s?.toUpperCase()];
+  return `<span class="text-[10px] font-bold px-2.5 py-1 rounded-full ${c} whitespace-nowrap">${l}</span>`;
+}
+
+function renderAll() {
+  renderEmpStats();
+  renderEmpUpcoming();
+  renderEmpRecent();
+  renderEmpHistory();
+  renderActiveCard();
+}
+
+function renderActiveCard() {
+  const card = document.getElementById('activeCard');
+  if (activeRecord && activeRecord.status === 'active') {
+    card.classList.remove('hidden');
+    document.getElementById('activeStart').textContent = fmtTime(activeRecord.start);
+    document.getElementById('activePlan').textContent = `Rencana ${activeRecord.startTime} · ${Math.round(activeRecord.plannedDuration/3600000)}j`;
+    document.getElementById('activeLocation').textContent = activeRecord.location ? `${activeRecord.location.distance}m` : '-';
+    document.getElementById('activeSource').textContent = activeRecord.source === 'manager' ? 'Ditugaskan' : 'Sendiri';
+    const autoTag = document.getElementById('activeAutoTag');
+    if (activeRecord.autoStarted) autoTag.classList.remove('hidden');
+    else autoTag.classList.add('hidden');
+  } else {
+    card.classList.add('hidden');
+  }
+}
+
+function renderEmpStats() {
+  const mine = records;
+  const totalMs = mine.filter(r => r.status === 'completed').reduce((s, r) => s + (r.duration || 0), 0);
+  const hours = totalMs / 3600000;
+  document.getElementById('empStatHours').innerHTML = `${hours.toFixed(1)}<span class="text-sm opacity-80 ml-0.5">j</span>`;
+  document.getElementById('empStatPending').textContent = mine.filter(r => r.status === 'pending').length;
+  document.getElementById('empStatVerify').textContent = mine.filter(r => ['pending_verification', 'proof_revision'].includes(r.status)).length;
+  document.getElementById('empStatApproved').textContent = mine.filter(r => r.status === 'completed').length;
+}
+
+function renderEmpUpcoming() {
+  const el = document.getElementById('upcomingList');
+  const now = Date.now();
+  const up = records.filter(r => r.status === 'approved');
+  document.getElementById('upcomingCount').textContent = up.length + ' jadwal';
+  if (up.length === 0) {
+    el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Belum ada jadwal lembur yang disetujui</div>';
+    return;
+  }
+  el.innerHTML = up.map(r => {
+    const dt = new Date(r.plannedStart);
+    const diff = dt.getTime() - now;
+    const isReady = diff <= 0 && diff >= -60000;
+    const isSoon = diff > 0 && diff < 3600000;
+    return `
+      <div class="relative ${isReady ? 'ready-badge' : ''} flex items-center gap-3 p-3 md:p-4 rounded-2xl border ${isReady ? 'border-emerald-300 bg-gradient-to-r from-emerald-50 to-white' : 'border-brand-100 bg-gradient-to-r from-brand-50/50 to-white'}">
+        <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl ${isReady ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-brand-500 to-neon-violet'} text-white flex flex-col items-center justify-center shrink-0">
+          <p class="text-[9px] uppercase font-bold opacity-80">${dt.toLocaleDateString('id-ID', {month:'short'})}</p>
+          <p class="text-base md:text-lg font-extrabold leading-none">${dt.getDate()}</p>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="font-bold text-slate-800 text-xs md:text-sm truncate">${r.reason} ${r.isHoliday ? '🏖' : '💼'}</p>
+          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${r.startTime} · ${Math.round(r.plannedDuration/3600000)} jam</p>
+          <p class="text-[10px] text-slate-400 mt-0.5 truncate">${r.source === 'manager' ? '📌 Ditugaskan' : '📝 Sendiri'}</p>
+        </div>
+        <div class="shrink-0 flex flex-col items-end gap-1">
+          ${isReady ? `
+            <span class="text-[9px] bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded-full animate-pulse">⚡ READY</span>
+            <button onclick="manualStart(${r.id})" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-[10px] md:text-xs px-2.5 md:px-3 py-1.5 rounded-xl shadow-lg">Mulai</button>
+          ` : isSoon ? `
+            <span class="text-[9px] bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">⏳ ${Math.ceil(diff/60000)}m</span>
+            <button onclick="manualStart(${r.id})" class="bg-gradient-to-r from-brand-600 to-neon-violet text-white font-bold text-[10px] md:text-xs px-2.5 md:px-3 py-1.5 rounded-xl shadow-lg">Mulai</button>
+          ` : `
+            <span class="text-[9px] bg-slate-100 text-slate-600 font-bold px-2 py-1 rounded-full">⚡ SIAP</span>
+          `}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderEmpRecent() {
+  const el = document.getElementById('empRecent');
+  const recent = records.slice(0, 3);
+  if (recent.length === 0) {
+    el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Belum ada aktivitas</div>';
+    return;
+  }
+  el.innerHTML = recent.map(r => compactCard(r)).join('');
+}
+
+function renderEmpHistory() {
+  const el = document.getElementById('empHistory');
+  if (records.length === 0) {
+    el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Belum ada riwayat</div>';
+    return;
+  }
+  el.innerHTML = records.map(r => fullCard(r)).join('');
+}
+
+function compactCard(r) {
+  return `
+    <div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition card-hover">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-sm">${r.isHoliday ? '🏖' : '💼'}</div>
+      <div class="flex-1 min-w-0">
+        <p class="text-xs md:text-sm font-semibold text-slate-800 truncate">${r.reason}</p>
+        <p class="text-[10px] md:text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime}</p>
+      </div>
+      ${statusBadge(r.status)}
+    </div>`;
+}
+
+function fullCard(r) {
+  const canEdit = ['revision', 'rejected'].includes(r.status);
+  const canEditProof = r.status === 'proof_revision';
+  const canStart = r.status === 'approved' && (new Date(r.plannedStart) - Date.now()) < 3600000;
+  const showRating = r.verifyRating != null;
+  return `
+    <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border ${canEdit ? 'border-orange-200 border-l-4 border-l-orange-400' : canEditProof ? 'border-amber-200 border-l-4 border-l-amber-400' : 'border-slate-100'} p-4 md:p-5 card-hover">
+      <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
+        <div class="min-w-0">
+          <p class="font-bold text-slate-800 text-sm md:text-base">${fmtDate(r.date)} · ${r.startTime} ${r.isHoliday ? '🏖' : '💼'}</p>
+          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">
+            ${Math.round(r.plannedDuration/3600000)} jam
+            · ${r.source === 'manager' ? '📌 Ditugaskan' : '📝 Sendiri'}
+            ${r.autoStarted ? ' · ⚡ Auto' : ''}
+          </p>
+        </div>
+        ${statusBadge(r.status)}
+      </div>
+      <div class="text-[11px] md:text-xs text-slate-600 space-y-1.5">
+        <p>📋 ${r.reason}</p>
+        <p>📝 ${r.desc}</p>
+        ${r.proof ? `<p>📎 ${r.proof}</p>` : ''}
+        ${r.duration > 0 ? `<p>⏱ Aktual: ${fmtDurShort(r.duration)}</p>` : ''}
+        ${r.cancelReason ? `<p class="text-red-600">✕ Dibatalkan: ${r.cancelReason}</p>` : ''}
+        ${r.note ? `<p class="text-amber-700 bg-amber-50 rounded-xl p-2.5 mt-2">💬 <strong>Catatan:</strong> ${r.note}</p>` : ''}
+        ${r.verifyNote && ['proof_revision', 'verify_rejected'].includes(r.status) ? `<p class="text-orange-700 bg-orange-50 rounded-xl p-2.5 mt-2">🔍 <strong>Verifikasi:</strong> ${r.verifyNote}</p>` : ''}
+        ${showRating && r.status === 'completed' ? `
+          <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-2.5 mt-2">
+            <p class="text-teal-800 font-bold text-[10px] mb-1">✓ Diverifikasi${r.verifiedBy ? ' (level ' + r.verifiedBy + ')' : ''}</p>
+            <p class="text-teal-700 text-sm">${'★'.repeat(r.verifyRating)}${'☆'.repeat(5-r.verifyRating)} ${r.verifyNote ? '· ' + r.verifyNote : ''}</p>
+          </div>
+        ` : ''}
+      </div>
+      ${canEdit ? `<button onclick="openEdit(${r.id})" class="mt-4 w-full bg-gradient-to-r from-brand-600 to-neon-violet text-white text-xs md:text-sm font-bold py-3 rounded-2xl shadow-lg active:scale-[0.98] transition">✏️ Edit & Kirim Ulang</button>` : ''}
+      ${canEditProof ? `<button onclick="openEditProof(${r.id})" class="mt-4 w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs md:text-sm font-bold py-3 rounded-2xl shadow-lg active:scale-[0.98] transition">📎 Revisi Bukti</button>` : ''}
+      ${canStart ? `<button onclick="manualStart(${r.id})" class="mt-4 w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs md:text-sm font-bold py-3 rounded-2xl shadow-lg active:scale-[0.98] transition">▶ Mulai Sekarang</button>` : ''}
+    </div>`;
+}
+
+switchTab('emp-dashboard');
+updateGPSUI();
+setTimeout(() => runGPSVerification('silent'), 800);
+loadRecords();
+setInterval(loadRecords, 30000);
 </script>
 </body>
 </html>
