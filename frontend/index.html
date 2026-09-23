@@ -30,13 +30,14 @@ tailwind.config = {
 
 <div class="w-full max-w-md modal-in">
   <div class="text-center mb-8">
-    <img src="logo-cimory.png" alt="Cimory" class="w-20 h-20 mx-auto mb-4 object-contain">
+    <img src="logo-cimory.png" alt="Cimory" class="w-24 h-24 mx-auto mb-4 object-contain">
     <h1 class="text-2xl font-extrabold text-white tracking-tight">Sistem Monitoring Lembur</h1>
+    <p class="text-sm text-slate-400 mt-1">Enterprise Suite</p>
   </div>
 
   <div class="bg-white rounded-2xl shadow-2xl p-8">
     <h2 class="text-xl font-extrabold text-slate-800 mb-1">Masuk ke Akun Anda</h2>
-    <p class="text-sm text-slate-500 mb-6">Gunakan email @cimory.com atau @gmail.com</p>
+    <p class="text-sm text-slate-500 mb-6">Gunakan email yang sudah didaftarkan admin</p>
 
     <form id="loginForm" onsubmit="handleLogin(event)">
       <div class="mb-4">
@@ -64,7 +65,7 @@ tailwind.config = {
 
     <div class="mt-6 pt-6 border-t border-slate-100">
       <p class="text-[11px] text-slate-400 text-center leading-relaxed">
-        Belum punya akun? Hubungi <strong class="text-slate-600">hrdcimory1@gmail.com</strong><br>
+        Belum punya akun? Hubungi <strong class="text-slate-600">admin@cimory.com</strong><br>
         untuk didaftarkan oleh administrator.
       </p>
     </div>
@@ -74,7 +75,7 @@ tailwind.config = {
 </div>
 
 <script>
-const API_URL = 'https://overtime-backend-wd4c.onrender.com';
+const API_URL = 'https://overtime-backend.onrender.com';
 
 async function handleLogin(e) {
   e.preventDefault();
@@ -110,7 +111,7 @@ async function handleLogin(e) {
     else if (data.user.role === 'manager') window.location.href = 'manager.html';
     else window.location.href = 'employee.html';
   } catch (err) {
-    errText.textContent = 'Tidak dapat terhubung ke server';
+    errText.textContent = 'Tidak dapat terhubung ke server. Tunggu 30 detik lalu coba lagi.';
     errBox.classList.remove('hidden');
   } finally {
     btn.disabled = false;
