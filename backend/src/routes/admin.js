@@ -14,7 +14,7 @@ function requireAdmin(req, res, next) {
 router.get('/users', requireAuth, requireAdmin, async (req, res) => {
   try {
     const result = await query(
-      `SELECT u.id, u.email, u.full_name, u.role, u.department, u.level, 
+      `SELECT u.id, u.email, u.full_name, u.role, u.jabatan, u.level,
               u.is_active, u.created_at, u.approver_ids,
               COALESCE(
                 (SELECT json_agg(json_build_object('id', a.id, 'full_name', a.full_name, 'level', a.level))
@@ -30,7 +30,7 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
 });
 
 router.post('/users', requireAuth, requireAdmin, async (req, res) => {
-  const { email, password, full_name, role, department, level, approver_ids } = req.body;
+  const { email, password, full_name, role, jabatan, level, approver_ids } = req.body;
 
   if (!email || !password || !full_name || !role) {
     return res.status(400).json({ error: 'Semua field wajib' });
@@ -53,10 +53,10 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
 
     const hash = hashPassword(password);
     const result = await query(
-      `INSERT INTO users (email, password_hash, full_name, role, department, level, approver_ids, created_by)
+      `INSERT INTO users (email, password_hash, full_name, role, jabatan, level, approver_ids, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING id, email, full_name, role, department, level, approver_ids, is_active, created_at`,
-      [email, hash, full_name, role, department || null, level || null, approver_ids || [], req.user.id]
+       RETURNING id, email, full_name, role, jabatan, level, approver_ids, is_active, created_at`,
+      [email, hash, full_name, role, jabatan || null, level || null, approver_ids || [], req.user.id]
     );
 
     res.json(result.rows[0]);
@@ -67,7 +67,7 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
 
 router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
-  const { full_name, role, department, is_active, password, level, approver_ids } = req.body;
+  const { full_name, role, jabatan, is_active, password, level, approver_ids } = req.body;
 
   try {
     let sql = `UPDATE users SET updated_at = NOW()`;
@@ -81,13 +81,13 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
       }
       sql += `, role = $${idx++}`; params.push(role);
     }
-    if (department !== undefined) { sql += `, department = $${idx++}`; params.push(department); }
+    if (jabatan !== undefined) { sql += `, jabatan = $${idx++}`; params.push(jabatan); }
     if (is_active !== undefined) { sql += `, is_active = $${idx++}`; params.push(is_active); }
     if (password) { sql += `, password_hash = $${idx++}`; params.push(hashPassword(password)); }
     if (level !== undefined) { sql += `, level = $${idx++}`; params.push(level); }
     if (approver_ids !== undefined) { sql += `, approver_ids = $${idx++}`; params.push(approver_ids); }
 
-    sql += ` WHERE id = $${idx} RETURNING id, email, full_name, role, department, level, approver_ids, is_active`;
+    sql += ` WHERE id = $${idx} RETURNING id, email, full_name, role, jabatan, level, approver_ids, is_active`;
     params.push(id);
 
     const result = await query(sql, params);
@@ -111,11 +111,10 @@ router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// Ambil daftar user untuk dropdown approver
 router.get('/approvers', requireAuth, requireAdmin, async (req, res) => {
   try {
     const result = await query(
-      `SELECT id, email, full_name, level, role FROM users 
+      `SELECT id, email, full_name, level, role FROM users
        WHERE is_active = true AND role IN ('manager', 'admin')
        ORDER BY level DESC NULLS LAST, full_name`
     );
@@ -130,7 +129,7 @@ router.get('/records', requireAuth, requireAdmin, async (req, res) => {
 
   try {
     let sql = `
-      SELECT r.*, u.email as employee_email, u.department, u.level as employee_level
+      SELECT r.*, u.email as employee_email, u.jabatan, u.level as employee_level
       FROM overtime_records r
       LEFT JOIN users u ON u.id = r.employee_id
       WHERE 1=1
