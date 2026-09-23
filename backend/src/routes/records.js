@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { query } from '../db.js';
-import { requireAuth } from '../auth.js';
+import { requireAuth, requireManager } from '../auth.js';
 import { sendEmail, templates } from '../mailer.js';
 
 const router = Router();
@@ -20,6 +20,18 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+// List employees untuk dropdown manager
+router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
+  try {
+    const result = await query(
+      "SELECT id, email, full_name, department FROM users WHERE role = 'employee' AND is_active = true ORDER BY full_name"
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Buat pengajuan / tugaskan lembur
 router.post('/', requireAuth, async (req, res) => {
   const {
@@ -29,7 +41,7 @@ router.post('/', requireAuth, async (req, res) => {
   } = req.body;
 
   const user = req.user;
-  const isManager = user.role === 'manager';
+  const isManager = user.role === 'manager' || user.role === 'admin';
 
   if (!date || !start_time || !duration_hours || !reason || !description) {
     return res.status(400).json({ error: 'Semua field wajib' });
@@ -63,9 +75,7 @@ router.post('/', requireAuth, async (req, res) => {
 
     const record = result.rows[0];
 
-    // Notifikasi email
     if (!isManager) {
-      // Kirim ke semua manager
       const managers = await query("SELECT email FROM users WHERE role = 'manager'");
       for (const m of managers.rows) {
         await sendEmail({
@@ -79,14 +89,11 @@ router.post('/', requireAuth, async (req, res) => {
         });
       }
     } else {
-      // Manager menugaskan → notif ke karyawan
       const emp = await query('SELECT email FROM users WHERE id = $1', [targetId]);
       if (emp.rows[0]) {
         await sendEmail({
           to: emp.rows[0].email,
-          ...templates.approved({
-            date, startTime: start_time
-          })
+          ...templates.approved({ date, startTime: start_time })
         });
       }
     }
@@ -105,7 +112,7 @@ router.get('/', requireAuth, async (req, res) => {
   let sql = 'SELECT * FROM overtime_records';
   const params = [];
 
-  if (user.role !== 'manager') {
+  if (user.role !== 'manager' && user.role !== 'admin') {
     sql += ' WHERE employee_id = $1';
     params.push(user.id);
   }
@@ -154,7 +161,7 @@ router.post('/:id/start', requireAuth, async (req, res) => {
            auto_started = FALSE,
            updated_at = NOW()
        WHERE id = $5 
-         AND (employee_id = $6 OR $7 = 'manager')
+         AND (employee_id = $6 OR $7 IN ('manager', 'admin'))
          AND status = 'approved'
        RETURNING *`,
       [lat, lng, accuracy, distance, id, user.id, user.role]
@@ -199,7 +206,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
            proof_uploaded_at = NOW(),
            updated_at = NOW()
        WHERE id = $3
-         AND (employee_id = $4 OR $5 = 'manager')
+         AND (employee_id = $4 OR $5 IN ('manager', 'admin'))
          AND status = 'active'
        RETURNING *`,
       [proof_text, proof_file_name || null, id, user.id, user.role]
@@ -211,7 +218,6 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
 
     const record = result.rows[0];
 
-    // Notifikasi ke manager
     const managers = await query("SELECT email FROM users WHERE role = 'manager'");
     for (const m of managers.rows) {
       await sendEmail({
@@ -254,7 +260,7 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
            actual_duration = NOW() - actual_start,
            updated_at = NOW()
        WHERE id = $2
-         AND (employee_id = $3 OR $4 = 'manager')
+         AND (employee_id = $3 OR $4 IN ('manager', 'admin'))
          AND status = 'active'
        RETURNING *`,
       [reason, id, user.id, user.role]
@@ -270,7 +276,7 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
   }
 });
 
-// Revisi pengajuan (setelah rejected/revision)
+// Revisi pengajuan
 router.post('/:id/revise', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { reason, description, proof } = req.body;
@@ -290,7 +296,7 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
            revision_count = revision_count + 1,
            updated_at = NOW()
        WHERE id = $4
-         AND (employee_id = $5 OR $6 = 'manager')
+         AND (employee_id = $5 OR $6 IN ('manager', 'admin'))
          AND status IN ('revision', 'rejected')
        RETURNING *`,
       [reason, description, proof || null, id, user.id, user.role]
@@ -302,7 +308,6 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
 
     const record = result.rows[0];
 
-    // Notif ke manager
     const managers = await query("SELECT email FROM users WHERE role = 'manager'");
     for (const m of managers.rows) {
       await sendEmail({
@@ -323,7 +328,7 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
   }
 });
 
-// Revisi bukti (setelah proof_revision)
+// Revisi bukti
 router.post('/:id/revise-proof', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { proof_text, proof_file_name } = req.body;
@@ -343,7 +348,7 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
            proof_revision_count = proof_revision_count + 1,
            updated_at = NOW()
        WHERE id = $3
-         AND (employee_id = $4 OR $5 = 'manager')
+         AND (employee_id = $4 OR $5 IN ('manager', 'admin'))
          AND status = 'proof_revision'
        RETURNING *`,
       [proof_text, proof_file_name || null, id, user.id, user.role]

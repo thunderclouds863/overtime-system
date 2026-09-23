@@ -28,14 +28,12 @@ tailwind.config = {
 <body class="bg-gradient-to-br from-ink-900 via-slate-900 to-brand-900 min-h-screen flex items-center justify-center p-4">
 
 <div class="w-full max-w-md modal-in">
-  <!-- Logo -->
   <div class="text-center mb-8">
     <div class="w-16 h-16 bg-gradient-to-br from-brand-500 to-brand-700 rounded-2xl flex items-center justify-center font-extrabold text-lg text-white mx-auto shadow-2xl shadow-brand-900/50 mb-4">OT</div>
     <h1 class="text-2xl font-extrabold text-white tracking-tight">Sistem Monitoring Lembur</h1>
     <p class="text-sm text-slate-400 mt-1">Enterprise Suite</p>
   </div>
 
-  <!-- Card Login -->
   <div class="bg-white rounded-2xl shadow-2xl p-8">
     <h2 class="text-xl font-extrabold text-slate-800 mb-1">Masuk ke Akun Anda</h2>
     <p class="text-sm text-slate-500 mb-6">Gunakan email @cimory.com atau @gmail.com</p>
@@ -76,7 +74,6 @@ tailwind.config = {
 </div>
 
 <script>
-// GANTI INI dengan URL backend Anda
 const API_URL = 'https://overtime-backend.onrender.com';
 
 async function handleLogin(e) {
@@ -106,18 +103,12 @@ async function handleLogin(e) {
       return;
     }
 
-    // Simpan token & user
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
 
-    // Redirect berdasarkan role
-    if (data.user.role === 'admin') {
-      window.location.href = 'admin.html';
-    } else if (data.user.role === 'manager') {
-      window.location.href = 'manager.html';
-    } else {
-      window.location.href = 'employee.html';
-    }
+    if (data.user.role === 'admin') window.location.href = 'admin.html';
+    else if (data.user.role === 'manager') window.location.href = 'manager.html';
+    else window.location.href = 'employee.html';
   } catch (err) {
     errText.textContent = 'Tidak dapat terhubung ke server';
     errBox.classList.remove('hidden');
@@ -127,7 +118,6 @@ async function handleLogin(e) {
   }
 }
 
-// Cek kalau sudah login
 const token = localStorage.getItem('token');
 const user = JSON.parse(localStorage.getItem('user') || 'null');
 if (token && user) {

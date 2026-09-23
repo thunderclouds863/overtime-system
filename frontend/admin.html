@@ -32,7 +32,6 @@ tailwind.config = {
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
-<!-- TOP BAR -->
 <header class="fixed top-0 left-0 right-0 h-16 bg-ink-900 text-white z-40 border-b border-slate-800">
   <div class="h-full px-5 flex items-center justify-between">
     <div class="flex items-center gap-3">
@@ -50,29 +49,18 @@ tailwind.config = {
         </div>
         <div class="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center font-bold text-xs">AD</div>
       </div>
-      <button onclick="logout()" class="text-xs bg-red-600/20 hover:bg-red-600/40 border border-red-500/40 text-red-300 px-3 py-1.5 rounded-md transition">
-        Logout
-      </button>
+      <button onclick="logout()" class="text-xs bg-red-600/20 hover:bg-red-600/40 border border-red-500/40 text-red-300 px-3 py-1.5 rounded-md transition">Logout</button>
     </div>
   </div>
 </header>
 
-<!-- SIDEBAR -->
 <aside class="fixed top-16 left-0 bottom-0 w-60 bg-ink-900 text-slate-400 z-30 flex flex-col border-r border-slate-800">
   <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
     <p class="text-[10px] uppercase text-slate-500 px-3 pt-2 pb-1 font-bold tracking-wider">Admin</p>
-    <a onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
-      <span>📊</span> Dashboard
-    </a>
-    <a onclick="switchTab('users')" data-tab="users" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
-      <span>👥</span> Manajemen User
-    </a>
-    <a onclick="switchTab('records')" data-tab="records" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
-      <span>📋</span> Semua Lembur
-    </a>
-    <a onclick="switchTab('rekap')" data-tab="rekap" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
-      <span>📥</span> Download Rekap
-    </a>
+    <a onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer active"><span>📊</span> Dashboard</a>
+    <a onclick="switchTab('users')" data-tab="users" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer"><span>👥</span> Manajemen User</a>
+    <a onclick="switchTab('records')" data-tab="records" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer"><span>📋</span> Semua Lembur</a>
+    <a onclick="switchTab('rekap')" data-tab="rekap" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer"><span>📥</span> Download Rekap</a>
   </nav>
   <div class="p-4 border-t border-slate-800">
     <p class="text-[10px] text-slate-500">Login sebagai</p>
@@ -80,10 +68,8 @@ tailwind.config = {
   </div>
 </aside>
 
-<!-- MAIN -->
 <main class="ml-60 pt-20 pb-8 px-6 max-w-[1500px]">
 
-  <!-- TAB: DASHBOARD -->
   <section id="tab-dashboard" class="tab-content space-y-5">
     <div>
       <h1 class="text-2xl font-extrabold text-slate-800">Dashboard Admin</h1>
@@ -125,7 +111,6 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- TAB: USERS -->
   <section id="tab-users" class="tab-content hidden space-y-5">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
@@ -156,7 +141,6 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- TAB: RECORDS -->
   <section id="tab-records" class="tab-content hidden space-y-5">
     <div>
       <h1 class="text-2xl font-extrabold text-slate-800">Semua Record Lembur</h1>
@@ -211,7 +195,6 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- TAB: REKAP -->
   <section id="tab-rekap" class="tab-content hidden space-y-5">
     <div>
       <h1 class="text-2xl font-extrabold text-slate-800">Download Rekap</h1>
@@ -221,7 +204,7 @@ tailwind.config = {
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-2xl">
       <div class="bg-brand-50 border border-brand-100 rounded-xl p-4 mb-5">
         <p class="text-xs text-brand-800">
-          <strong>💡 Cara pakai:</strong> Pilih periode dan filter, klik Download. File Excel akan otomatis ter-download dengan kolom: Nama, Email, Tanggal, Jam Mulai, Jam Selesai, Durasi, Status, Rating, Catatan.
+          <strong>💡 Cara pakai:</strong> Pilih periode dan filter, klik Download. File Excel akan otomatis ter-download.
         </p>
       </div>
 
@@ -271,7 +254,6 @@ tailwind.config = {
 
 </main>
 
-<!-- MODAL: TAMBAH/EDIT USER -->
 <div id="userModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 modal-in">
     <div class="flex items-center justify-between mb-4">
@@ -312,7 +294,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- TOAST -->
 <div id="toast" class="fixed bottom-6 right-6 bg-ink-900 text-white px-4 py-3 rounded-xl text-sm hidden z-[60] shadow-2xl max-w-xs"></div>
 
 <script>
@@ -336,10 +317,7 @@ function toast(msg, color='bg-ink-900') {
   t._t = setTimeout(() => t.classList.add('hidden'), 3200);
 }
 
-function logout() {
-  localStorage.clear();
-  window.location.href = 'index.html';
-}
+function logout() { localStorage.clear(); window.location.href = 'index.html'; }
 
 async function api(path, opts = {}) {
   const res = await fetch(`${API_URL}${path}`, {
@@ -368,9 +346,6 @@ function switchTab(tab) {
   if (tab === 'rekap') loadRekapEmployees();
 }
 
-// ============================================
-// DASHBOARD
-// ============================================
 async function loadStats() {
   try {
     const s = await api('/api/admin/stats');
@@ -410,9 +385,6 @@ function statusLabel(s) {
   return map[s] || s;
 }
 
-// ============================================
-// USERS
-// ============================================
 async function loadUsers() {
   try {
     const users = await api('/api/admin/users');
@@ -449,10 +421,7 @@ async function loadUsers() {
   }
 }
 
-let editingUser = null;
-
 function openUserModal(editData = null) {
-  editingUser = editData;
   document.getElementById('userModalTitle').textContent = editData ? 'Edit User' : 'Tambah User';
   document.getElementById('userId').value = editData?.id || '';
   document.getElementById('userFullName').value = editData?.full_name || '';
@@ -515,9 +484,6 @@ async function deleteUser(id) {
   }
 }
 
-// ============================================
-// RECORDS
-// ============================================
 async function loadRecords() {
   const params = new URLSearchParams();
   const status = document.getElementById('filterStatus').value;
@@ -534,17 +500,23 @@ async function loadRecords() {
       el.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>';
       return;
     }
-    el.innerHTML = records.map(r => `
+    el.innerHTML = records.map(r => {
+      let duration = '-';
+      if (r.actual_duration) {
+        const parts = r.actual_duration.split(':');
+        duration = parts[0] + 'j ' + parts[1] + 'm';
+      }
+      return `
       <tr class="hover:bg-slate-50 transition">
         <td class="px-4 py-3 font-semibold text-slate-800 text-sm">${r.employee_name}</td>
         <td class="px-4 py-3 text-slate-600 text-sm">${new Date(r.date).toLocaleDateString('id-ID')}</td>
         <td class="px-4 py-3 text-slate-600 text-xs">${r.start_time}${r.actual_end ? ' — ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
-        <td class="px-4 py-3 text-slate-600 text-sm">${r.actual_duration ? Math.round(r.actual_duration.split(':')[0] * 60 + parseInt(r.actual_duration.split(':')[1])) + 'm' : (r.planned_duration || '-')}</td>
+        <td class="px-4 py-3 text-slate-600 text-sm">${duration}</td>
         <td class="px-4 py-3">
           <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">${statusLabel(r.status)}</span>
         </td>
       </tr>
-    `).join('');
+    `}).join('');
   } catch (err) {
     toast(err.message, 'bg-red-600');
   }
@@ -557,9 +529,6 @@ function resetFilter() {
   loadRecords();
 }
 
-// ============================================
-// REKAP
-// ============================================
 async function loadRekapEmployees() {
   try {
     const users = await api('/api/admin/users');
@@ -629,7 +598,6 @@ async function downloadRekap() {
       return toast('Tidak ada data untuk di-download', 'bg-amber-600');
     }
 
-    // Format data untuk Excel
     const rows = data.map(r => {
       const start = r.actual_start ? new Date(r.actual_start) : null;
       const end = r.actual_end ? new Date(r.actual_end) : null;
@@ -660,19 +628,16 @@ async function downloadRekap() {
       };
     });
 
-    // Buat workbook
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Rekap Lembur');
 
-    // Set column width
     ws['!cols'] = [
       { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
       { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 15 },
       { wch: 8 }, { wch: 25 }, { wch: 30 }
     ];
 
-    // Filename dengan periode
     const start = document.getElementById('rekapStart').value || 'awal';
     const end = document.getElementById('rekapEnd').value || 'akhir';
     const filename = `Rekap-Lembur_${start}_${end}.xlsx`;
@@ -684,9 +649,6 @@ async function downloadRekap() {
   }
 }
 
-// ============================================
-// INIT
-// ============================================
 const today = new Date();
 const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
 document.getElementById('rekapStart').valueAsDate = firstDay;

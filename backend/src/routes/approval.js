@@ -5,9 +5,6 @@ import { sendEmail, templates } from '../mailer.js';
 
 const router = Router();
 
-// ============================================
-// FASE 1: Approve jadwal
-// ============================================
 router.post('/:id/approve-schedule', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
   const { note } = req.body;
@@ -48,7 +45,6 @@ router.post('/:id/approve-schedule', requireAuth, requireManager, async (req, re
   }
 });
 
-// Reject pengajuan
 router.post('/:id/reject', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
   const { note } = req.body;
@@ -87,7 +83,6 @@ router.post('/:id/reject', requireAuth, requireManager, async (req, res) => {
   }
 });
 
-// Minta revisi
 router.post('/:id/request-revision', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
   const { note } = req.body;
@@ -125,7 +120,6 @@ router.post('/:id/request-revision', requireAuth, requireManager, async (req, re
   }
 });
 
-// Buka kembali record yang rejected/revision
 router.post('/:id/reopen', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
 
@@ -150,9 +144,6 @@ router.post('/:id/reopen', requireAuth, requireManager, async (req, res) => {
   }
 });
 
-// ============================================
-// FASE 3: Verifikasi hasil
-// ============================================
 router.post('/:id/verify-result', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
   const { action, rating, note } = req.body;

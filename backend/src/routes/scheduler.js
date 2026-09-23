@@ -3,13 +3,11 @@ import { query } from '../db.js';
 
 const router = Router();
 
-// Dipanggil oleh cron job untuk auto-start lembur yang sudah waktunya
 router.post('/check', async (req, res) => {
   const now = new Date();
   const toleranceStart = new Date(now.getTime() - 60000);
 
   try {
-    // Cari record yang perlu di-auto-start
     const dueResult = await query(
       `SELECT * FROM overtime_records
        WHERE status = 'approved'
@@ -21,7 +19,6 @@ router.post('/check', async (req, res) => {
     const results = [];
 
     for (const record of dueResult.rows) {
-      // Update status ke active
       const updateResult = await query(
         `UPDATE overtime_records
          SET status = 'active',
@@ -34,7 +31,6 @@ router.post('/check', async (req, res) => {
       );
 
       if (updateResult.rows.length > 0) {
-        // Log
         await query(
           `INSERT INTO activity_logs (record_id, actor_id, actor_name, action, details)
            VALUES ($1, NULL, 'SYSTEM', 'auto_started', $2)`,
@@ -60,7 +56,6 @@ router.post('/check', async (req, res) => {
   }
 });
 
-// Endpoint untuk cek status scheduler
 router.get('/status', async (req, res) => {
   try {
     const result = await query(

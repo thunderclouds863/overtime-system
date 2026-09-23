@@ -4,7 +4,6 @@ import { hashPassword, requireAuth } from '../auth.js';
 
 const router = Router();
 
-// Middleware: hanya admin
 function requireAdmin(req, res, next) {
   if (req.user?.role !== 'admin') {
     return res.status(403).json({ error: 'Akses hanya untuk admin' });
@@ -12,11 +11,6 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-// ============================================
-// USER MANAGEMENT
-// ============================================
-
-// Ambil semua users
 router.get('/users', requireAuth, requireAdmin, async (req, res) => {
   try {
     const result = await query(
@@ -29,7 +23,6 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// Tambah user baru
 router.post('/users', requireAuth, requireAdmin, async (req, res) => {
   const { email, password, full_name, role, department } = req.body;
 
@@ -66,7 +59,6 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// Update user
 router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { full_name, role, department, is_active, password } = req.body;
@@ -111,7 +103,6 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// Hapus user
 router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
 
@@ -127,11 +118,6 @@ router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// ============================================
-// MONITORING ALL RECORDS
-// ============================================
-
-// Ambil semua record (semua karyawan)
 router.get('/records', requireAuth, requireAdmin, async (req, res) => {
   const { status, start_date, end_date, employee_id, limit = 500 } = req.query;
 
@@ -172,9 +158,6 @@ router.get('/records', requireAuth, requireAdmin, async (req, res) => {
   }
 });
 
-// ============================================
-// DASHBOARD STATS
-// ============================================
 router.get('/stats', requireAuth, requireAdmin, async (req, res) => {
   try {
     const totalUsers = await query('SELECT COUNT(*) FROM users WHERE is_active = true');

@@ -1,12 +1,9 @@
 import { Router } from 'express';
 import { query } from '../db.js';
-import { hashPassword, verifyPassword, generateToken, requireAuth, requireManager } from '../auth.js';
+import { verifyPassword, generateToken, requireAuth } from '../auth.js';
 
 const router = Router();
 
-const ALLOWED_DOMAINS = ['gmail.com', 'cimory.com'];
-
-// Login
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -23,7 +20,7 @@ router.post('/login', async (req, res) => {
     }
 
     if (!user.is_active) {
-      return res.status(403).json({ error: 'Akun tidak aktif. Hubungi admin.' });
+      return res.status(403).json({ error: 'Akun tidak aktif' });
     }
 
     res.json({
@@ -41,7 +38,6 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Get current user
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const result = await query(

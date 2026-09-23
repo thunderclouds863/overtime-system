@@ -33,7 +33,6 @@ export async function sendEmail({ to, subject, html }) {
   }
 }
 
-// Template email
 export const templates = {
   newRequest: (d) => ({
     subject: `[Lembur] Pengajuan baru dari ${d.employeeName}`,
