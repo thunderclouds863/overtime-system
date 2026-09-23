@@ -11,6 +11,13 @@ const OFFICE = {
   radius: 100
 };
 
+// Batas jam pengajuan (lewat ini tidak bisa ajukan untuk hari ini)
+const SUBMIT_DEADLINE_HOUR = 18;
+
+// Jam mulai lembur default
+const START_HOUR_WEEKDAY = 17; // hari kerja mulai jam 5 sore
+const START_HOUR_HOLIDAY = 8;  // hari libur mulai jam 8 pagi
+
 function isHoliday(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   const day = d.getDay();
@@ -68,9 +75,7 @@ async function notifyUser(userId, templateName, data) {
   }
 }
 
-// ============================================
 // GET /employees/list
-// ============================================
 router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
   try {
     const result = await query(
@@ -101,10 +106,29 @@ router.post('/', requireAuth, async (req, res) => {
   }
 
   const holiday = isHoliday(date);
-  const finalStartTime = start_time || (holiday ? '08:00' : '18:00');
+  const now = new Date();
 
+  // ============================================
+  // VALIDASI: batas pengajuan jam 18:00 (hanya untuk hari ini)
+  // ============================================
+  const todayStr = now.toISOString().slice(0, 10);
+  const isToday = date === todayStr;
+
+  if (isToday && now.getHours() >= SUBMIT_DEADLINE_HOUR) {
+    return res.status(400).json({
+      error: `Batas pengajuan untuk hari ini sudah lewat (maks jam ${SUBMIT_DEADLINE_HOUR}:00). Silakan ajukan untuk tanggal lain.`
+    });
+  }
+
+  // Jam mulai default
+  const defaultHour = holiday ? START_HOUR_HOLIDAY : START_HOUR_WEEKDAY;
+  const finalStartTime = start_time || `${String(defaultHour).padStart(2, '0')}:00`;
+
+  // Planned start = tanggal + jam mulai
   const plannedStart = new Date(`${date}T${finalStartTime}:00`);
-  if (plannedStart < new Date()) {
+
+  // Kalau tanggalnya hari ini, jam mulai tidak boleh sudah terlewat
+  if (isToday && plannedStart < now) {
     return res.status(400).json({ error: 'Jam mulai sudah terlewat' });
   }
 
@@ -149,7 +173,7 @@ router.post('/', requireAuth, async (req, res) => {
     );
 
     const record = result.rows[0];
-    console.log(`✅ Record created: ID=${record.id}, status=${record.status}, employee=${record.employee_name}, chain=[${approvalChainIds.join(',')}]`);
+    console.log(`✅ Record created: ID=${record.id}, status=${record.status}, employee=${record.employee_name}, date=${date}, start=${finalStartTime}`);
 
     let emailSent = 0;
 
@@ -174,7 +198,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// GET / — List records (FIXED: manager lihat semua)
+// GET / — List records (manager lihat semua)
 // ============================================
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user;
@@ -184,7 +208,6 @@ router.get('/', requireAuth, async (req, res) => {
   const params = [];
   let idx = 1;
 
-  // Manager & admin: lihat SEMUA. Employee: hanya sendiri
   if (user.role !== 'manager' && user.role !== 'admin') {
     sql += ` WHERE employee_id = $1`;
     params.push(user.id);
@@ -205,7 +228,6 @@ router.get('/', requireAuth, async (req, res) => {
     console.log(`📋 GET /records: ${user.name} (${user.role}) → ${result.rows.length} records`);
     res.json(result.rows);
   } catch (err) {
-    console.error('GET /records error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -268,7 +290,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan / tidak aktif' });
 
     const record = result.rows[0];
-    console.log(`✅ Record ${record.id} selesai, kirim email ke manager`);
+    console.log(`✅ Record ${record.id} selesai`);
 
     const emailSent = await notifyAllManagers('proofSubmitted', {
       employeeName: record.employee_name,
