@@ -442,7 +442,7 @@ async function loadEmployees() {
     employees = await api('/api/records/employees/list');
     const sel = document.getElementById('mgrEmp');
     sel.innerHTML = '<option value="">— Pilih anggota tim —</option>' +
-      employees.map(e => `<option value="${e.id}|${e.full_name}">${e.full_name} (${e.level || '-'}) — ${e.department || '-'}</option>`).join('');
+      employees.map(e => `<option value="${e.id}|${e.full_name}">${e.full_name} (${e.level || '-'}) — ${e.jabatan || '-'}</option>`).join('');
   } catch (err) { console.error(err); }
 }
 
