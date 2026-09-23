@@ -328,7 +328,7 @@ tailwind.config = {
           </div>
         </div>
         <div class="mt-4 bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 text-xs text-brand-900">
-          <strong>💡 Info jam:</strong> Hari kerja mulai <strong>18:00</strong>. Hari libur (Sabtu/Minggu) mulai <strong>08:00</strong>. Lembur hari kerja >5 jam dipotong 1 jam istirahat otomatis.
+          <strong>💡 Info jam:</strong> Hari kerja mulai <strong>17:00</strong>. Hari libur (Sabtu/Minggu) mulai <strong>08:00</strong>. Lembur hari kerja >5 jam dipotong 1 jam istirahat otomatis.
         </div>
         <button onclick="submitRequest()" class="mt-5 w-full bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/30 text-sm transition active:scale-[0.98]">
           Kirim Pengajuan 🚀
@@ -340,7 +340,7 @@ tailwind.config = {
           <h3 class="font-bold text-sm">Ketentuan</h3>
         </div>
         <ul class="space-y-3 text-xs text-slate-300">
-          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari kerja: mulai <strong class="text-white">18:00</strong></span></li>
+          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari kerja: mulai <strong class="text-white">17:00</strong></span></li>
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari libur: mulai <strong class="text-white">08:00</strong></span></li>
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari kerja >5 jam dipotong <strong class="text-white">1 jam</strong></span></li>
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>GPS radius <strong class="text-white">100m</strong></span></li>
@@ -752,7 +752,7 @@ function updateStartTime() {
   document.getElementById('inpStart').value = startTime;
   document.getElementById('jenisHari').innerHTML = holiday
     ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (08:00)</span>'
-    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (18:00)</span>';
+    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (17:00)</span>';
   document.getElementById('jenisHari').className = holiday
     ? 'w-full mt-1.5 border border-emerald-200 rounded-2xl px-3 py-3 text-sm bg-emerald-50'
     : 'w-full mt-1.5 border border-blue-200 rounded-2xl px-3 py-3 text-sm bg-blue-50';
