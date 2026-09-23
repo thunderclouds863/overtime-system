@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS users (
   full_name VARCHAR(255) NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'employee' 
     CHECK (role IN ('employee', 'manager', 'admin')),
-  department VARCHAR(100),
+  jabatan VARCHAR(100),
   is_active BOOLEAN DEFAULT TRUE,
   created_by INTEGER REFERENCES users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
