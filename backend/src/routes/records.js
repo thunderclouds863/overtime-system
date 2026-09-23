@@ -166,12 +166,11 @@ router.post('/', requireAuth, async (req, res) => {
 
     let emailSent = 0;
 
-    // ============================================
+    // ==========================================
     // KIRIM EMAIL
-    // ============================================
+    // ==========================================
     if (!isManager) {
       // === A. EMPLOYEE AJUKAN ===
-      // Email 1: ke semua manager (ACTION: minta persetujuan + tombol setujui/tolak)
       const managersResult = await query(
         "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
       );
@@ -205,7 +204,6 @@ router.post('/', requireAuth, async (req, res) => {
         if (r.success) emailSent++;
       }
 
-      // Email 2: ke employee (FYI: menunggu persetujuan)
       const fyiSent = await notifyUser(record.employee_id, 'pendingApproval', {
         date, startTime: finalStartTime,
         duration: durationNum,
@@ -215,7 +213,6 @@ router.post('/', requireAuth, async (req, res) => {
 
     } else {
       // === D. MANAGER TUGASKAN LEMBUR ===
-      // Email 1: ke employee (ACTION: kamu ditugaskan)
       const assignedSent = await notifyUser(targetId, 'assigned', {
         managerName: user.name,
         date, startTime: finalStartTime,
@@ -224,7 +221,6 @@ router.post('/', requireAuth, async (req, res) => {
       });
       emailSent += assignedSent;
 
-      // Email 2: ke manager (FYI: penugasan terkirim)
       const fyiSent = await notifyUser(user.id, 'assignedFyiManager', {
         employeeName: targetName,
         date, startTime: finalStartTime,
@@ -241,7 +237,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// GET / — List records
+// GET / — List records (admin, manager, reviewer lihat semua)
 // ============================================
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user;
@@ -256,7 +252,8 @@ router.get('/', requireAuth, async (req, res) => {
   const params = [];
   let idx = 1;
 
-  if (user.role !== 'manager' && user.role !== 'admin') {
+  // Employee hanya lihat record sendiri. Manager, admin, reviewer lihat semua.
+  if (!['manager', 'admin', 'reviewer'].includes(user.role)) {
     sql += ` WHERE employee_id = $1`;
     params.push(user.id);
     idx = 2;
@@ -273,6 +270,7 @@ router.get('/', requireAuth, async (req, res) => {
 
   try {
     const result = await query(sql, params);
+    console.log(`📋 GET /records: ${user.name} (${user.role}) → ${result.rows.length} records`);
     res.json(result.rows);
   } catch (err) {
     console.error('GET /records error:', err.message);
@@ -311,7 +309,7 @@ router.post('/:id/start', requireAuth, async (req, res) => {
     const record = result.rows[0];
     console.log(`▶️ Record ${id} started manual by ${user.name}`);
 
-    // FYI ke employee saja (bukan atasan)
+    // FYI ke employee
     await notifyUser(record.employee_id, 'startedEmployee', {
       date: record.date,
       startTime: record.start_time,
@@ -339,13 +337,32 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
   console.log(`🚨 AUTO-STOP: record=${id}, distance=${distance}m, user=${user.name}`);
 
   try {
+    // Cek dulu record masih active
+    const checkResult = await query(
+      'SELECT id, employee_name, employee_id, status FROM overtime_records WHERE id = $1',
+      [id]
+    );
+    const existing = checkResult.rows[0];
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Record tidak ditemukan' });
+    }
+    if (existing.status !== 'active') {
+      console.warn(`⚠️ Auto-stop: record ${id} bukan active (status: ${existing.status})`);
+      return res.status(400).json({ 
+        error: `Record sudah tidak aktif (status: ${existing.status})`,
+        already_stopped: true
+      });
+    }
+
+    // Update: pastikan actual_duration tidak NULL
     const result = await query(
       `UPDATE overtime_records
        SET status = 'cancelled',
            cancel_reason = $1,
            cancelled_at = NOW(),
            actual_end = NOW(),
-           actual_duration = NOW() - actual_start,
+           actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
            gps_lat = $2, gps_lng = $3, gps_distance = $4,
            updated_at = NOW()
        WHERE id = $5
@@ -360,7 +377,7 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Record tidak aktif / tidak ditemukan' });
+      return res.status(404).json({ error: 'Record tidak bisa di-auto-stop' });
     }
 
     const record = result.rows[0];
@@ -369,14 +386,14 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
     const stoppedAt = new Date().toLocaleString('id-ID');
     const reasonText = reason || `Keluar radius kantor (${distance}m)`;
 
-    // Email 1: ke EMPLOYEE (ACTION)
+    // Email ke EMPLOYEE (ACTION)
     await notifyUser(record.employee_id, 'autoStopEmployee', {
       reason: reasonText,
       distance,
       stoppedAt
     });
 
-    // Email 2: ke semua MANAGER (FYI)
+    // Email ke semua MANAGER (FYI)
     await notifyAllManagers('autoStopManager', {
       employeeName: record.employee_name,
       distance,
@@ -411,7 +428,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Record tidak ditemukan / belum dimulai' });
     }
     if (rec.status !== 'active') {
-      return res.status(400).json({ error: 'Record tidak dalam status aktif' });
+      return res.status(400).json({ error: `Record tidak dalam status aktif (status: ${rec.status})` });
     }
 
     const durationMs = Date.now() - new Date(rec.actual_start).getTime();
@@ -429,7 +446,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
              cancel_reason = $1,
              cancelled_at = NOW(),
              actual_end = NOW(),
-             actual_duration = NOW() - actual_start,
+             actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
              proof_text = $2,
              proof_file_name = $3,
              proof_uploaded_at = NOW(),
@@ -454,7 +471,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
       const reasonText = `Durasi ${durationHours.toFixed(2)} jam < 1 jam — tidak dihitung lembur`;
       console.log(`❌ Record ${id} TIDAK DIHITUNG: ${reasonText}`);
 
-      // Email 1: ke EMPLOYEE (ACTION)
+      // Email ke EMPLOYEE (ACTION)
       await notifyUser(record.employee_id, 'notCountedEmployee', {
         employeeName: record.employee_name,
         date: record.date,
@@ -462,7 +479,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
         reason: reasonText
       });
 
-      // Email 2: ke semua MANAGER (FYI)
+      // Email ke semua MANAGER (FYI)
       await notifyAllManagers('notCountedManager', {
         employeeName: record.employee_name,
         date: record.date,
@@ -484,7 +501,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
       `UPDATE overtime_records
        SET status = 'pending_verification',
            actual_end = NOW(),
-           actual_duration = NOW() - actual_start,
+           actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
            proof_text = $1,
            proof_file_name = $2,
            proof_uploaded_at = NOW(),
@@ -505,14 +522,14 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
     const submittedAt = new Date().toLocaleString('id-ID');
     console.log(`✅ Record ${id} selesai, durasi ${durationStr}`);
 
-    // Email 1: ke MANAGER (ACTION: verifikasi)
+    // Email ke MANAGER (ACTION)
     const mgrSent = await notifyAllManagers('proofSubmitted', {
       employeeName: record.employee_name,
       duration: durationStr,
       proof: proof_text
     });
 
-    // Email 2: ke EMPLOYEE (FYI: bukti terkirim)
+    // Email ke EMPLOYEE (FYI)
     const empSent = await notifyUser(record.employee_id, 'proofPendingFyi', {
       duration: durationStr,
       submittedAt
@@ -526,7 +543,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/cancel — Batalkan lembur
+// POST /:id/cancel — Batalkan lembur manual
 // ============================================
 router.post('/:id/cancel', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -538,13 +555,14 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
       `UPDATE overtime_records
        SET status = 'cancelled', cancel_reason = $1, cancelled_at = NOW(),
            actual_end = NOW(),
-           actual_duration = NOW() - actual_start, updated_at = NOW()
+           actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
+           updated_at = NOW()
        WHERE id = $2 AND (employee_id = $3 OR $4 IN ('manager', 'admin'))
          AND status = 'active'
        RETURNING *`,
       [reason, id, user.id, user.role]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan / tidak aktif' });
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -643,7 +661,7 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
     let emailSent = 0;
 
-    // Email 1: ke MANAGER (ACTION: review ulang)
+    // Email ke MANAGER (ACTION: review ulang)
     for (const mgr of managersResult.rows) {
       const approveToken = jwt.sign(
         { recordId: updated.id, action: 'approve', managerId: mgr.id },
@@ -672,7 +690,7 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
       if (r.success) emailSent++;
     }
 
-    // Email 2: ke EMPLOYEE (FYI: revisi terkirim)
+    // Email ke EMPLOYEE (FYI)
     const fyiSent = await notifyUser(updated.employee_id, 'pendingApproval', {
       date: finalDate,
       startTime: finalStartTime,
@@ -712,14 +730,14 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
     const record = result.rows[0];
     const submittedAt = new Date().toLocaleString('id-ID');
 
-    // Email 1: ke MANAGER (ACTION: verifikasi ulang)
+    // Email ke MANAGER (ACTION: verifikasi ulang)
     const mgrSent = await notifyAllManagers('proofRevisionResubmitted', {
       employeeName: record.employee_name,
       proof: proof_text,
       submittedAt
     });
 
-    // Email 2: ke EMPLOYEE (FYI: bukti revisi terkirim)
+    // Email ke EMPLOYEE (FYI)
     const empSent = await notifyUser(record.employee_id, 'proofPendingFyi', {
       duration: record.actual_duration || '-',
       submittedAt
@@ -727,6 +745,48 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
 
     res.json({ ...record, email_sent: mgrSent + empSent });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// GET /stats/summary — Total jam bulan ini untuk user
+// ============================================
+router.get('/stats/summary', requireAuth, async (req, res) => {
+  const user = req.user;
+
+  try {
+    // Hitung total jam dari completed + pending_verification (yang sudah ada durasi aktual)
+    let sql = `
+      SELECT 
+        COALESCE(SUM(EXTRACT(EPOCH FROM actual_duration))/3600, 0) as total_hours,
+        COUNT(*) FILTER (WHERE status = 'completed') as completed_count,
+        COUNT(*) FILTER (WHERE status = 'pending_verification') as pending_verify_count,
+        COUNT(*) FILTER (WHERE status = 'pending') as pending_count,
+        COUNT(*) FILTER (WHERE status IN ('revision', 'rejected')) as revision_count
+      FROM overtime_records
+      WHERE date_trunc('month', date) = date_trunc('month', CURRENT_DATE)
+        AND actual_duration IS NOT NULL
+    `;
+    const params = [];
+    
+    if (!['manager', 'admin', 'reviewer'].includes(user.role)) {
+      sql += ` AND employee_id = $1`;
+      params.push(user.id);
+    }
+
+    const result = await query(sql, params);
+    const row = result.rows[0];
+
+    res.json({
+      total_hours: parseFloat(row.total_hours).toFixed(1),
+      completed_count: parseInt(row.completed_count),
+      pending_verify_count: parseInt(row.pending_verify_count),
+      pending_count: parseInt(row.pending_count),
+      revision_count: parseInt(row.revision_count)
+    });
+  } catch (err) {
+    console.error('stats/summary error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
