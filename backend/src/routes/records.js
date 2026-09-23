@@ -35,7 +35,10 @@ async function notifyUser(userId, templateName, data) {
   try {
     const result = await query('SELECT email FROM users WHERE id = $1', [userId]);
     const email = result.rows[0]?.email;
-    if (!email) return 0;
+    if (!email) {
+      console.warn(`⚠️ notifyUser: user ${userId} tidak punya email`);
+      return 0;
+    }
     const r = await sendEmail({ to: email, ...templates[templateName](data) });
     return r.success ? 1 : 0;
   } catch (err) {
@@ -54,6 +57,7 @@ async function notifyAllManagers(templateName, data) {
       const r = await sendEmail({ to: row.email, ...templates[templateName](data) });
       if (r.success) sent++;
     }
+    console.log(`📨 notifyAllManagers(${templateName}): ${sent} terkirim`);
     return sent;
   } catch (err) {
     console.error('notifyAllManagers error:', err.message);
@@ -77,7 +81,7 @@ router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
 });
 
 // ============================================
-// POST / — Buat pengajuan ATAU tugaskan
+// POST / — Buat pengajuan (employee) ATAU tugaskan (manager)
 // ============================================
 router.post('/', requireAuth, async (req, res) => {
   const {
@@ -130,7 +134,6 @@ router.post('/', requireAuth, async (req, res) => {
         "SELECT id FROM users WHERE role = 'manager' AND is_active = true"
       );
       approvalChainIds = managersResult.rows.map(r => r.id);
-      console.log(`📋 Approval chain: [${approvalChainIds.join(', ')}]`);
     } catch (err) {
       console.error('Get managers error:', err.message);
     }
@@ -159,16 +162,19 @@ router.post('/', requireAuth, async (req, res) => {
     );
 
     const record = result.rows[0];
-    console.log(`✅ Record created: ID=${record.id}, status=${record.status}, duration=${durationNum}j, employee=${record.employee_name}`);
+    console.log(`✅ Record created: ID=${record.id}, status=${record.status}, source=${record.source}, employee=${record.employee_name}`);
 
     let emailSent = 0;
 
+    // ============================================
+    // KIRIM EMAIL
+    // ============================================
     if (!isManager) {
+      // === A. EMPLOYEE AJUKAN ===
+      // Email 1: ke semua manager (ACTION: minta persetujuan + tombol setujui/tolak)
       const managersResult = await query(
         "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
       );
-
-      console.log(`📨 Mengirim email ke ${managersResult.rows.length} manager`);
 
       const JWT_SECRET = process.env.JWT_SECRET;
       const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
@@ -185,7 +191,7 @@ router.post('/', requireAuth, async (req, res) => {
           { expiresIn: '24h' }
         );
 
-        const emailResult = await sendEmail({
+        const r = await sendEmail({
           to: mgr.email,
           ...templates.newRequest({
             employeeName: targetName,
@@ -196,12 +202,35 @@ router.post('/', requireAuth, async (req, res) => {
             rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
           })
         });
-        if (emailResult.success) emailSent++;
+        if (r.success) emailSent++;
       }
-    } else {
-      emailSent = await notifyUser(targetId, 'approved', {
-        date, startTime: finalStartTime
+
+      // Email 2: ke employee (FYI: menunggu persetujuan)
+      const fyiSent = await notifyUser(record.employee_id, 'pendingApproval', {
+        date, startTime: finalStartTime,
+        duration: durationNum,
+        managerName: 'Atasan'
       });
+      emailSent += fyiSent;
+
+    } else {
+      // === D. MANAGER TUGASKAN LEMBUR ===
+      // Email 1: ke employee (ACTION: kamu ditugaskan)
+      const assignedSent = await notifyUser(targetId, 'assigned', {
+        managerName: user.name,
+        date, startTime: finalStartTime,
+        duration: durationNum,
+        reason, desc: description
+      });
+      emailSent += assignedSent;
+
+      // Email 2: ke manager (FYI: penugasan terkirim)
+      const fyiSent = await notifyUser(user.id, 'assignedFyiManager', {
+        employeeName: targetName,
+        date, startTime: finalStartTime,
+        duration: durationNum
+      });
+      emailSent += fyiSent;
     }
 
     res.json({ ...record, email_sent: emailSent });
@@ -244,7 +273,6 @@ router.get('/', requireAuth, async (req, res) => {
 
   try {
     const result = await query(sql, params);
-    console.log(`📋 GET /records: ${user.name} (${user.role}) → ${result.rows.length} records`);
     res.json(result.rows);
   } catch (err) {
     console.error('GET /records error:', err.message);
@@ -253,7 +281,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/start — Mulai lembur (GPS)
+// POST /:id/start — Mulai lembur manual (GPS)
 // ============================================
 router.post('/:id/start', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -279,6 +307,18 @@ router.post('/:id/start', requireAuth, async (req, res) => {
       [lat, lng, accuracy, distance, id, user.id, user.role]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan / tidak bisa dimulai' });
+
+    const record = result.rows[0];
+    console.log(`▶️ Record ${id} started manual by ${user.name}`);
+
+    // FYI ke employee saja (bukan atasan)
+    await notifyUser(record.employee_id, 'startedEmployee', {
+      date: record.date,
+      startTime: record.start_time,
+      duration: Math.round(parseFloat(record.planned_duration?.split(':')[0] || 2)),
+      employeeName: record.employee_name
+    });
+
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -286,7 +326,7 @@ router.post('/:id/start', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/auto-stop — Auto stop karena keluar radius
+// POST /:id/auto-stop — Auto stop keluar radius
 // ============================================
 router.post('/:id/auto-stop', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -296,7 +336,7 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
   if (!lat || !lng) return res.status(400).json({ error: 'Koordinat GPS wajib' });
 
   const distance = Math.round(haversine(lat, lng, OFFICE.lat, OFFICE.lng));
-  console.log(`🚨 AUTO-STOP request: record=${id}, distance=${distance}m, user=${user.name}`);
+  console.log(`🚨 AUTO-STOP: record=${id}, distance=${distance}m, user=${user.name}`);
 
   try {
     const result = await query(
@@ -320,34 +360,29 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
     );
 
     if (result.rows.length === 0) {
-      console.warn(`⚠️ Auto-stop: record ${id} tidak ditemukan / bukan active`);
       return res.status(404).json({ error: 'Record tidak aktif / tidak ditemukan' });
     }
 
     const record = result.rows[0];
-    console.log(`✅ Record ${id} AUTO-STOPPED: ${record.employee_name} keluar radius (${distance}m)`);
+    console.log(`✅ Record ${id} AUTO-STOPPED: ${record.employee_name}`);
 
-    try {
-      const managersResult = await query(
-        "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
-      );
-      for (const mgr of managersResult.rows) {
-        await sendEmail({
-          to: mgr.email,
-          subject: `[Lembur] ⚠️ Auto-stop: ${record.employee_name} keluar radius`,
-          html: `
-            <div style="font-family:sans-serif;max-width:600px;margin:auto;padding:20px">
-              <h2 style="color:#dc2626">⚠️ Auto-Stop Lembur</h2>
-              <p><strong>${record.employee_name}</strong> keluar dari radius kantor.</p>
-              <p>Jarak: <strong>${distance}m</strong> (maks ${OFFICE.radius}m)</p>
-              <p>Lembur dihentikan otomatis pada ${new Date().toLocaleString('id-ID')}.</p>
-            </div>
-          `
-        });
-      }
-    } catch (e) {
-      console.error('Email error:', e.message);
-    }
+    const stoppedAt = new Date().toLocaleString('id-ID');
+    const reasonText = reason || `Keluar radius kantor (${distance}m)`;
+
+    // Email 1: ke EMPLOYEE (ACTION)
+    await notifyUser(record.employee_id, 'autoStopEmployee', {
+      reason: reasonText,
+      distance,
+      stoppedAt
+    });
+
+    // Email 2: ke semua MANAGER (FYI)
+    await notifyAllManagers('autoStopManager', {
+      employeeName: record.employee_name,
+      distance,
+      stoppedAt,
+      reason: reasonText
+    });
 
     res.json(record);
   } catch (err) {
@@ -368,7 +403,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
 
   try {
     const recordCheck = await query(
-      'SELECT actual_start, employee_name, status FROM overtime_records WHERE id = $1',
+      'SELECT actual_start, employee_name, employee_id, date, status FROM overtime_records WHERE id = $1',
       [id]
     );
     const rec = recordCheck.rows[0];
@@ -384,6 +419,9 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
 
     console.log(`⏱ Durasi aktual: ${durationHours.toFixed(2)} jam (min: ${MIN_OVERTIME_HOURS} jam)`);
 
+    // ==========================================
+    // KASUS A: DURASI < 1 JAM → TIDAK DIHITUNG
+    // ==========================================
     if (durationHours < MIN_OVERTIME_HOURS) {
       const result = await query(
         `UPDATE overtime_records
@@ -413,19 +451,35 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
       }
 
       const record = result.rows[0];
-      console.log(`❌ Record ${id} TIDAK DIHITUNG: durasi ${durationHours.toFixed(2)} jam < 1 jam`);
+      const reasonText = `Durasi ${durationHours.toFixed(2)} jam < 1 jam — tidak dihitung lembur`;
+      console.log(`❌ Record ${id} TIDAK DIHITUNG: ${reasonText}`);
 
-      await notifyAllManagers('verifyRejected', {
-        note: `Durasi ${durationHours.toFixed(2)} jam < 1 jam, tidak dihitung lembur`
+      // Email 1: ke EMPLOYEE (ACTION)
+      await notifyUser(record.employee_id, 'notCountedEmployee', {
+        employeeName: record.employee_name,
+        date: record.date,
+        duration: `${durationHours.toFixed(2)} jam`,
+        reason: reasonText
+      });
+
+      // Email 2: ke semua MANAGER (FYI)
+      await notifyAllManagers('notCountedManager', {
+        employeeName: record.employee_name,
+        date: record.date,
+        duration: `${durationHours.toFixed(2)} jam`,
+        reason: reasonText
       });
 
       return res.json({
         ...record,
         not_counted: true,
-        message: `Durasi ${durationHours.toFixed(2)} jam < 1 jam, tidak dihitung lembur`
+        message: reasonText
       });
     }
 
+    // ==========================================
+    // KASUS B: DURASI >= 1 JAM → NORMAL
+    // ==========================================
     const result = await query(
       `UPDATE overtime_records
        SET status = 'pending_verification',
@@ -447,14 +501,24 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
     }
 
     const record = result.rows[0];
-    console.log(`✅ Record ${id} selesai, durasi ${durationHours.toFixed(2)} jam`);
+    const durationStr = `${durationHours.toFixed(2)} jam`;
+    const submittedAt = new Date().toLocaleString('id-ID');
+    console.log(`✅ Record ${id} selesai, durasi ${durationStr}`);
 
-    const emailSent = await notifyAllManagers('proofSubmitted', {
+    // Email 1: ke MANAGER (ACTION: verifikasi)
+    const mgrSent = await notifyAllManagers('proofSubmitted', {
       employeeName: record.employee_name,
-      duration: `${durationHours.toFixed(2)} jam`
+      duration: durationStr,
+      proof: proof_text
     });
 
-    res.json({ ...record, email_sent: emailSent, not_counted: false });
+    // Email 2: ke EMPLOYEE (FYI: bukti terkirim)
+    const empSent = await notifyUser(record.employee_id, 'proofPendingFyi', {
+      duration: durationStr,
+      submittedAt
+    });
+
+    res.json({ ...record, email_sent: mgrSent + empSent, not_counted: false });
   } catch (err) {
     console.error('finish error:', err.message);
     res.status(500).json({ error: err.message });
@@ -488,7 +552,7 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/revise — Revisi pengajuan
+// POST /:id/revise — Revisi pengajuan (employee)
 // ============================================
 router.post('/:id/revise', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -569,7 +633,7 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     );
 
     const updated = result.rows[0];
-    console.log(`✅ Record ${id} direvisi: date=${finalDate}, start=${finalStartTime}, duration=${finalDuration}j`);
+    console.log(`✅ Record ${id} direvisi: date=${finalDate}, start=${finalStartTime}`);
 
     const managersResult = await query(
       "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
@@ -579,6 +643,7 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
     let emailSent = 0;
 
+    // Email 1: ke MANAGER (ACTION: review ulang)
     for (const mgr of managersResult.rows) {
       const approveToken = jwt.sign(
         { recordId: updated.id, action: 'approve', managerId: mgr.id },
@@ -593,7 +658,7 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
 
       const r = await sendEmail({
         to: mgr.email,
-        ...templates.newRequest({
+        ...templates.revisionResubmitted({
           employeeName: updated.employee_name,
           date: finalDate,
           startTime: finalStartTime,
@@ -607,6 +672,15 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
       if (r.success) emailSent++;
     }
 
+    // Email 2: ke EMPLOYEE (FYI: revisi terkirim)
+    const fyiSent = await notifyUser(updated.employee_id, 'pendingApproval', {
+      date: finalDate,
+      startTime: finalStartTime,
+      duration: finalDuration,
+      managerName: 'Atasan'
+    });
+    emailSent += fyiSent;
+
     res.json({ ...updated, email_sent: emailSent });
   } catch (err) {
     console.error('POST /:id/revise error:', err.message);
@@ -615,7 +689,7 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/revise-proof — Revisi bukti
+// POST /:id/revise-proof — Revisi bukti (employee)
 // ============================================
 router.post('/:id/revise-proof', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -636,12 +710,22 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
 
     const record = result.rows[0];
-    const emailSent = await notifyAllManagers('proofSubmitted', {
+    const submittedAt = new Date().toLocaleString('id-ID');
+
+    // Email 1: ke MANAGER (ACTION: verifikasi ulang)
+    const mgrSent = await notifyAllManagers('proofRevisionResubmitted', {
       employeeName: record.employee_name,
-      duration: record.actual_duration
+      proof: proof_text,
+      submittedAt
     });
 
-    res.json({ ...record, email_sent: emailSent });
+    // Email 2: ke EMPLOYEE (FYI: bukti revisi terkirim)
+    const empSent = await notifyUser(record.employee_id, 'proofPendingFyi', {
+      duration: record.actual_duration || '-',
+      submittedAt
+    });
+
+    res.json({ ...record, email_sent: mgrSent + empSent });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
