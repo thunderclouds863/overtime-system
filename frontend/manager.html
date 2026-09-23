@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Atasan — Sistem Lembur</title>
+<link rel="icon" type="image/png" href="logo-cimory.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -51,7 +52,7 @@ tailwind.config = {
       <div class="flex items-center gap-2 pl-3 border-l border-slate-800">
         <div class="text-right hidden sm:block">
           <p class="text-xs font-semibold" id="userName">-</p>
-          <p class="text-[10px] text-brand-400 font-bold">ATASAN</p>
+          <p class="text-[10px] text-brand-400 font-bold" id="userLevelLabel">ATASAN</p>
         </div>
         <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center font-bold text-xs" id="userAvatar">-</div>
       </div>
@@ -63,12 +64,8 @@ tailwind.config = {
 <aside class="fixed top-16 left-0 bottom-0 w-60 bg-ink-900 text-slate-400 z-30 hidden md:flex flex-col border-r border-slate-800">
   <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
     <p class="text-[10px] uppercase text-slate-500 px-3 pt-2 pb-1 font-bold tracking-wider">Menu</p>
-    <a onclick="switchTab('mgr-dashboard')" data-tab="mgr-dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer active">
-      <span>📊</span> Dashboard
-    </a>
-    <a onclick="switchTab('mgr-tugas')" data-tab="mgr-tugas" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
-      <span>✦</span> Tugaskan Lembur
-    </a>
+    <a onclick="switchTab('mgr-dashboard')" data-tab="mgr-dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer active"><span>📊</span> Dashboard</a>
+    <a onclick="switchTab('mgr-tugas')" data-tab="mgr-tugas" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer"><span>✦</span> Tugaskan Lembur</a>
     <a onclick="switchTab('mgr-approval')" data-tab="mgr-approval" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
       <span>✓</span> Perlu Review
       <span id="navBadgeApproval" class="ml-auto text-[10px] bg-amber-500 text-white font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
@@ -77,13 +74,12 @@ tailwind.config = {
       <span>🔍</span> Verifikasi Hasil
       <span id="navBadgeVerify" class="ml-auto text-[10px] bg-orange-500 text-white font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
     </a>
-    <a onclick="switchTab('mgr-monitor')" data-tab="mgr-monitor" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
-      <span>◈</span> Monitoring Tim
-    </a>
+    <a onclick="switchTab('mgr-monitor')" data-tab="mgr-monitor" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer"><span>◈</span> Monitoring Tim</a>
   </nav>
   <div class="p-4 border-t border-slate-800">
     <p class="text-[10px] text-slate-500">Login sebagai</p>
     <p class="text-xs text-slate-300 font-semibold" id="mgrEmail">-</p>
+    <p class="text-[10px] text-purple-400 font-bold mt-1" id="mgrLevel">-</p>
   </div>
 </aside>
 
@@ -96,7 +92,6 @@ tailwind.config = {
 
 <main class="md:ml-60 pt-20 pb-24 md:pb-8 px-4 md:px-8 max-w-[1400px]">
 
-  <!-- DASHBOARD -->
   <section id="tab-mgr-dashboard" class="tab-content space-y-5">
     <div>
       <h1 class="text-2xl font-extrabold text-slate-800">Dashboard Atasan</h1>
@@ -130,7 +125,6 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- TUGASKAN -->
   <section id="tab-mgr-tugas" class="tab-content hidden space-y-5">
     <div>
       <h1 class="text-2xl font-extrabold text-slate-800">Tugaskan Lembur</h1>
@@ -139,7 +133,7 @@ tailwind.config = {
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-3xl">
       <div class="bg-brand-50 border border-brand-100 rounded-xl p-3.5 mb-5 flex gap-3">
         <span class="text-brand-600 text-lg">✦</span>
-        <p class="text-xs text-brand-800 leading-relaxed"><strong>Penugasan langsung:</strong> karyawan otomatis menerima notifikasi email. Timer berjalan pada jam yang ditentukan tanpa approval tambahan.</p>
+        <p class="text-xs text-brand-800 leading-relaxed"><strong>Penugasan langsung:</strong> karyawan otomatis menerima notifikasi email. Jam mulai otomatis sesuai jenis hari.</p>
       </div>
       <div class="grid md:grid-cols-2 gap-4">
         <div class="md:col-span-2">
@@ -150,22 +144,21 @@ tailwind.config = {
         </div>
         <div>
           <label class="text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
-          <input type="date" id="mgrDate" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
+          <input type="date" id="mgrDate" onchange="updateMgrStartTime()" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Durasi <span class="text-red-500">*</span></label>
-          <select id="mgrDurasi" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
-            <option value="1">1 jam</option>
-            <option value="2">2 jam</option>
-            <option value="3">3 jam</option>
-            <option value="4" selected>4 jam</option>
-          </select>
+          <label class="text-xs font-bold text-slate-600 uppercase">Jenis Hari</label>
+          <div id="mgrJenisHari" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-100 text-slate-600">Pilih tanggal</div>
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Jam Mulai <span class="text-red-500">*</span></label>
-          <input type="time" id="mgrStart" value="18:00" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
+          <label class="text-xs font-bold text-slate-600 uppercase">Jam Mulai (otomatis)</label>
+          <input type="time" id="mgrStart" readonly class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-100 text-slate-600 cursor-not-allowed">
         </div>
         <div>
+          <label class="text-xs font-bold text-slate-600 uppercase">Durasi (jam) <span class="text-red-500">*</span></label>
+          <input type="number" id="mgrDurasi" min="1" max="24" value="2" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
+        </div>
+        <div class="md:col-span-2">
           <label class="text-xs font-bold text-slate-600 uppercase">Kategori <span class="text-red-500">*</span></label>
           <select id="mgrReason" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
             <option>Target proyek</option>
@@ -179,11 +172,11 @@ tailwind.config = {
           <textarea id="mgrDesc" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white" placeholder="Jelaskan tugas yang harus diselesaikan..."></textarea>
         </div>
       </div>
+      <div id="mgrApprovalInfo" class="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 hidden"></div>
       <button onclick="submitAssignment()" class="mt-5 w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-600/25 text-sm">Tugaskan Lembur</button>
     </div>
   </section>
 
-  <!-- APPROVAL -->
   <section id="tab-mgr-approval" class="tab-content hidden space-y-5">
     <div>
       <h1 class="text-2xl font-extrabold text-slate-800">Perlu Review Pengajuan</h1>
@@ -212,7 +205,6 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- VERIFIKASI HASIL -->
   <section id="tab-mgr-verifikasi" class="tab-content hidden space-y-5">
     <div>
       <h1 class="text-2xl font-extrabold text-slate-800">Verifikasi Hasil Kerja</h1>
@@ -221,7 +213,7 @@ tailwind.config = {
     <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 flex gap-3">
       <span class="text-orange-600 text-lg">🔍</span>
       <div class="text-xs text-orange-800 leading-relaxed">
-        <strong>Verifikasi hasil kerja:</strong> karyawan sudah menyelesaikan lembur dan upload bukti. Periksa apakah hasil sesuai rencana. Jika tidak, kembalikan untuk revisi.
+        <strong>Verifikasi hasil kerja:</strong> karyawan sudah menyelesaikan lembur dan upload bukti. Level ≥ 4a bisa lihat penilaian dari level bawah.
       </div>
     </div>
     <div id="verifyList" class="space-y-3">
@@ -229,7 +221,6 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- MONITORING -->
   <section id="tab-mgr-monitor" class="tab-content hidden space-y-5">
     <div>
       <h1 class="text-2xl font-extrabold text-slate-800">Monitoring Tim</h1>
@@ -241,6 +232,7 @@ tailwind.config = {
           <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
             <tr>
               <th class="text-left px-4 py-3.5 font-bold">Karyawan</th>
+              <th class="text-left px-4 py-3.5 font-bold">Level</th>
               <th class="text-left px-4 py-3.5 font-bold">Tanggal</th>
               <th class="text-left px-4 py-3.5 font-bold">Jam</th>
               <th class="text-left px-4 py-3.5 font-bold">Durasi</th>
@@ -257,7 +249,6 @@ tailwind.config = {
 
 </main>
 
-<!-- REVIEW MODAL (Fase 1) -->
 <div id="modalReview" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 modal-in max-h-[92vh] overflow-y-auto">
     <div class="flex items-start justify-between mb-4">
@@ -281,7 +272,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- VERIFY MODAL (Fase 3) -->
 <div id="modalVerify" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 modal-in max-h-[92vh] overflow-y-auto">
     <div class="flex items-start justify-between mb-4">
@@ -320,12 +310,12 @@ tailwind.config = {
 <div id="toast" class="fixed bottom-6 right-6 bg-ink-900 text-white px-4 py-3 rounded-xl text-sm hidden z-[60] shadow-2xl fade-in max-w-xs"></div>
 
 <script>
-const API_URL = 'https://overtime-backend-wd4c.onrender.com';
+const API_URL = 'https://overtime-backend.onrender.com';
 
 const token = localStorage.getItem('token');
 let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
-if (!token || !currentUser || currentUser.role !== 'manager') {
+if (!token || !currentUser || (currentUser.role !== 'manager' && currentUser.role !== 'admin')) {
   window.location.href = 'index.html';
 }
 
@@ -335,7 +325,18 @@ let reviewTargetId = null;
 let verifyTargetId = null;
 let currentRating = 0;
 
-// ================= API =================
+function levelNum(level) {
+  if (!level) return 0;
+  const match = String(level).match(/^(\d+)/);
+  return match ? parseInt(match[1]) : 0;
+}
+
+function isHoliday(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = d.getDay();
+  return day === 0 || day === 6;
+}
+
 async function api(path, opts = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     ...opts,
@@ -378,21 +379,21 @@ function parseInterval(iv) {
     if (!m) return 0;
     return ((parseInt(m[1]||0)*60 + parseInt(m[2]||0))*60 + parseFloat(m[3]||0)) * 1000;
   }
-  const parts = iv.split(':').map(parseFloat);
+  const parts = String(iv).split(':').map(parseFloat);
   if (parts.length === 3) return ((parts[0]*60 + parts[1])*60 + parts[2]) * 1000;
   if (parts.length === 2) return (parts[0]*60 + parts[1]) * 60 * 1000;
   return 0;
 }
 
-// ================= INIT USER =================
 document.getElementById('userName').textContent = currentUser.full_name;
 document.getElementById('mgrEmail').textContent = currentUser.email;
+document.getElementById('mgrLevel').textContent = `Level: ${currentUser.level || '-'}`;
+document.getElementById('userLevelLabel').textContent = currentUser.level || 'ATASAN';
 document.getElementById('userAvatar').textContent = currentUser.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
 
 const today = new Date();
 document.getElementById('mgrDate').valueAsDate = today;
 
-// ================= NAV =================
 function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
   document.getElementById('tab-' + tab)?.classList.remove('hidden');
@@ -400,13 +401,13 @@ function switchTab(tab) {
   document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
 }
 
-// ================= LOAD DATA =================
 async function loadRecords() {
   try {
     const raw = await api('/api/records');
     records = raw.map(r => ({
       id: r.id,
       employee: r.employee_name,
+      employeeLevel: r.employee_level || '-',
       date: r.date,
       startTime: r.start_time,
       plannedStart: r.planned_start,
@@ -415,6 +416,9 @@ async function loadRecords() {
       desc: r.description,
       source: r.source,
       status: r.status,
+      isHoliday: r.is_holiday,
+      approvalChain: r.approval_chain || [],
+      approvalProgress: r.approval_progress || 0,
       start: r.actual_start,
       end: r.actual_end,
       duration: parseInterval(r.actual_duration),
@@ -425,79 +429,95 @@ async function loadRecords() {
       note: r.approval_note,
       verifyNote: r.verify_note,
       verifyRating: r.verify_rating,
+      verifiedBy: r.verified_by_level,
       verifyRevisionCount: r.proof_revision_count,
       revisionCount: r.revision_count
     }));
     renderAll();
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 async function loadEmployees() {
   try {
-    // Manager tidak punya endpoint khusus, pakai records untuk unique employee
-    // Tapi kita butuh list dari backend — sementara pakai hardcode fallback
-    // Idealnya backend sediakan /api/records/employees
-    const raw = await api('/api/records');
-    const uniqueEmps = [...new Set(raw.map(r => r.employee_name))];
+    employees = await api('/api/records/employees/list');
     const sel = document.getElementById('mgrEmp');
     sel.innerHTML = '<option value="">— Pilih anggota tim —</option>' +
-      uniqueEmps.map(e => `<option value="${e}">${e}</option>`).join('');
-  } catch (err) {
-    console.error(err);
+      employees.map(e => `<option value="${e.id}|${e.full_name}">${e.full_name} (${e.level || '-'}) — ${e.department || '-'}</option>`).join('');
+  } catch (err) { console.error(err); }
+}
+
+function updateMgrStartTime() {
+  const dateStr = document.getElementById('mgrDate').value;
+  if (!dateStr) return;
+  const holiday = isHoliday(dateStr);
+  const startTime = holiday ? '08:00' : '18:00';
+  document.getElementById('mgrStart').value = startTime;
+  document.getElementById('mgrJenisHari').innerHTML = holiday
+    ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (08:00)</span>'
+    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (18:00)</span>';
+
+  const myLevel = levelNum(currentUser.level);
+  const info = document.getElementById('mgrApprovalInfo');
+  if (myLevel > 0 && myLevel < 4) {
+    info.classList.remove('hidden');
+    info.innerHTML = `<strong>⚠ Perlu approval bertingkat:</strong> Level kamu (${currentUser.level}) di bawah 4a. Penugasan ini akan dikirim ke atasan kamu untuk di-approve terlebih dahulu.`;
+  } else {
+    info.classList.add('hidden');
   }
 }
 
-// ================= SUBMIT ASSIGNMENT =================
 async function submitAssignment() {
-  const emp = document.getElementById('mgrEmp').value;
+  const empValue = document.getElementById('mgrEmp').value;
   const date = document.getElementById('mgrDate').value;
   const durasi = parseInt(document.getElementById('mgrDurasi').value);
   const start = document.getElementById('mgrStart').value;
   const reason = document.getElementById('mgrReason').value;
   const desc = document.getElementById('mgrDesc').value.trim();
 
-  if (!emp || !date || !desc) return toast('Lengkapi semua field *', 'bg-red-600');
+  if (!empValue || !date || !desc) return toast('Lengkapi semua field *', 'bg-red-600');
+  if (durasi < 1) return toast('Durasi minimal 1 jam', 'bg-red-600');
 
-  const planned = new Date(`${date}T${start}:00`);
-  if (planned < new Date()) return toast('Jam mulai sudah terlewat', 'bg-red-600');
+  const [empId, empName] = empValue.split('|');
 
   try {
     await api('/api/records', {
       method: 'POST',
       body: JSON.stringify({
-        date,
-        start_time: start,
-        duration_hours: durasi,
-        reason,
-        description: desc,
-        employee_name: emp
+        date, start_time: start, duration_hours: durasi,
+        reason, description: desc,
+        employee_id: parseInt(empId),
+        employee_name: empName
       })
     });
 
     document.getElementById('mgrEmp').value = '';
-    document.getElementById('mgrDate').valueAsDate = today;
+    document.getElementById('mgrDate').value = '';
     document.getElementById('mgrDesc').value = '';
-    toast(`Lembur ditugaskan ke ${emp}`, 'bg-emerald-600');
+    document.getElementById('mgrDurasi').value = 2;
+    document.getElementById('mgrStart').value = '';
+    document.getElementById('mgrJenisHari').textContent = 'Pilih tanggal';
+    document.getElementById('mgrApprovalInfo').classList.add('hidden');
+
+    toast('Lembur ditugaskan', 'bg-emerald-600');
     await loadRecords();
     switchTab('mgr-monitor');
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ================= REVIEW (Fase 1) =================
 function openReview(id) {
   const r = records.find(x => x.id === id);
   if (!r) return;
   reviewTargetId = id;
+  const chainLen = r.approvalChain.length;
+  const progress = r.approvalProgress;
   document.getElementById('reviewContent').innerHTML = `
     <div class="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-100">
       <div class="flex justify-between text-xs"><span class="text-slate-500">Karyawan</span><span class="font-bold">${r.employee}</span></div>
-      <div class="flex justify-between text-xs"><span class="text-slate-500">Tanggal</span><span class="font-bold">${fmtDate(r.date)}</span></div>
+      <div class="flex justify-between text-xs"><span class="text-slate-500">Level</span><span class="font-bold">${r.employeeLevel}</span></div>
+      <div class="flex justify-between text-xs"><span class="text-slate-500">Tanggal</span><span class="font-bold">${fmtDate(r.date)} ${r.isHoliday ? '🏖' : '💼'}</span></div>
       <div class="flex justify-between text-xs"><span class="text-slate-500">Rencana</span><span class="font-bold">${r.startTime} · ${Math.round(r.plannedDuration/3600000)} jam</span></div>
       <div class="flex justify-between text-xs"><span class="text-slate-500">Sumber</span><span class="font-bold">${r.source === 'manager' ? 'Penugasan Atasan' : 'Pengajuan Karyawan'}</span></div>
+      ${chainLen > 0 ? `<div class="flex justify-between text-xs text-purple-600"><span>Approval</span><span class="font-bold">Tahap ${progress + 1} dari ${chainLen}</span></div>` : ''}
     </div>
     <div><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Kategori</p><p>${r.reason}</p></div>
     <div><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Rencana Pekerjaan</p><p>${r.desc}</p></div>
@@ -510,13 +530,17 @@ function openReview(id) {
 
 async function doApprove() {
   try {
-    await api(`/api/approval/${reviewTargetId}/approve-schedule`, {
+    const result = await api(`/api/approval/${reviewTargetId}/approve-schedule`, {
       method: 'POST',
       body: JSON.stringify({ note: document.getElementById('reviewNote').value.trim() || null })
     });
     closeModal('modalReview');
     await loadRecords();
-    toast('Disetujui. Auto-start akan jalan saat jam tiba ⚡', 'bg-emerald-600');
+    if (result.final) {
+      toast('Disetujui final. Auto-start akan jalan saat jam tiba ⚡', 'bg-emerald-600');
+    } else {
+      toast('Disetujui. Diteruskan ke approver berikutnya.', 'bg-brand-600');
+    }
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
@@ -557,7 +581,6 @@ async function reopenRecord(id) {
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ================= VERIFY (Fase 3) =================
 function openVerify(id) {
   const r = records.find(x => x.id === id);
   if (!r) return;
@@ -565,8 +588,8 @@ function openVerify(id) {
   currentRating = r.verifyRating || 0;
   document.getElementById('verifyContent').innerHTML = `
     <div class="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-100">
-      <div class="flex justify-between text-xs"><span class="text-slate-500">Karyawan</span><span class="font-bold">${r.employee}</span></div>
-      <div class="flex justify-between text-xs"><span class="text-slate-500">Tanggal</span><span class="font-bold">${fmtDate(r.date)}</span></div>
+      <div class="flex justify-between text-xs"><span class="text-slate-500">Karyawan</span><span class="font-bold">${r.employee} (${r.employeeLevel})</span></div>
+      <div class="flex justify-between text-xs"><span class="text-slate-500">Tanggal</span><span class="font-bold">${fmtDate(r.date)} ${r.isHoliday ? '🏖' : '💼'}</span></div>
       <div class="flex justify-between text-xs"><span class="text-slate-500">Aktual</span><span class="font-bold">${r.start ? fmtTime(r.start) : '-'} — ${r.end ? fmtTime(r.end) : '-'} · ${fmtDurShort(r.duration)}</span></div>
       <div class="flex justify-between text-xs"><span class="text-slate-500">Rencana</span><span class="font-bold">${Math.round(r.plannedDuration/3600000)} jam · ${r.source === 'manager' ? 'Ditugaskan atasan' : 'Pengajuan karyawan'}</span></div>
       ${r.verifyRevisionCount > 0 ? `<div class="flex justify-between text-xs text-amber-600"><span>Revisi bukti ke-</span><span class="font-bold">${r.verifyRevisionCount}</span></div>` : ''}
@@ -640,7 +663,6 @@ async function verifyReject() {
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ================= RENDER =================
 function statusBadge(s) {
   const map = {
     pending: ['bg-amber-100 text-amber-700', 'PENDING'],
@@ -703,7 +725,7 @@ function renderRecent() {
   }
   el.innerHTML = recent.map(r => `
     <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition">
-      <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-sm">📋</div>
+      <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-sm">${r.isHoliday ? '🏖' : '💼'}</div>
       <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-slate-800 truncate">${r.employee} — ${r.reason}</p>
         <p class="text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime}</p>
@@ -720,25 +742,32 @@ function renderApprovalList() {
     el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Tidak ada pengajuan menunggu</div>';
     return;
   }
-  el.innerHTML = need.map(r => `
+  el.innerHTML = need.map(r => {
+    const chainLen = r.approvalChain.length;
+    const progress = r.approvalProgress;
+    const chainInfo = chainLen > 0
+      ? `<p class="text-purple-600 text-[10px] font-bold">📋 Approval ${progress + 1}/${chainLen} level</p>`
+      : '';
+    return `
     <div class="bg-white rounded-2xl shadow-sm border ${r.status === 'pending' ? 'border-amber-200' : 'border-slate-100'} p-5">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
         <div>
-          <p class="font-bold text-slate-800">${r.employee}</p>
-          <p class="text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime} · ${Math.round(r.plannedDuration/3600000)} jam</p>
+          <p class="font-bold text-slate-800">${r.employee} ${r.isHoliday ? '🏖' : '💼'}</p>
+          <p class="text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime} · ${Math.round(r.plannedDuration/3600000)} jam · Level ${r.employeeLevel}</p>
         </div>
         ${statusBadge(r.status)}
       </div>
       <div class="bg-slate-50 rounded-xl p-3.5 text-xs text-slate-600 space-y-1 mb-3">
         <p>📋 ${r.reason}</p>
         <p>📝 ${r.desc}</p>
+        ${chainInfo}
         ${r.revisionCount > 0 ? `<p class="text-amber-600">🔄 Revisi ke-${r.revisionCount}</p>` : ''}
       </div>
       ${r.status === 'pending'
         ? `<button onclick="openReview(${r.id})" class="w-full bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold py-2.5 rounded-xl shadow-lg shadow-brand-600/20">🔍 Review & Beri Keputusan</button>`
         : `<button onclick="reopenRecord(${r.id})" class="w-full border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm font-bold py-2.5 rounded-xl">↺ Buka Kembali</button>`}
     </div>
-  `).join('');
+  `}).join('');
 }
 
 function renderVerifyList() {
@@ -752,7 +781,7 @@ function renderVerifyList() {
     <div class="bg-white rounded-2xl shadow-sm border border-orange-200 border-l-4 border-l-orange-400 p-5">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
         <div>
-          <p class="font-bold text-slate-800">${r.employee}</p>
+          <p class="font-bold text-slate-800">${r.employee} (${r.employeeLevel}) ${r.isHoliday ? '🏖' : '💼'}</p>
           <p class="text-xs text-slate-500">${fmtDate(r.date)} · ${r.start ? fmtTime(r.start) : '-'} — ${r.end ? fmtTime(r.end) : '-'} · ${fmtDurShort(r.duration)}</p>
         </div>
         ${statusBadge(r.status)}
@@ -777,18 +806,21 @@ function renderVerifyList() {
 function renderMonitorTable() {
   const tb = document.getElementById('monitorTable');
   if (records.length === 0) {
-    tb.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-slate-400 text-sm">Belum ada data</td></tr>';
+    tb.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-400 text-sm">Belum ada data</td></tr>';
     return;
   }
   tb.innerHTML = records.map(r => `
     <tr class="hover:bg-slate-50 transition">
       <td class="px-4 py-3 font-semibold text-slate-800 text-sm">${r.employee}</td>
-      <td class="px-4 py-3 text-slate-600 text-sm">${fmtDate(r.date)}</td>
+      <td class="px-4 py-3 text-xs">
+        <span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">${r.employeeLevel}</span>
+      </td>
+      <td class="px-4 py-3 text-slate-600 text-sm">${fmtDate(r.date)} ${r.isHoliday ? '🏖' : '💼'}</td>
       <td class="px-4 py-3 text-slate-600 text-xs">${r.startTime}${r.end ? ' — ' + fmtTime(r.end) : ''}</td>
       <td class="px-4 py-3 text-slate-600 text-sm">${r.duration ? fmtDurShort(r.duration) : (Math.round(r.plannedDuration/3600000) + 'j (rencana)')}</td>
       <td class="px-4 py-3">
         ${r.source === 'manager' ? '<span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-1 rounded-full">ATASAN</span>' : '<span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-1 rounded-full">KARYAWAN</span>'}
-        ${r.autoStarted ? ' <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded-full">⚡ AUTO</span>' : ''}
+        ${r.autoStarted ? ' <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded-full">⚡</span>' : ''}
       </td>
       <td class="px-4 py-3">${statusBadge(r.status)}</td>
       <td class="px-4 py-3">
@@ -801,12 +833,9 @@ function renderMonitorTable() {
   `).join('');
 }
 
-// ================= INIT =================
 switchTab('mgr-dashboard');
 loadRecords();
 loadEmployees();
-
-// Polling tiap 30 detik untuk update
 setInterval(loadRecords, 30000);
 </script>
 </body>
