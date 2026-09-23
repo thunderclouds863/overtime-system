@@ -106,15 +106,9 @@ tailwind.config = {
 <aside class="hidden md:flex fixed top-16 left-0 bottom-0 w-60 bg-ink-900 text-slate-400 z-30 flex-col border-r border-slate-800">
   <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
     <p class="text-[10px] uppercase text-slate-500 px-3 pt-2 pb-1 font-bold tracking-wider">Menu</p>
-    <a onclick="switchTab('emp-dashboard')" data-tab="emp-dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer active">
-      <span>🏠</span> Dashboard
-    </a>
-    <a onclick="switchTab('emp-ajukan')" data-tab="emp-ajukan" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer">
-      <span>✍️</span> Ajukan Lembur
-    </a>
-    <a onclick="switchTab('emp-riwayat')" data-tab="emp-riwayat" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer">
-      <span>📜</span> Riwayat
-    </a>
+    <a onclick="switchTab('emp-dashboard')" data-tab="emp-dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer active"><span>🏠</span> Dashboard</a>
+    <a onclick="switchTab('emp-ajukan')" data-tab="emp-ajukan" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>✍️</span> Ajukan Lembur</a>
+    <a onclick="switchTab('emp-riwayat')" data-tab="emp-riwayat" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>📜</span> Riwayat</a>
   </nav>
   <div class="p-4 border-t border-slate-800 space-y-2">
     <button onclick="openGPSModal()" class="w-full text-left bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-xl p-3 transition">
@@ -130,16 +124,13 @@ tailwind.config = {
 <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 z-40 safe-bottom">
   <div class="flex items-center justify-around px-2 py-2">
     <button onclick="switchTab('emp-dashboard')" data-mobile-tab="emp-dashboard" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
-      <span class="text-xl">🏠</span>
-      <span class="text-[10px] font-semibold text-slate-600">Home</span>
+      <span class="text-xl">🏠</span><span class="text-[10px] font-semibold text-slate-600">Home</span>
     </button>
     <button onclick="switchTab('emp-ajukan')" data-mobile-tab="emp-ajukan" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
-      <span class="text-xl">✍️</span>
-      <span class="text-[10px] font-semibold text-slate-600">Ajukan</span>
+      <span class="text-xl">✍️</span><span class="text-[10px] font-semibold text-slate-600">Ajukan</span>
     </button>
     <button onclick="switchTab('emp-riwayat')" data-mobile-tab="emp-riwayat" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
-      <span class="text-xl">📜</span>
-      <span class="text-[10px] font-semibold text-slate-600">Riwayat</span>
+      <span class="text-xl">📜</span><span class="text-[10px] font-semibold text-slate-600">Riwayat</span>
     </button>
   </div>
 </nav>
@@ -221,7 +212,10 @@ tailwind.config = {
             <p id="activeLocation" class="text-emerald-200 text-[10px] mt-0.5"></p>
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-2 mt-5">
+        <div class="mt-4 bg-white/10 rounded-2xl p-3 text-[11px] text-emerald-100 border border-white/20">
+          ⚠️ Jangan keluar dari radius kantor, nanti lembur otomatis berhenti
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-3">
           <button onclick="cancelOvertime()" class="bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold py-3 rounded-2xl text-xs md:text-sm transition active:scale-95">✕ Batal</button>
           <button onclick="endOvertime()" class="bg-white text-emerald-700 hover:bg-emerald-50 font-bold py-3 rounded-2xl text-xs md:text-sm shadow-lg transition active:scale-95">✓ Selesai</button>
         </div>
@@ -309,6 +303,7 @@ tailwind.config = {
           <div class="md:col-span-2">
             <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Durasi (jam) <span class="text-red-500">*</span></label>
             <input type="number" id="inpDurasi" min="1" max="24" value="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition">
+            <p class="text-[10px] text-slate-400 mt-1">Minimal 1 jam. Lembur < 1 jam tidak dihitung.</p>
           </div>
           <div class="md:col-span-2">
             <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Rencana Pekerjaan <span class="text-red-500">*</span></label>
@@ -331,8 +326,9 @@ tailwind.config = {
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari kerja: mulai <strong class="text-white">17:00</strong></span></li>
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari libur: mulai <strong class="text-white">08:00</strong></span></li>
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Batas pengajuan hari ini: <strong class="text-white">18:00</strong></span></li>
+          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Minimal lembur <strong class="text-white">1 jam</strong></span></li>
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>GPS radius <strong class="text-white">100m</strong></span></li>
-          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Auto-start saat jam tiba ⚡</span></li>
+          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Auto-stop kalau keluar radius</span></li>
         </ul>
       </div>
     </div>
@@ -350,7 +346,6 @@ tailwind.config = {
 
 </main>
 
-<!-- GPS MODAL -->
 <div id="modalGPS" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -380,7 +375,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- BUKTI MODAL -->
 <div id="modalBukti" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -395,18 +389,20 @@ tailwind.config = {
     <textarea id="proofText" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none" placeholder="Contoh: Laporan bulanan selesai..."></textarea>
     <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Lampiran (opsional)</label>
     <input type="file" id="proofFile" class="w-full mt-1.5 text-sm border border-slate-200 rounded-2xl px-3 py-2.5 bg-slate-50">
+    <div id="proofWarning" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-3 mt-4 text-xs text-amber-800">
+      ⚠️ Durasi lembur kamu <strong>kurang dari 1 jam</strong>. Kalau diselesaikan sekarang, lembur tidak akan dihitung.
+    </div>
     <div class="bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-100 rounded-2xl p-3 mt-4 flex gap-2">
       <span class="text-blue-600">ℹ</span>
       <p class="text-[11px] text-blue-800">Atasan akan verifikasi hasil kerja sebelum approve.</p>
     </div>
     <div class="flex gap-2 mt-5">
       <button onclick="closeModal('modalBukti')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Batal</button>
-      <button onclick="submitProof()" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg">Kirim 🚀</button>
+      <button onclick="submitProof()" id="btnSubmitProof" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg">Kirim 🚀</button>
     </div>
   </div>
 </div>
 
-<!-- CANCEL MODAL -->
 <div id="modalCancel" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-sm w-full p-6 modal-in">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -424,34 +420,25 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- EDIT MODAL — BISA UBAH TANGGAL, JAM, DURASI -->
 <div id="modalEdit" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <h3 class="font-extrabold text-slate-800 text-lg">✏️ Revisi Pengajuan</h3>
     <p class="text-xs text-slate-500 mt-1 mb-4">Perbaiki tanggal, jam, atau detail lalu kirim ulang</p>
-
     <div id="editNote" class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 mb-4"></div>
-
     <label class="text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
-    <input type="date" id="editDate" onchange="updateEditStartTime()"
-      class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
-
+    <input type="date" id="editDate" onchange="updateEditStartTime()" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
     <div class="grid grid-cols-2 gap-3 mt-3">
       <div>
         <label class="text-xs font-bold text-slate-600 uppercase">Jam Mulai <span class="text-red-500">*</span></label>
-        <input type="time" id="editStart"
-          class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+        <input type="time" id="editStart" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
       </div>
       <div>
         <label class="text-xs font-bold text-slate-600 uppercase">Durasi (jam) <span class="text-red-500">*</span></label>
-        <input type="number" id="editDurasi" min="1" max="24"
-          class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+        <input type="number" id="editDurasi" min="1" max="24" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
       </div>
     </div>
-
     <div id="editJenisHari" class="mt-2 text-xs text-slate-500 italic">Info jenis hari akan muncul setelah pilih tanggal</div>
-
     <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Kategori</label>
     <select id="editReason" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
       <option>Pekerjaan mendesak</option>
@@ -460,23 +447,17 @@ tailwind.config = {
       <option>Closing bulanan</option>
       <option>Lainnya</option>
     </select>
-
     <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Rencana Pekerjaan <span class="text-red-500">*</span></label>
     <textarea id="editDesc" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"></textarea>
-
     <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Bukti / Keterangan</label>
     <textarea id="editProof" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"></textarea>
-
     <div class="flex gap-2 mt-5 pt-4 border-t border-slate-100">
       <button onclick="closeModal('modalEdit')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Batal</button>
-      <button onclick="submitRevision()" id="btnSubmitRevision" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg active:scale-[0.98] transition">
-        Kirim Ulang
-      </button>
+      <button onclick="submitRevision()" id="btnSubmitRevision" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg active:scale-[0.98] transition">Kirim Ulang</button>
     </div>
   </div>
 </div>
 
-<!-- EDIT PROOF MODAL -->
 <div id="modalEditProof" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -498,7 +479,7 @@ tailwind.config = {
 
 <div id="autoStartNotif" class="fixed top-20 right-4 md:right-6 bg-white border-l-4 border-emerald-500 rounded-2xl shadow-2xl p-4 hidden z-50 notif-slide max-w-sm">
   <div class="flex items-start gap-3">
-    <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-bold shrink-0">⚡</div>
+    <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-bold shrink-0" id="notifIcon">⚡</div>
     <div class="flex-1">
       <p class="font-bold text-slate-800 text-sm" id="notifTitle">Lembur Dimulai</p>
       <p class="text-xs text-slate-500 mt-0.5" id="notifDesc">Timer berjalan</p>
@@ -510,6 +491,7 @@ tailwind.config = {
 <script>
 const API_URL = 'https://overtime-backend-wd4c.onrender.com';
 const OFFICE = { lat: -6.192028366395371, lng: 106.73758715254144, radius: 100 };
+const MIN_OVERTIME_HOURS = 1;
 
 const token = localStorage.getItem('token');
 let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
@@ -519,6 +501,8 @@ if (!token || !currentUser) window.location.href = 'index.html';
 let records = [];
 let activeRecord = null;
 let activeTimer = null;
+let radiusMonitor = null;
+let outOfRadiusCount = 0;
 let editTargetId = null;
 let editProofTargetId = null;
 let gpsState = { status: 'idle', lat: null, lng: null, acc: null, distance: null };
@@ -529,7 +513,7 @@ function toast(msg, color='bg-ink-900') {
   t.textContent = msg;
   t.classList.remove('hidden');
   clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.add('hidden'), 3200);
+  t._t = setTimeout(() => t.classList.add('hidden'), 3500);
 }
 function logout() { localStorage.clear(); window.location.href = 'index.html'; }
 function haversine(lat1, lon1, lat2, lon2) {
@@ -544,19 +528,6 @@ function fmtDur(ms) { const s = Math.floor(ms/1000); return `${String(Math.floor
 function fmtDurShort(ms) { if (!ms) return '-'; const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000); return `${h}j ${m}m`; }
 function timeToDate(dateStr, timeStr) { const [h,m]=timeStr.split(':').map(Number); const d=new Date(dateStr+'T00:00:00'); d.setHours(h,m,0,0); return d; }
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-function parseInterval(iv) {
-  if (!iv) return 0;
-  if (typeof iv === 'number') return iv;
-  if (String(iv).includes('PT')) {
-    const m = String(iv).match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
-    if (!m) return 0;
-    return ((parseInt(m[1]||0)*60 + parseInt(m[2]||0))*60 + parseFloat(m[3]||0)) * 1000;
-  }
-  const parts = String(iv).split(':').map(parseFloat);
-  if (parts.length === 3) return ((parts[0]*60 + parts[1])*60 + parts[2]) * 1000;
-  if (parts.length === 2) return (parts[0]*60 + parts[1]) * 60 * 1000;
-  return 0;
-}
 
 async function api(path, opts = {}) {
   const res = await fetch(`${API_URL}${path}`, {
@@ -598,6 +569,81 @@ async function fetchGPS() {
     return { lat: OFFICE.lat + 0.0003, lng: OFFICE.lng + 0.0003, acc: 15, simulated: true };
   }
 }
+
+// ============================================
+// RADIUS MONITOR — Auto stop kalau keluar radius
+// ============================================
+function startRadiusMonitor() {
+  if (radiusMonitor) return;
+  console.log('🎯 Monitor radius dimulai');
+  outOfRadiusCount = 0;
+
+  radiusMonitor = setInterval(async () => {
+    if (!activeRecord || activeRecord.status !== 'active') {
+      stopRadiusMonitor();
+      return;
+    }
+    try {
+      const gps = await fetchGPS();
+      const distance = Math.round(haversine(gps.lat, gps.lng, OFFICE.lat, OFFICE.lng));
+
+      if (distance > OFFICE.radius) {
+        outOfRadiusCount++;
+        console.log(`⚠️ Di luar radius (${distance}m) - hit ${outOfRadiusCount}/2`);
+        if (outOfRadiusCount >= 2) {
+          stopRadiusMonitor();
+          await autoStop(activeRecord.id, gps.lat, gps.lng, distance);
+        }
+      } else {
+        outOfRadiusCount = 0;
+      }
+    } catch (err) {
+      console.warn('Monitor radius error:', err.message);
+    }
+  }, 30000);
+}
+
+function stopRadiusMonitor() {
+  if (radiusMonitor) {
+    clearInterval(radiusMonitor);
+    radiusMonitor = null;
+    console.log('🛑 Monitor radius dihentikan');
+  }
+}
+
+async function autoStop(recordId, lat, lng, distance) {
+  try {
+    await api(`/api/records/${recordId}/auto-stop`, {
+      method: 'POST',
+      body: JSON.stringify({
+        lat, lng,
+        reason: `Keluar radius kantor (${distance}m)`
+      })
+    });
+    activeRecord = null;
+    clearInterval(activeTimer);
+    await loadRecords();
+    showAutoStopNotif(distance);
+    toast(`⚠️ Lembur auto-stop: kamu keluar radius (${distance}m)`, 'bg-red-600');
+  } catch (err) {
+    console.error('autoStop error:', err);
+    toast('Gagal auto-stop: ' + err.message, 'bg-red-600');
+  }
+}
+
+function showAutoStopNotif(distance) {
+  document.getElementById('notifIcon').textContent = '⚠️';
+  document.getElementById('notifIcon').className = 'w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600 font-bold shrink-0';
+  document.getElementById('notifTitle').textContent = '⚠️ Lembur Dihentikan';
+  document.getElementById('notifDesc').textContent = `Kamu keluar radius kantor (${distance}m). Hubungi atasan.`;
+  const n = document.getElementById('autoStartNotif');
+  n.classList.remove('hidden');
+  n.classList.remove('notif-slide');
+  void n.offsetWidth;
+  n.classList.add('notif-slide');
+  setTimeout(() => n.classList.add('hidden'), 10000);
+}
+
 async function runGPSVerification(source = 'banner') {
   gpsState.status = 'checking';
   updateGPSUI();
@@ -739,7 +785,6 @@ function switchTab(tab) {
   document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
   document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
   document.querySelectorAll('.mobile-nav').forEach(e => {
-    e.classList.remove('active');
     e.classList.remove('bg-brand-600', 'text-white');
     e.querySelector('span:last-child').classList.add('text-slate-600');
     e.querySelector('span:last-child').classList.remove('text-white');
@@ -781,7 +826,9 @@ async function loadRecords() {
       date: r.date,
       startTime: r.start_time,
       plannedStart: r.planned_start,
-      plannedDuration: parseInterval(r.planned_duration),
+      plannedHours: parseFloat(r.planned_hours || 0),
+      plannedDuration: (parseFloat(r.planned_hours || 0)) * 3600000,
+      actualHours: parseFloat(r.actual_hours || 0),
       reason: r.reason,
       desc: r.description,
       source: r.source,
@@ -789,7 +836,7 @@ async function loadRecords() {
       isHoliday: r.is_holiday,
       start: r.actual_start,
       end: r.actual_end,
-      duration: parseInterval(r.actual_duration),
+      duration: (parseFloat(r.actual_hours || 0)) * 3600000,
       autoStarted: r.auto_started,
       location: r.gps_distance ? { distance: r.gps_distance } : null,
       proof: r.proof_text,
@@ -804,7 +851,13 @@ async function loadRecords() {
       cancelReason: r.cancel_reason
     }));
     const active = records.find(r => r.status === 'active');
-    if (active) { activeRecord = active; startLiveTimer(); }
+    if (active) {
+      activeRecord = active;
+      startLiveTimer();
+      startRadiusMonitor();
+    } else {
+      stopRadiusMonitor();
+    }
     renderAll();
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
@@ -886,6 +939,7 @@ async function confirmCancel() {
     await api(`/api/records/${activeRecord.id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) });
     activeRecord = null;
     clearInterval(activeTimer);
+    stopRadiusMonitor();
     closeModal('modalCancel');
     await loadRecords();
     toast('Lembur dibatalkan', 'bg-red-600');
@@ -894,47 +948,69 @@ async function confirmCancel() {
 
 function endOvertime() {
   if (!activeRecord) return;
+  const elapsed = Date.now() - new Date(activeRecord.start).getTime();
+  const hours = elapsed / 3600000;
+  const warn = document.getElementById('proofWarning');
+  if (hours < MIN_OVERTIME_HOURS) {
+    warn.classList.remove('hidden');
+  } else {
+    warn.classList.add('hidden');
+  }
   document.getElementById('modalBukti').classList.remove('hidden');
   document.getElementById('modalBukti').classList.add('flex');
 }
+
 async function submitProof() {
+  const btn = document.getElementById('btnSubmitProof');
   const text = document.getElementById('proofText').value.trim();
   const file = document.getElementById('proofFile').files[0];
   if (!text) return toast('Deskripsi wajib', 'bg-red-600');
+
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Mengirim...';
+
   try {
-    await api(`/api/records/${activeRecord.id}/finish`, {
+    const result = await api(`/api/records/${activeRecord.id}/finish`, {
       method: 'POST',
       body: JSON.stringify({ proof_text: text, proof_file_name: file ? file.name : null })
     });
+
     activeRecord = null;
     clearInterval(activeTimer);
+    stopRadiusMonitor();
     closeModal('modalBukti');
     document.getElementById('proofText').value = '';
     document.getElementById('proofFile').value = '';
+    document.getElementById('proofWarning').classList.add('hidden');
     await loadRecords();
-    toast('Bukti terkirim ⏳', 'bg-orange-600');
+
+    if (result.not_counted) {
+      toast(`⚠️ ${result.message}`, 'bg-red-600');
+    } else {
+      toast('✅ Bukti terkirim. Menunggu verifikasi atasan.', 'bg-emerald-600');
+    }
     switchTab('emp-riwayat');
-  } catch (err) { toast(err.message, 'bg-red-600'); }
+  } catch (err) {
+    toast('❌ ' + err.message, 'bg-red-600');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
-// ============================================
-// EDIT / REVISI — Bisa ubah tanggal, jam, durasi
-// ============================================
 function openEdit(id) {
   const r = records.find(x => x.id === id);
   if (!r) return;
   editTargetId = id;
-
   document.getElementById('editNote').innerHTML = `<strong>Catatan atasan:</strong> ${r.note || '-'}`;
   document.getElementById('editDate').value = r.date;
   document.getElementById('editStart').value = r.startTime;
-  document.getElementById('editDurasi').value = Math.round(r.plannedDuration / 3600000);
+  document.getElementById('editDurasi').value = Math.max(1, Math.round(r.plannedHours));
   document.getElementById('editReason').value = r.reason;
   document.getElementById('editDesc').value = r.desc;
   document.getElementById('editProof').value = r.proof || '';
-
   updateEditStartTime();
-
   document.getElementById('modalEdit').classList.remove('hidden');
   document.getElementById('modalEdit').classList.add('flex');
 }
@@ -953,7 +1029,6 @@ function updateEditStartTime() {
 async function submitRevision() {
   const r = records.find(x => x.id === editTargetId);
   if (!r) return;
-
   const date = document.getElementById('editDate').value;
   const start_time = document.getElementById('editStart').value;
   const duration_hours = parseInt(document.getElementById('editDurasi').value);
@@ -974,12 +1049,8 @@ async function submitRevision() {
   try {
     await api(`/api/records/${r.id}/revise`, {
       method: 'POST',
-      body: JSON.stringify({
-        date, start_time, duration_hours,
-        reason, description, proof
-      })
+      body: JSON.stringify({ date, start_time, duration_hours, reason, description, proof })
     });
-
     closeModal('modalEdit');
     await loadRecords();
     toast('✅ Pengajuan direvisi & dikirim ulang ke atasan', 'bg-emerald-600');
@@ -991,9 +1062,6 @@ async function submitRevision() {
   }
 }
 
-// ============================================
-// EDIT PROOF
-// ============================================
 function openEditProof(id) {
   const r = records.find(x => x.id === id);
   if (!r) return;
@@ -1061,7 +1129,7 @@ function renderActiveCard() {
   if (activeRecord && activeRecord.status === 'active') {
     card.classList.remove('hidden');
     document.getElementById('activeStart').textContent = fmtTime(activeRecord.start);
-    document.getElementById('activePlan').textContent = `Rencana ${activeRecord.startTime} · ${Math.round(activeRecord.plannedDuration/3600000)}j`;
+    document.getElementById('activePlan').textContent = `Rencana ${activeRecord.startTime} · ${activeRecord.plannedHours}j`;
     document.getElementById('activeLocation').textContent = activeRecord.location ? `${activeRecord.location.distance}m` : '-';
     document.getElementById('activeSource').textContent = activeRecord.source === 'manager' ? 'Ditugaskan' : 'Sendiri';
     const autoTag = document.getElementById('activeAutoTag');
@@ -1104,7 +1172,7 @@ function renderEmpUpcoming() {
         </div>
         <div class="flex-1 min-w-0">
           <p class="font-bold text-slate-800 text-xs md:text-sm truncate">${r.reason} ${r.isHoliday ? '🏖' : '💼'}</p>
-          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${r.startTime} · ${Math.round(r.plannedDuration/3600000)} jam</p>
+          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${r.startTime} · ${r.plannedHours} jam</p>
           <p class="text-[10px] text-slate-400 mt-0.5 truncate">${r.source === 'manager' ? '📌 Ditugaskan' : '📝 Sendiri'}</p>
         </div>
         <div class="shrink-0 flex flex-col items-end gap-1">
@@ -1148,7 +1216,7 @@ function compactCard(r) {
       <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-sm">${r.isHoliday ? '🏖' : '💼'}</div>
       <div class="flex-1 min-w-0">
         <p class="text-xs md:text-sm font-semibold text-slate-800 truncate">${r.reason}</p>
-        <p class="text-[10px] md:text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime}</p>
+        <p class="text-[10px] md:text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime} · ${r.plannedHours}j</p>
       </div>
       ${statusBadge(r.status)}
     </div>`;
@@ -1159,13 +1227,14 @@ function fullCard(r) {
   const canEditProof = r.status === 'proof_revision';
   const canStart = r.status === 'approved' && (new Date(r.plannedStart) - Date.now()) < 3600000;
   const showRating = r.verifyRating != null;
+  const isNotCounted = r.status === 'cancelled' && r.cancelReason && r.cancelReason.includes('kurang dari');
   return `
-    <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border ${canEdit ? 'border-orange-200 border-l-4 border-l-orange-400' : canEditProof ? 'border-amber-200 border-l-4 border-l-amber-400' : 'border-slate-100'} p-4 md:p-5 card-hover">
+    <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border ${canEdit ? 'border-orange-200 border-l-4 border-l-orange-400' : canEditProof ? 'border-amber-200 border-l-4 border-l-amber-400' : isNotCounted ? 'border-slate-300 border-l-4 border-l-slate-400' : 'border-slate-100'} p-4 md:p-5 card-hover">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
         <div class="min-w-0">
           <p class="font-bold text-slate-800 text-sm md:text-base">${fmtDate(r.date)} · ${r.startTime} ${r.isHoliday ? '🏖' : '💼'}</p>
           <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">
-            ${Math.round(r.plannedDuration/3600000)} jam
+            ${r.plannedHours} jam
             · ${r.source === 'manager' ? '📌 Ditugaskan' : '📝 Sendiri'}
             ${r.autoStarted ? ' · ⚡ Auto' : ''}
           </p>
@@ -1176,8 +1245,14 @@ function fullCard(r) {
         <p>📋 ${r.reason}</p>
         <p>📝 ${r.desc}</p>
         ${r.proof ? `<p>📎 ${r.proof}</p>` : ''}
-        ${r.duration > 0 ? `<p>⏱ Aktual: ${fmtDurShort(r.duration)}</p>` : ''}
-        ${r.cancelReason ? `<p class="text-red-600">✕ Dibatalkan: ${r.cancelReason}</p>` : ''}
+        ${r.actualHours > 0 ? `<p>⏱ Aktual: ${r.actualHours.toFixed(1)} jam</p>` : ''}
+        ${isNotCounted ? `
+          <div class="bg-slate-100 rounded-xl p-2.5 mt-2 border border-slate-200">
+            <p class="text-slate-700 font-bold text-[10px] mb-1">⚪ Lembur Tidak Dihitung</p>
+            <p class="text-slate-600">${r.cancelReason}</p>
+          </div>
+        ` : ''}
+        ${r.cancelReason && !isNotCounted ? `<p class="text-red-600">✕ Dibatalkan: ${r.cancelReason}</p>` : ''}
         ${r.note ? `<p class="text-amber-700 bg-amber-50 rounded-xl p-2.5 mt-2">💬 <strong>Catatan:</strong> ${r.note}</p>` : ''}
         ${r.verifyNote && ['proof_revision', 'verify_rejected'].includes(r.status) ? `<p class="text-orange-700 bg-orange-50 rounded-xl p-2.5 mt-2">🔍 <strong>Verifikasi:</strong> ${r.verifyNote}</p>` : ''}
         ${showRating && r.status === 'completed' ? `
