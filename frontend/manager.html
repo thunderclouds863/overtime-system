@@ -487,11 +487,11 @@ function updateMgrStartTime() {
   const dateStr = document.getElementById('mgrDate').value;
   if (!dateStr) return;
   const holiday = isHoliday(dateStr);
-  const startTime = holiday ? '08:00' : '18:00';
+  const startTime = holiday ? '08:00' : '17:00';
   document.getElementById('mgrStart').value = startTime;
   document.getElementById('mgrJenisHari').innerHTML = holiday
     ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (08:00)</span>'
-    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (18:00)</span>';
+    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (17:00)</span>';
   document.getElementById('mgrJenisHari').className = holiday
     ? 'w-full mt-1.5 border border-emerald-200 rounded-2xl px-3 py-3 text-sm bg-emerald-50'
     : 'w-full mt-1.5 border border-blue-200 rounded-2xl px-3 py-3 text-sm bg-blue-50';
