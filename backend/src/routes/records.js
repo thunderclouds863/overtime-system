@@ -11,12 +11,6 @@ const OFFICE = {
   radius: 100
 };
 
-function levelNum(level) {
-  if (!level) return 0;
-  const match = String(level).match(/^(\d+)/);
-  return match ? parseInt(match[1]) : 0;
-}
-
 function isHoliday(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   const day = d.getDay();
@@ -31,42 +25,61 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Cari atasan sampai level >= 4a (untuk approval chain)
-async function buildApprovalChain(employeeId) {
-  const chain = [];
-  let currentId = employeeId;
-  const visited = new Set();
-
-  for (let i = 0; i < 10; i++) {
-    if (visited.has(currentId)) break;
-    visited.add(currentId);
-
+// Kumpulkan semua email manager aktif
+async function getManagerEmails() {
+  try {
     const result = await query(
-      'SELECT id, level, approver_ids, role FROM users WHERE id = $1',
-      [currentId]
+      "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
     );
-    const user = result.rows[0];
-    if (!user) break;
-    if (levelNum(user.level) >= 4) break;
-
-    const approverIds = user.approver_ids || [];
-    if (approverIds.length === 0) break;
-
-    const approverResult = await query(
-      'SELECT id, level, role, email, full_name FROM users WHERE id = ANY($1) AND is_active = true ORDER BY level DESC LIMIT 1',
-      [approverIds]
-    );
-    const approver = approverResult.rows[0];
-    if (!approver) break;
-
-    chain.push({ id: approver.id, email: approver.email, name: approver.full_name });
-    currentId = approver.id;
-
-    if (levelNum(approver.level) >= 4) break;
+    return result.rows.map(r => r.email).filter(Boolean);
+  } catch (err) {
+    console.error('getManagerEmails error:', err.message);
+    return [];
   }
-  return chain;
 }
 
+// Kirim email ke semua manager
+async function notifyAllManagers(templateName, data) {
+  const emails = await getManagerEmails();
+  console.log(`📨 notifyAllManagers: ${emails.length} manager ditemukan`);
+  if (emails.length === 0) {
+    console.warn('⚠️ Tidak ada manager aktif di database, email skip');
+    return 0;
+  }
+  let sent = 0;
+  for (const email of emails) {
+    const r = await sendEmail({
+      to: email,
+      ...templates[templateName](data)
+    });
+    if (r.success) sent++;
+  }
+  return sent;
+}
+
+// Kirim email ke satu user
+async function notifyUser(userId, templateName, data) {
+  try {
+    const result = await query('SELECT email FROM users WHERE id = $1', [userId]);
+    const email = result.rows[0]?.email;
+    if (!email) {
+      console.warn(`⚠️ User ${userId} tidak punya email`);
+      return 0;
+    }
+    const r = await sendEmail({
+      to: email,
+      ...templates[templateName](data)
+    });
+    return r.success ? 1 : 0;
+  } catch (err) {
+    console.error('notifyUser error:', err.message);
+    return 0;
+  }
+}
+
+// ============================================
+// GET employees list (untuk dropdown manager)
+// ============================================
 router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
   try {
     const result = await query(
@@ -79,7 +92,9 @@ router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
   }
 });
 
-// Buat pengajuan / tugaskan lembur
+// ============================================
+// POST / — Buat pengajuan lembur ATAU tugaskan
+// ============================================
 router.post('/', requireAuth, async (req, res) => {
   const {
     date, start_time, duration_hours,
@@ -88,15 +103,10 @@ router.post('/', requireAuth, async (req, res) => {
   } = req.body;
 
   const user = req.user;
-  const userLevel = levelNum(user.level);
   const isManager = user.role === 'manager' || user.role === 'admin';
 
   if (!date || !duration_hours || !reason || !description) {
-    return res.status(400).json({ error: 'Semua field wajib' });
-  }
-
-  if (!isManager && userLevel >= 3) {
-    return res.status(403).json({ error: 'Level kamu tidak bisa mengajukan lembur sendiri' });
+    return res.status(400).json({ error: 'Semua field wajib diisi' });
   }
 
   const holiday = isHoliday(date);
@@ -109,31 +119,7 @@ router.post('/', requireAuth, async (req, res) => {
 
   const targetId = isManager && employee_id ? employee_id : user.id;
   const targetName = isManager && employee_name ? employee_name : user.name;
-
-  // Bangun approval chain
-  let approvalChainIds = [];
-  let initialStatus = 'pending';
-  let notifyEmails = [];
-
-  if (isManager && employee_id) {
-    // Manager assign
-    if (userLevel >= 4) {
-      initialStatus = 'approved';
-    } else {
-      const chain = await buildApprovalChain(user.id);
-      approvalChainIds = chain.map(c => c.id);
-      notifyEmails = chain.slice(0, 1).map(c => c.email);
-    }
-  } else {
-    // Employee ajukan
-    const chain = await buildApprovalChain(user.id);
-    approvalChainIds = chain.map(c => c.id);
-    if (approvalChainIds.length === 0 && userLevel >= 4) {
-      initialStatus = 'approved';
-    } else {
-      notifyEmails = chain.slice(0, 1).map(c => c.email);
-    }
-  }
+  const initialStatus = isManager ? 'approved' : 'pending';
 
   try {
     const result = await query(
@@ -152,50 +138,45 @@ router.post('/', requireAuth, async (req, res) => {
         isManager ? 'manager' : 'employee',
         initialStatus,
         holiday,
-        approvalChainIds,
+        [],
         0
       ]
     );
 
     const record = result.rows[0];
+    console.log(`✅ Record created: ID=${record.id}, status=${record.status}, source=${record.source}`);
+
+    let emailSent = 0;
 
     // KIRIM EMAIL
-    let emailResult = { success: true, sent: 0 };
-    if (initialStatus === 'pending' && notifyEmails.length > 0) {
-      for (const email of notifyEmails) {
-        const r = await sendEmail({
-          to: email,
-          ...templates.newRequest({
-            employeeName: targetName,
-            date, startTime: finalStartTime,
-            duration: duration_hours,
-            reason, desc: description
-          })
-        });
-        if (r.success) emailResult.sent++;
-      }
-    } else if (initialStatus === 'approved') {
-      const emp = await query('SELECT email FROM users WHERE id = $1', [targetId]);
-      if (emp.rows[0]?.email) {
-        const r = await sendEmail({
-          to: emp.rows[0].email,
-          ...templates.approved({ date, startTime: finalStartTime })
-        });
-        if (r.success) emailResult.sent++;
-      }
+    if (!isManager) {
+      // Karyawan ngajuin → email ke semua manager
+      emailSent = await notifyAllManagers('newRequest', {
+        employeeName: targetName,
+        date, startTime: finalStartTime,
+        duration: duration_hours,
+        reason, desc: description
+      });
+    } else {
+      // Manager tugaskan → email ke employee
+      emailSent = await notifyUser(targetId, 'approved', {
+        date, startTime: finalStartTime
+      });
     }
 
     res.json({
       ...record,
-      email_sent: emailResult.sent,
-      email_recipients: notifyEmails
+      email_sent: emailSent
     });
   } catch (err) {
-    console.error('POST /records error:', err);
+    console.error('POST /records error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
+// ============================================
+// GET / — List records
+// ============================================
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user;
   const { status, limit = 100 } = req.query;
@@ -233,7 +214,9 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// Mulai lembur
+// ============================================
+// POST /:id/start — Mulai lembur dengan GPS
+// ============================================
 router.post('/:id/start', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { lat, lng, accuracy } = req.body;
@@ -259,10 +242,14 @@ router.post('/:id/start', requireAuth, async (req, res) => {
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan / tidak bisa dimulai' });
     res.json(result.rows[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// Selesai lembur
+// ============================================
+// POST /:id/finish — Selesai lembur + upload bukti
+// ============================================
 router.post('/:id/finish', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { proof_text, proof_file_name } = req.body;
@@ -282,28 +269,25 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
        RETURNING *`,
       [proof_text, proof_file_name || null, id, user.id, user.role]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan' });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan / tidak aktif' });
 
     const record = result.rows[0];
+    console.log(`✅ Record ${record.id} selesai, kirim email ke manager`);
 
-    // Kirim email ke semua manager aktif
-    const managers = await query("SELECT email FROM users WHERE role = 'manager' AND is_active = true");
-    let sent = 0;
-    for (const m of managers.rows) {
-      const r = await sendEmail({
-        to: m.email,
-        ...templates.proofSubmitted({
-          employeeName: record.employee_name,
-          duration: record.actual_duration
-        })
-      });
-      if (r.success) sent++;
-    }
+    const emailSent = await notifyAllManagers('proofSubmitted', {
+      employeeName: record.employee_name,
+      duration: record.actual_duration
+    });
 
-    res.json({ ...record, email_sent: sent });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    res.json({ ...record, email_sent: emailSent });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// ============================================
+// POST /:id/cancel — Batalkan lembur
+// ============================================
 router.post('/:id/cancel', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { reason } = req.body;
@@ -321,9 +305,14 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
     res.json(result.rows[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// ============================================
+// POST /:id/revise — Revisi pengajuan
+// ============================================
 router.post('/:id/revise', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { reason, description, proof } = req.body;
@@ -343,22 +332,24 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak bisa direvisi' });
 
     const record = result.rows[0];
-    const managers = await query("SELECT email FROM users WHERE role = 'manager' AND is_active = true");
-    for (const m of managers.rows) {
-      await sendEmail({
-        to: m.email,
-        ...templates.newRequest({
-          employeeName: user.name,
-          date: record.date, startTime: record.start_time,
-          duration: record.planned_duration,
-          reason, desc: description
-        })
-      });
-    }
-    res.json(record);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    const emailSent = await notifyAllManagers('newRequest', {
+      employeeName: user.name,
+      date: record.date,
+      startTime: record.start_time,
+      duration: record.planned_duration,
+      reason,
+      desc: description
+    });
+
+    res.json({ ...record, email_sent: emailSent });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
+// ============================================
+// POST /:id/revise-proof — Revisi bukti
+// ============================================
 router.post('/:id/revise-proof', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { proof_text, proof_file_name } = req.body;
@@ -376,8 +367,17 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
       [proof_text, proof_file_name || null, id, user.id, user.role]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
-    res.json(result.rows[0]);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+
+    const record = result.rows[0];
+    const emailSent = await notifyAllManagers('proofSubmitted', {
+      employeeName: record.employee_name,
+      duration: record.actual_duration
+    });
+
+    res.json({ ...record, email_sent: emailSent });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
