@@ -130,7 +130,7 @@ tailwind.config = {
               <th class="text-left px-4 py-3.5 font-bold">Email</th>
               <th class="text-left px-4 py-3.5 font-bold">Role</th>
               <th class="text-left px-4 py-3.5 font-bold">Level</th>
-              <th class="text-left px-4 py-3.5 font-bold">Departemen</th>
+              <th class="text-left px-4 py-3.5 font-bold">Jabatan</th>
               <th class="text-left px-4 py-3.5 font-bold">Atasan</th>
               <th class="text-left px-4 py-3.5 font-bold">Status</th>
               <th class="text-left px-4 py-3.5 font-bold">Aksi</th>
@@ -301,7 +301,7 @@ tailwind.config = {
         </div>
       </div>
       <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Departemen</label>
+        <label class="text-xs font-bold text-slate-600 uppercase">Jabatan</label>
         <input type="text" id="userDept" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Contoh: Keuangan">
       </div>
       <div>
@@ -662,7 +662,7 @@ async function downloadRekap() {
         'Nama': r.employee_name,
         'Email': r.employee_email || '-',
         'Level': r.employee_level || '-',
-        'Departemen': r.department || '-',
+        'Jabatan': r.jabatan || '-',
         'Tanggal': new Date(r.date).toLocaleDateString('id-ID'),
         'Jenis Hari': r.is_holiday ? 'Hari Libur' : 'Hari Kerja',
         'Jam Mulai': r.start_time || '-',
