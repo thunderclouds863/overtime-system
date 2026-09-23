@@ -19,10 +19,11 @@ export function generateToken(user) {
       id: user.id,
       email: user.email,
       role: user.role,
-      name: user.full_name
+      name: user.full_name,
+      level: user.level
     },
     JWT_SECRET,
-    { expiresIn: '7d' }
+    { expiresIn: '5B' }
   );
 }
 
