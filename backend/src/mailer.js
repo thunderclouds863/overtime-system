@@ -6,7 +6,7 @@ const BREVO_API_KEY = process.env.BREVO_API_KEY;
 const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'hrdcimory1@gmail.com';
 const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Sistem Lembur Cimory';
 
-console.log('📧 Mailer config:', {
+console.log('📧 Mailer init:', {
   provider: 'Brevo API v6',
   apiKey: BREVO_API_KEY ? '✓ set' : '✗ MISSING',
   sender: SENDER_EMAIL
@@ -17,32 +17,31 @@ if (BREVO_API_KEY) {
   brevo = new BrevoClient({ apiKey: BREVO_API_KEY });
   console.log('✅ Brevo API siap');
 } else {
-  console.error('❌ BREVO_API_KEY tidak di-set!');
+  console.error('❌ BREVO_API_KEY tidak di-set! Email tidak akan terkirim.');
 }
 
 export async function sendEmail({ to, subject, html }) {
   if (!to) {
-    console.warn('⚠️ sendEmail: alamat email kosong, skip');
+    console.warn('⚠️ sendEmail: email kosong, skip');
     return { success: false, error: 'no recipient' };
   }
   if (!brevo) {
-    console.warn('⚠️ sendEmail: Brevo tidak siap, skip');
+    console.warn('⚠️ sendEmail: Brevo tidak siap');
     return { success: false, error: 'no api key' };
   }
 
   try {
-    console.log(`📧 Mengirim email ke ${to}...`);
+    console.log(`📧 [SEND] Ke: ${to} | Subj: ${subject}`);
     const result = await brevo.transactionalEmails.sendTransacEmail({
       sender: { email: SENDER_EMAIL, name: SENDER_NAME },
       to: [{ email: to }],
       subject,
       htmlContent: html
     });
-
-    console.log(`✅ Email terkirim ke ${to}:`, result.messageId);
+    console.log(`✅ [OK] ${to} | ID: ${result.messageId}`);
     return { success: true, messageId: result.messageId };
   } catch (error) {
-    console.error(`❌ Email GAGAL ke ${to}:`, error.message);
+    console.error(`❌ [FAIL] ${to} | ${error.message}`);
     return { success: false, error: error.message };
   }
 }
@@ -54,11 +53,9 @@ const wrap = (title, color, content) => `
         <h2 style="margin:0;font-size:20px">${title}</h2>
         <p style="margin:4px 0 0;opacity:0.9;font-size:12px">Sistem Monitoring Lembur Cimory</p>
       </div>
-      <div style="padding:24px;color:#1e293b;font-size:14px;line-height:1.6">
-        ${content}
-      </div>
+      <div style="padding:24px;color:#1e293b;font-size:14px;line-height:1.6">${content}</div>
       <div style="background:#f8fafc;padding:16px;text-align:center;font-size:11px;color:#94a3b8">
-        Email otomatis dari Sistem Monitoring Lembur · Jangan balas email ini
+        Email otomatis · Jangan balas
       </div>
     </div>
   </div>
@@ -89,7 +86,7 @@ export const templates = {
         <tr><td style="padding:8px;color:#64748b;font-size:12px">Tanggal</td><td style="padding:8px;font-weight:bold">${d.date}</td></tr>
         <tr><td style="padding:8px;color:#64748b;font-size:12px">Jam Mulai</td><td style="padding:8px">${d.startTime}</td></tr>
       </table>
-      <p>Timer akan otomatis berjalan saat jam yang ditentukan tiba.</p>
+      <p>Timer akan otomatis berjalan saat jam tiba.</p>
     `)
   }),
 
@@ -97,11 +94,9 @@ export const templates = {
     subject: '[Lembur] ❌ Pengajuan ditolak',
     html: wrap('❌ Pengajuan Ditolak', '#ef4444,#dc2626', `
       <p>Pengajuan lembur Anda <strong>ditolak</strong>.</p>
-      <table style="width:100%;border-collapse:collapse;margin:16px 0">
-        <tr><td style="padding:8px;color:#64748b;font-size:12px">Tanggal</td><td style="padding:8px">${d.date}</td></tr>
-        <tr><td style="padding:8px;color:#64748b;font-size:12px">Jam</td><td style="padding:8px">${d.startTime}</td></tr>
-        <tr><td style="padding:8px;color:#64748b;font-size:12px">Alasan</td><td style="padding:8px;color:#dc2626">${d.note}</td></tr>
-      </table>
+      <div style="background:#fee2e2;padding:12px;border-radius:12px;margin:16px 0">
+        <p style="margin:0;color:#991b1b"><strong>Alasan:</strong> ${d.note}</p>
+      </div>
     `)
   }),
 
@@ -112,7 +107,6 @@ export const templates = {
       <div style="background:#fef3c7;padding:12px;border-radius:12px;margin:16px 0">
         <p style="margin:0;color:#92400e"><strong>Catatan:</strong> ${d.note}</p>
       </div>
-      <p>Silakan login dan perbaiki pengajuan.</p>
     `)
   }),
 
@@ -131,12 +125,11 @@ export const templates = {
   verifyApproved: (d) => ({
     subject: '[Lembur] ⭐ Hasil kerja disetujui',
     html: wrap('⭐ Hasil Kerja Disetujui', '#10b981,#059669', `
-      <p>Hasil lembur Anda telah <strong>diverifikasi dan disetujui</strong>.</p>
+      <p>Hasil lembur Anda telah <strong>diverifikasi</strong>.</p>
       <div style="background:#d1fae5;padding:16px;border-radius:12px;margin:16px 0;text-align:center">
         <p style="font-size:32px;margin:0">${'★'.repeat(d.rating)}${'☆'.repeat(5 - d.rating)}</p>
         <p style="margin:4px 0 0;font-size:12px;color:#065f46">Rating: ${d.rating}/5</p>
       </div>
-      <p>Lembur Anda akan masuk ke perhitungan penggajian.</p>
     `)
   }),
 
@@ -153,7 +146,7 @@ export const templates = {
   verifyRejected: (d) => ({
     subject: '[Lembur] ❌ Hasil kerja ditolak',
     html: wrap('❌ Hasil Ditolak', '#ef4444,#dc2626', `
-      <p>Hasil kerja lembur Anda <strong>ditolak</strong>. Lembur tidak akan dihitung.</p>
+      <p>Hasil kerja lembur Anda <strong>ditolak</strong>.</p>
       <div style="background:#fee2e2;padding:12px;border-radius:12px;margin:16px 0">
         <p style="margin:0;color:#991b1b"><strong>Alasan:</strong> ${d.note}</p>
       </div>
