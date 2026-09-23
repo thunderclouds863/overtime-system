@@ -129,7 +129,12 @@ router.get('/records', requireAuth, requireAdmin, async (req, res) => {
 
   try {
     let sql = `
-      SELECT r.*, u.email as employee_email, u.jabatan, u.level as employee_level
+      SELECT r.*,
+        u.email as employee_email,
+        u.jabatan,
+        u.level as employee_level,
+        ROUND(COALESCE(EXTRACT(EPOCH FROM r.planned_duration), 0) / 3600.0, 2) as planned_hours,
+        ROUND(COALESCE(EXTRACT(EPOCH FROM r.actual_duration), 0) / 3600.0, 2) as actual_hours
       FROM overtime_records r
       LEFT JOIN users u ON u.id = r.employee_id
       WHERE 1=1
