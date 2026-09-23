@@ -118,9 +118,7 @@ tailwind.config = {
         <h1 class="text-2xl font-extrabold text-slate-800">Manajemen User</h1>
         <p class="text-sm text-slate-500 mt-1">Tambah, edit, dan kelola akun pengguna</p>
       </div>
-      <button onclick="openUserModal()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-brand-600/25 transition">
-        + Tambah User
-      </button>
+      <button onclick="openUserModal()" class="bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-lg shadow-brand-600/25 transition">+ Tambah User</button>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -131,7 +129,9 @@ tailwind.config = {
               <th class="text-left px-4 py-3.5 font-bold">Nama</th>
               <th class="text-left px-4 py-3.5 font-bold">Email</th>
               <th class="text-left px-4 py-3.5 font-bold">Role</th>
+              <th class="text-left px-4 py-3.5 font-bold">Level</th>
               <th class="text-left px-4 py-3.5 font-bold">Departemen</th>
+              <th class="text-left px-4 py-3.5 font-bold">Atasan</th>
               <th class="text-left px-4 py-3.5 font-bold">Status</th>
               <th class="text-left px-4 py-3.5 font-bold">Aksi</th>
             </tr>
@@ -184,6 +184,7 @@ tailwind.config = {
           <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
             <tr>
               <th class="text-left px-4 py-3.5 font-bold">Karyawan</th>
+              <th class="text-left px-4 py-3.5 font-bold">Level</th>
               <th class="text-left px-4 py-3.5 font-bold">Tanggal</th>
               <th class="text-left px-4 py-3.5 font-bold">Jam</th>
               <th class="text-left px-4 py-3.5 font-bold">Durasi</th>
@@ -204,9 +205,7 @@ tailwind.config = {
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-2xl">
       <div class="bg-brand-50 border border-brand-100 rounded-xl p-4 mb-5">
-        <p class="text-xs text-brand-800">
-          <strong>💡 Cara pakai:</strong> Pilih periode dan filter, klik Download. File Excel akan otomatis ter-download.
-        </p>
+        <p class="text-xs text-brand-800"><strong>💡 Cara pakai:</strong> Pilih periode dan filter, klik Download. File Excel akan otomatis ter-download.</p>
       </div>
 
       <div class="grid md:grid-cols-2 gap-4">
@@ -238,12 +237,8 @@ tailwind.config = {
       </div>
 
       <div class="flex gap-3 mt-6">
-        <button onclick="downloadRekap()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-600/25">
-          📥 Download Excel
-        </button>
-        <button onclick="previewRekap()" class="flex-1 border border-brand-200 text-brand-700 hover:bg-brand-50 font-bold py-3 rounded-xl transition">
-          👁 Preview Data
-        </button>
+        <button onclick="downloadRekap()" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-600/25">📥 Download Excel</button>
+        <button onclick="previewRekap()" class="flex-1 border border-brand-200 text-brand-700 hover:bg-brand-50 font-bold py-3 rounded-xl transition">👁 Preview Data</button>
       </div>
 
       <div id="rekapPreview" class="mt-5 hidden">
@@ -255,8 +250,8 @@ tailwind.config = {
 
 </main>
 
-<div id="userModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 modal-in">
+<div id="userModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4 overflow-y-auto">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 modal-in my-8">
     <div class="flex items-center justify-between mb-4">
       <h3 class="font-extrabold text-slate-800 text-lg" id="userModalTitle">Tambah User</h3>
       <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
@@ -264,28 +259,48 @@ tailwind.config = {
     <input type="hidden" id="userId">
     <div class="space-y-3">
       <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Nama Lengkap</label>
+        <label class="text-xs font-bold text-slate-600 uppercase">Nama Lengkap *</label>
         <input type="text" id="userFullName" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
       </div>
       <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Email</label>
+        <label class="text-xs font-bold text-slate-600 uppercase">Email *</label>
         <input type="email" id="userEmail" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="nama@cimory.com">
       </div>
       <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Password</label>
+        <label class="text-xs font-bold text-slate-600 uppercase">Password *</label>
         <input type="password" id="userPassword" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Minimal 6 karakter">
       </div>
-      <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Role</label>
-        <select id="userRole" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
-          <option value="employee">Karyawan</option>
-          <option value="manager">Atasan</option>
-          <option value="admin">Admin</option>
-        </select>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs font-bold text-slate-600 uppercase">Role *</label>
+          <select id="userRole" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+            <option value="employee">Karyawan</option>
+            <option value="manager">Atasan</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 uppercase">Level *</label>
+          <select id="userLevel" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+            <option value="">— Pilih level —</option>
+            <option value="1a">1a</option>
+            <option value="2a">2a</option>
+            <option value="3a">3a</option>
+            <option value="4a">4a</option>
+            <option value="5a">5a</option>
+            <option value="6a">6a</option>
+            <option value="7a">7a</option>
+          </select>
+        </div>
       </div>
       <div>
         <label class="text-xs font-bold text-slate-600 uppercase">Departemen</label>
         <input type="text" id="userDept" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Contoh: Keuangan">
+      </div>
+      <div>
+        <label class="text-xs font-bold text-slate-600 uppercase">Atasan Langsung (bisa lebih dari satu)</label>
+        <select id="userApprovers" multiple class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm h-32"></select>
+        <p class="text-[10px] text-slate-400 mt-1">Tahan Ctrl (Windows) atau Cmd (Mac) untuk pilih lebih dari satu</p>
       </div>
     </div>
     <div class="flex gap-2 mt-5">
@@ -298,7 +313,7 @@ tailwind.config = {
 <div id="toast" class="fixed bottom-6 right-6 bg-ink-900 text-white px-4 py-3 rounded-xl text-sm hidden z-[60] shadow-2xl max-w-xs"></div>
 
 <script>
-const API_URL = 'https://overtime-backend-wd4c.onrender.com';
+const API_URL = 'https://overtime-backend.onrender.com';
 const token = localStorage.getItem('token');
 const user = JSON.parse(localStorage.getItem('user') || 'null');
 
@@ -308,6 +323,8 @@ if (!token || !user || user.role !== 'admin') {
 
 document.getElementById('adminName').textContent = user.full_name;
 document.getElementById('adminEmail').textContent = user.email;
+
+let allApprovers = [];
 
 function toast(msg, color='bg-ink-900') {
   const t = document.getElementById('toast');
@@ -342,11 +359,12 @@ function switchTab(tab) {
   document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
 
   if (tab === 'dashboard') loadStats();
-  if (tab === 'users') loadUsers();
+  if (tab === 'users') { loadApprovers(); loadUsers(); }
   if (tab === 'records') loadRecords();
   if (tab === 'rekap') loadRekapEmployees();
 }
 
+// ================= DASHBOARD =================
 async function loadStats() {
   try {
     const s = await api('/api/admin/stats');
@@ -365,16 +383,14 @@ async function loadStats() {
     }
     el.innerHTML = records.slice(0, 10).map(r => `
       <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition">
-        <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-sm">📋</div>
+        <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-sm">${r.is_holiday ? '🏖' : '💼'}</div>
         <div class="flex-1 min-w-0">
           <p class="text-sm font-semibold text-slate-800 truncate">${r.employee_name} — ${r.reason}</p>
           <p class="text-xs text-slate-500">${new Date(r.date).toLocaleDateString('id-ID')} · ${r.start_time} · ${statusLabel(r.status)}</p>
         </div>
       </div>
     `).join('');
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 function statusLabel(s) {
@@ -386,12 +402,23 @@ function statusLabel(s) {
   return map[s] || s;
 }
 
+// ================= USERS =================
+async function loadApprovers() {
+  try {
+    allApprovers = await api('/api/admin/approvers');
+    const sel = document.getElementById('userApprovers');
+    sel.innerHTML = allApprovers.map(a =>
+      `<option value="${a.id}">${a.full_name} (${a.level || '-'}) — ${a.role}</option>`
+    ).join('');
+  } catch (err) { console.error(err); }
+}
+
 async function loadUsers() {
   try {
     const users = await api('/api/admin/users');
     const el = document.getElementById('usersTable');
     if (users.length === 0) {
-      el.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400 text-sm">Belum ada user</td></tr>';
+      el.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-slate-400 text-sm">Belum ada user</td></tr>';
       return;
     }
     el.innerHTML = users.map(u => `
@@ -405,7 +432,13 @@ async function loadUsers() {
             'bg-slate-100 text-slate-600'
           }">${u.role.toUpperCase()}</span>
         </td>
+        <td class="px-4 py-3">
+          <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-purple-100 text-purple-700">${u.level || '-'}</span>
+        </td>
         <td class="px-4 py-3 text-slate-600 text-xs">${u.department || '-'}</td>
+        <td class="px-4 py-3 text-slate-600 text-xs">
+          ${(u.approvers || []).map(a => `${a.full_name} (${a.level || '-'})`).join(', ') || '-'}
+        </td>
         <td class="px-4 py-3">
           <span class="text-[10px] font-bold px-2 py-1 rounded-full ${u.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
             ${u.is_active ? 'AKTIF' : 'NONAKTIF'}
@@ -417,9 +450,7 @@ async function loadUsers() {
         </td>
       </tr>
     `).join('');
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 function openUserModal(editData = null) {
@@ -429,8 +460,16 @@ function openUserModal(editData = null) {
   document.getElementById('userEmail').value = editData?.email || '';
   document.getElementById('userPassword').value = '';
   document.getElementById('userRole').value = editData?.role || 'employee';
+  document.getElementById('userLevel').value = editData?.level || '';
   document.getElementById('userDept').value = editData?.department || '';
   document.getElementById('userEmail').disabled = !!editData;
+
+  const sel = document.getElementById('userApprovers');
+  const approverIds = (editData?.approver_ids || []).map(x => parseInt(x));
+  Array.from(sel.options).forEach(opt => {
+    opt.selected = approverIds.includes(parseInt(opt.value));
+  });
+
   document.getElementById('userModal').classList.remove('hidden');
   document.getElementById('userModal').classList.add('flex');
 }
@@ -446,26 +485,32 @@ async function saveUser() {
   const email = document.getElementById('userEmail').value.trim();
   const password = document.getElementById('userPassword').value;
   const role = document.getElementById('userRole').value;
+  const level = document.getElementById('userLevel').value;
   const department = document.getElementById('userDept').value.trim();
 
+  const sel = document.getElementById('userApprovers');
+  const approver_ids = Array.from(sel.selectedOptions).map(o => parseInt(o.value));
+
   if (!full_name) return toast('Nama wajib', 'bg-red-600');
+  if (!level) return toast('Level wajib', 'bg-red-600');
 
   try {
     if (id) {
-      const payload = { full_name, role, department };
+      const payload = { full_name, role, department, level, approver_ids };
       if (password) payload.password = password;
       await api(`/api/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
       toast('User diupdate', 'bg-emerald-600');
     } else {
       if (!email || !password) return toast('Email & password wajib', 'bg-red-600');
-      await api('/api/admin/users', { method: 'POST', body: JSON.stringify({ email, password, full_name, role, department }) });
+      await api('/api/admin/users', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, full_name, role, department, level, approver_ids })
+      });
       toast('User ditambahkan', 'bg-emerald-600');
     }
     closeUserModal();
     loadUsers();
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 async function editUser(id) {
@@ -480,11 +525,10 @@ async function deleteUser(id) {
     await api(`/api/admin/users/${id}`, { method: 'DELETE' });
     toast('User dihapus', 'bg-emerald-600');
     loadUsers();
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
+// ================= RECORDS =================
 async function loadRecords() {
   const params = new URLSearchParams();
   const status = document.getElementById('filterStatus').value;
@@ -498,19 +542,22 @@ async function loadRecords() {
     const records = await api('/api/admin/records?' + params.toString());
     const el = document.getElementById('recordsTable');
     if (records.length === 0) {
-      el.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>';
+      el.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>';
       return;
     }
     el.innerHTML = records.map(r => {
       let duration = '-';
       if (r.actual_duration) {
-        const parts = r.actual_duration.split(':');
+        const parts = String(r.actual_duration).split(':');
         duration = parts[0] + 'j ' + parts[1] + 'm';
       }
       return `
       <tr class="hover:bg-slate-50 transition">
         <td class="px-4 py-3 font-semibold text-slate-800 text-sm">${r.employee_name}</td>
-        <td class="px-4 py-3 text-slate-600 text-sm">${new Date(r.date).toLocaleDateString('id-ID')}</td>
+        <td class="px-4 py-3 text-xs">
+          <span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">${r.employee_level || '-'}</span>
+        </td>
+        <td class="px-4 py-3 text-slate-600 text-sm">${new Date(r.date).toLocaleDateString('id-ID')} ${r.is_holiday ? '🏖' : '💼'}</td>
         <td class="px-4 py-3 text-slate-600 text-xs">${r.start_time}${r.actual_end ? ' — ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
         <td class="px-4 py-3 text-slate-600 text-sm">${duration}</td>
         <td class="px-4 py-3">
@@ -518,9 +565,7 @@ async function loadRecords() {
         </td>
       </tr>
     `}).join('');
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 function resetFilter() {
@@ -530,6 +575,7 @@ function resetFilter() {
   loadRecords();
 }
 
+// ================= REKAP =================
 async function loadRekapEmployees() {
   try {
     const users = await api('/api/admin/users');
@@ -550,7 +596,6 @@ async function fetchRekapData() {
   if (status) params.set('status', status);
   if (emp) params.set('employee_id', emp);
   params.set('limit', '1000');
-
   return await api('/api/admin/records?' + params.toString());
 }
 
@@ -568,6 +613,7 @@ async function previewRekap() {
         <thead class="text-slate-500 text-[10px] uppercase">
           <tr>
             <th class="text-left py-1">Nama</th>
+            <th class="text-left py-1">Level</th>
             <th class="text-left py-1">Tanggal</th>
             <th class="text-left py-1">Jam</th>
             <th class="text-left py-1">Status</th>
@@ -577,7 +623,8 @@ async function previewRekap() {
           ${data.slice(0, 20).map(r => `
             <tr class="border-t border-slate-200">
               <td class="py-1.5">${r.employee_name}</td>
-              <td class="py-1.5">${new Date(r.date).toLocaleDateString('id-ID')}</td>
+              <td class="py-1.5">${r.employee_level || '-'}</td>
+              <td class="py-1.5">${new Date(r.date).toLocaleDateString('id-ID')} ${r.is_holiday ? '🏖' : '💼'}</td>
               <td class="py-1.5">${r.start_time}</td>
               <td class="py-1.5">${statusLabel(r.status)}</td>
             </tr>
@@ -586,18 +633,13 @@ async function previewRekap() {
       </table>
       ${data.length > 20 ? `<p class="text-center mt-2 text-slate-400">...dan ${data.length - 20} lainnya</p>` : ''}
     `;
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 async function downloadRekap() {
   try {
     const data = await fetchRekapData();
-
-    if (data.length === 0) {
-      return toast('Tidak ada data untuk di-download', 'bg-amber-600');
-    }
+    if (data.length === 0) return toast('Tidak ada data untuk di-download', 'bg-amber-600');
 
     const rows = data.map(r => {
       const start = r.actual_start ? new Date(r.actual_start) : null;
@@ -609,12 +651,13 @@ async function downloadRekap() {
         const m = Math.floor((diffMs % 3600000) / 60000);
         durationStr = `${h}j ${m}m`;
       }
-
       return {
         'Nama': r.employee_name,
         'Email': r.employee_email || '-',
+        'Level': r.employee_level || '-',
         'Departemen': r.department || '-',
         'Tanggal': new Date(r.date).toLocaleDateString('id-ID'),
+        'Jenis Hari': r.is_holiday ? 'Hari Libur' : 'Hari Kerja',
         'Jam Mulai': r.start_time || '-',
         'Jam Selesai': end ? end.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}) : '-',
         'Durasi Aktual': durationStr,
@@ -624,6 +667,7 @@ async function downloadRekap() {
         'Sumber': r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan',
         'Status': statusLabel(r.status),
         'Rating': r.verify_rating || '-',
+        'Diverifikasi Level': r.verified_by_level || '-',
         'Catatan Atasan': r.verify_note || r.approval_note || '-',
         'Bukti': r.proof_text || '-'
       };
@@ -632,22 +676,17 @@ async function downloadRekap() {
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Rekap Lembur');
-
     ws['!cols'] = [
-      { wch: 20 }, { wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
-      { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 15 },
-      { wch: 8 }, { wch: 25 }, { wch: 30 }
+      { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 15 }, { wch: 12 }, { wch: 12 },
+      { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 30 },
+      { wch: 20 }, { wch: 15 }, { wch: 8 }, { wch: 15 }, { wch: 25 }, { wch: 30 }
     ];
 
     const start = document.getElementById('rekapStart').value || 'awal';
     const end = document.getElementById('rekapEnd').value || 'akhir';
-    const filename = `Rekap-Lembur_${start}_${end}.xlsx`;
-
-    XLSX.writeFile(wb, filename);
+    XLSX.writeFile(wb, `Rekap-Lembur_${start}_${end}.xlsx`);
     toast(`✓ Downloaded: ${data.length} record`, 'bg-emerald-600');
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 const today = new Date();
