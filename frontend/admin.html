@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script>
 tailwind.config = {
   theme: {
@@ -53,7 +54,6 @@ tailwind.config = {
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
-<!-- TOP BAR -->
 <header class="fixed top-0 left-0 right-0 h-14 md:h-16 bg-ink-900 text-white z-40 border-b border-slate-800">
   <div class="h-full px-3 md:px-5 flex items-center justify-between">
     <div class="flex items-center gap-2 md:gap-3">
@@ -76,7 +76,6 @@ tailwind.config = {
   </div>
 </header>
 
-<!-- SIDEBAR (Desktop only) -->
 <aside class="hidden md:flex fixed top-16 left-0 bottom-0 w-60 bg-ink-900 text-slate-400 z-30 flex-col border-r border-slate-800">
   <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
     <p class="text-[10px] uppercase text-slate-500 px-3 pt-2 pb-1 font-bold tracking-wider">Admin</p>
@@ -91,7 +90,6 @@ tailwind.config = {
   </div>
 </aside>
 
-<!-- BOTTOM NAV (Mobile only) -->
 <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 z-40 safe-bottom">
   <div class="flex items-center justify-around px-1 py-2">
     <button onclick="switchTab('dashboard')" data-mobile-tab="dashboard" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[60px]">
@@ -111,7 +109,6 @@ tailwind.config = {
 
 <main class="md:ml-60 pt-16 md:pt-20 pb-24 md:pb-8 px-3 md:px-6 max-w-[1500px]">
 
-  <!-- DASHBOARD -->
   <section id="tab-dashboard" class="tab-content space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Dashboard Admin</h1>
@@ -159,7 +156,6 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- USERS -->
   <section id="tab-users" class="tab-content hidden space-y-4">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
@@ -190,11 +186,10 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- RECORDS -->
   <section id="tab-records" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Semua Record Lembur</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Monitor semua aktivitas lembur</p>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Monitor & cetak bukti lembur</p>
     </div>
 
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-3 md:p-4">
@@ -238,6 +233,7 @@ tailwind.config = {
               <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden lg:table-cell">Jam</th>
               <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Durasi</th>
               <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Status</th>
+              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Aksi</th>
             </tr>
           </thead>
           <tbody id="recordsTable" class="divide-y divide-slate-100"></tbody>
@@ -246,16 +242,15 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- REKAP -->
   <section id="tab-rekap" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Download Rekap</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Export data lembur ke Excel</p>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Export data lembur ke Excel (dengan link cetak bukti)</p>
     </div>
 
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-6 max-w-2xl">
       <div class="bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 md:p-4 mb-5">
-        <p class="text-xs text-brand-900"><strong>💡 Cara pakai:</strong> Pilih periode & filter, klik Download. File Excel akan otomatis ter-download.</p>
+        <p class="text-xs text-brand-900"><strong>💡 Info:</strong> Excel akan berisi data lengkap + <strong>hyperlink</strong> di kolom "Cetak Bukti". Klik link di Excel → langsung buka sistem & tampilkan modal cetak PDF.</p>
       </div>
 
       <div class="grid md:grid-cols-2 gap-3 md:gap-4">
@@ -272,10 +267,9 @@ tailwind.config = {
           <select id="rekapStatus" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
             <option value="">Semua Status</option>
             <option value="completed">Selesai (Approved)</option>
-            <option value="pending">Pending</option>
+            <option value="pending_verification">Menunggu Verifikasi</option>
             <option value="approved">Approved</option>
             <option value="active">Aktif</option>
-            <option value="pending_verification">Menunggu Verifikasi</option>
           </select>
         </div>
         <div>
@@ -334,42 +328,28 @@ tailwind.config = {
           </div>
           <div>
             <label class="text-xs font-bold text-slate-600 uppercase">Level *</label>
-              <select id="userLevel" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-                <option value="">— Pilih level —</option>
-                <optgroup label="Level 1">
-                  <option value="1a">1a</option>
-                  <option value="1b">1b</option>
-                  <option value="1c">1c</option>
-                </optgroup>
-                <optgroup label="Level 2">
-                  <option value="2a">2a</option>
-                  <option value="2b">2b</option>
-                  <option value="2c">2c</option>
-                </optgroup>
-                <optgroup label="Level 3">
-                  <option value="3a">3a</option>
-                  <option value="3b">3b</option>
-                  <option value="3c">3c</option>
-                </optgroup>
-                <optgroup label="Level 4">
-                  <option value="4a">4a</option>
-                  <option value="4b">4b</option>
-                  <option value="4c">4c</option>
-                </optgroup>
-                <optgroup label="Level 5">
-                  <option value="5a">5a</option>
-                  <option value="5b">5b</option>
-                  <option value="5c">5c</option>
-                </optgroup>
-                <optgroup label="Level 6">
-                  <option value="6a">6a</option>
-                  <option value="6b">6b</option>
-                </optgroup>
-                <optgroup label="Level 7">
-                  <option value="7a">7a</option>
-                  <option value="7b">7b</option>
-                </optgroup>
-              </select>
+            <select id="userLevel" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
+              <option value="">— Pilih level —</option>
+              <option value="1a">1a</option>
+              <option value="1b">1b</option>
+              <option value="1c">1c</option>
+              <option value="2a">2a</option>
+              <option value="2b">2b</option>
+              <option value="2c">2c</option>
+              <option value="3a">3a</option>
+              <option value="3b">3b</option>
+              <option value="3c">3c</option>
+              <option value="4a">4a</option>
+              <option value="4b">4b</option>
+              <option value="4c">4c</option>
+              <option value="5a">5a</option>
+              <option value="5b">5b</option>
+              <option value="5c">5c</option>
+              <option value="6a">6a</option>
+              <option value="6b">6b</option>
+              <option value="7a">7a</option>
+              <option value="7b">7b</option>
+            </select>
           </div>
         </div>
         <div>
@@ -392,10 +372,34 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- MODAL CETAK BUKTI -->
+<div id="modalBukti" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center z-50 p-0 md:p-4 overflow-y-auto">
+  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-2xl w-full modal-in my-0 md:my-8">
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-3xl">
+      <div>
+        <h3 class="font-extrabold text-slate-800 text-base md:text-lg">🖨 Bukti Lembur</h3>
+        <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">Preview sebelum download PDF</p>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="downloadBuktiPDF()" id="btnDownloadPDF" class="bg-gradient-to-r from-brand-600 to-neon-violet text-white font-bold text-xs md:text-sm px-3 md:px-4 py-2.5 rounded-xl shadow-lg transition active:scale-95">
+          📥 Download PDF
+        </button>
+        <button onclick="closeBuktiModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none w-10 h-10 flex items-center justify-center">×</button>
+      </div>
+    </div>
+    <div class="p-4 md:p-5 max-h-[75vh] overflow-y-auto bg-slate-100 rounded-b-3xl">
+      <div id="buktiContent" class="bg-white p-6 md:p-8 max-w-[700px] mx-auto shadow-lg" style="font-family:'Segoe UI',sans-serif">
+        <div class="text-center py-8 text-slate-400 text-sm">Memuat...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div id="toast" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 bg-ink-900 text-white px-4 py-3 rounded-2xl text-sm hidden z-[60] shadow-2xl max-w-xs modal-in"></div>
 
 <script>
 const API_URL = 'https://overtime-backend-wd4c.onrender.com';
+const APP_URL = 'https://overtime-system.desi-arr863.workers.dev';
 const token = localStorage.getItem('token');
 const user = JSON.parse(localStorage.getItem('user') || 'null');
 
@@ -407,6 +411,7 @@ document.getElementById('adminName').textContent = user.full_name;
 document.getElementById('adminEmail').textContent = user.email;
 
 let allApprovers = [];
+let currentBuktiRecord = null;
 
 function toast(msg, color='bg-ink-900') {
   const t = document.getElementById('toast');
@@ -414,7 +419,7 @@ function toast(msg, color='bg-ink-900') {
   t.textContent = msg;
   t.classList.remove('hidden');
   clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.add('hidden'), 3200);
+  t._t = setTimeout(() => t.classList.add('hidden'), 3500);
 }
 
 function logout() { localStorage.clear(); window.location.href = 'index.html'; }
@@ -635,6 +640,9 @@ async function deleteUser(id) {
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
+// ============================================
+// RECORDS + TOMBOL CETAK
+// ============================================
 async function loadRecords() {
   const params = new URLSearchParams();
   const status = document.getElementById('filterStatus').value;
@@ -648,15 +656,13 @@ async function loadRecords() {
     const records = await api('/api/admin/records?' + params.toString());
     const el = document.getElementById('recordsTable');
     if (records.length === 0) {
-      el.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>';
+      el.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>';
       return;
     }
     el.innerHTML = records.map(r => {
-      let duration = '-';
-      if (r.actual_duration) {
-        const parts = String(r.actual_duration).split(':');
-        duration = parts[0] + 'j ' + parts[1] + 'm';
-      }
+      const duration = r.actual_hours ? `${parseFloat(r.actual_hours).toFixed(1)}j` : 
+                       (r.planned_hours ? `${r.planned_hours}j (rencana)` : '-');
+      const canPrint = ['completed', 'verify_rejected', 'pending_verification'].includes(r.status);
       return `
       <tr class="hover:bg-slate-50 transition">
         <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">
@@ -672,6 +678,11 @@ async function loadRecords() {
         <td class="px-3 md:px-4 py-3">
           <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">${statusLabel(r.status)}</span>
         </td>
+        <td class="px-3 md:px-4 py-3">
+          ${canPrint ? `
+            <button onclick="openBukti(${r.id})" class="text-brand-600 hover:text-brand-800 text-xs font-bold whitespace-nowrap">🖨 Cetak</button>
+          ` : '<span class="text-xs text-slate-300">—</span>'}
+        </td>
       </tr>
     `}).join('');
   } catch (err) { toast(err.message, 'bg-red-600'); }
@@ -684,6 +695,165 @@ function resetFilter() {
   loadRecords();
 }
 
+// ============================================
+// CETAK BUKTI — Modal + PDF
+// ============================================
+async function openBukti(recordId) {
+  try {
+    const records = await api('/api/admin/records?limit=1000');
+    const r = records.find(x => x.id === recordId);
+    if (!r) return toast('Record tidak ditemukan', 'bg-red-600');
+
+    currentBuktiRecord = r;
+
+    const statusText = statusLabel(r.status);
+    const verifyStars = r.verify_rating ? '★'.repeat(r.verify_rating) + '☆'.repeat(5 - r.verify_rating) : '-';
+    const approvedDate = r.approved_at ? new Date(r.approved_at).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
+    const verifiedDate = r.verified_at ? new Date(r.verified_at).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
+    const actualStart = r.actual_start ? new Date(r.actual_start).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
+    const actualEnd = r.actual_end ? new Date(r.actual_end).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
+
+    // Hash verifikasi
+    const hashInput = `${r.id}-${r.employee_name}-${r.date}-${r.status}`;
+    let hash = 0;
+    for (let i = 0; i < hashInput.length; i++) {
+      hash = ((hash << 5) - hash) + hashInput.charCodeAt(i);
+      hash = hash & hash;
+    }
+    const verifyHash = Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
+
+    document.getElementById('buktiContent').innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #6366f1;padding-bottom:16px;margin-bottom:24px">
+        <div style="width:60px;height:60px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:12px;display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:24px">C</div>
+        <div style="flex:1">
+          <h1 style="margin:0;font-size:20px;color:#0f172a;font-weight:800">BUKTI PELAKSANAAN LEMBUR</h1>
+          <p style="margin:2px 0 0;font-size:12px;color:#64748b">Sistem Monitoring Lembur Cimory</p>
+        </div>
+        <div style="text-align:right;font-size:10px;color:#94a3b8">
+          <p style="margin:0">No. Bukti</p>
+          <p style="margin:2px 0 0;font-weight:700;color:#6366f1;font-size:14px">#OT-${String(r.id).padStart(5,'0')}</p>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Informasi Karyawan</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <tr><td style="padding:8px 0;color:#64748b;width:140px">Nama</td><td style="padding:8px 0;font-weight:600;color:#0f172a">${r.employee_name}</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Email</td><td style="padding:8px 0;color:#0f172a">${r.employee_email || '-'}</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Level</td><td style="padding:8px 0;color:#0f172a">${r.employee_level || '-'}</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Jabatan</td><td style="padding:8px 0;color:#0f172a">${r.jabatan || '-'}</td></tr>
+        </table>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Detail Lembur</h2>
+        <table style="width:100%;border-collapse:collapse;font-size:13px;background:#f8fafc;border-radius:8px;padding:12px">
+          <tr><td style="padding:8px 12px;color:#64748b;width:140px">Tanggal</td><td style="padding:8px 12px;font-weight:600;color:#0f172a">${new Date(r.date).toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'})} ${r.is_holiday ? '(Hari Libur)' : '(Hari Kerja)'}</td></tr>
+          <tr><td style="padding:8px 12px;color:#64748b">Jam Rencana</td><td style="padding:8px 12px;color:#0f172a">${r.start_time} · ${r.planned_hours || 0} jam</td></tr>
+          <tr><td style="padding:8px 12px;color:#64748b">Waktu Aktual</td><td style="padding:8px 12px;color:#0f172a">${actualStart} — ${actualEnd}</td></tr>
+          <tr><td style="padding:8px 12px;color:#64748b">Durasi Aktual</td><td style="padding:8px 12px;font-weight:700;color:#10b981">${r.actual_hours ? parseFloat(r.actual_hours).toFixed(2) + ' jam' : '-'}</td></tr>
+          <tr><td style="padding:8px 12px;color:#64748b">Kategori</td><td style="padding:8px 12px;color:#0f172a">${r.reason}</td></tr>
+          <tr><td style="padding:8px 12px;color:#64748b">Sumber</td><td style="padding:8px 12px;color:#0f172a">${r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan'}</td></tr>
+        </table>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Rencana Pekerjaan</h2>
+        <div style="background:#f8fafc;padding:12px;border-radius:8px;font-size:13px;color:#0f172a;line-height:1.6">${r.description || '-'}</div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Bukti Hasil Kerja</h2>
+        <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px;border-radius:8px;font-size:13px;color:#065f46;line-height:1.6">
+          ${r.proof_text || '(Belum ada bukti yang diupload)'}
+          ${r.proof_file_name ? `<p style="margin:8px 0 0;font-size:11px;color:#059669">📎 ${r.proof_file_name}</p>` : ''}
+          ${r.proof_uploaded_at ? `<p style="margin:4px 0 0;font-size:10px;color:#94a3b8">Diunggah: ${new Date(r.proof_uploaded_at).toLocaleString('id-ID')}</p>` : ''}
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Persetujuan Atasan</h2>
+        <div style="border:1px solid #e2e8f0;padding:16px;border-radius:8px;font-size:13px">
+          <table style="width:100%;border-collapse:collapse">
+            <tr><td style="padding:6px 0;color:#64748b;width:140px">Status</td><td style="padding:6px 0;font-weight:700;color:${r.status === 'completed' ? '#10b981' : r.status === 'rejected' ? '#dc2626' : '#f59e0b'}">${statusText}</td></tr>
+            ${r.approved_at ? `<tr><td style="padding:6px 0;color:#64748b">Disetujui Pada</td><td style="padding:6px 0;color:#0f172a">${approvedDate}</td></tr>` : ''}
+            ${r.approval_note ? `<tr><td style="padding:6px 0;color:#64748b;vertical-align:top">Catatan</td><td style="padding:6px 0;color:#0f172a;font-style:italic">"${r.approval_note}"</td></tr>` : ''}
+          </table>
+        </div>
+      </div>
+
+      ${r.verify_rating ? `
+      <div style="margin-bottom:20px">
+        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Penilaian Hasil Kerja</h2>
+        <div style="border:1px solid #e2e8f0;padding:16px;border-radius:8px;font-size:13px;text-align:center;background:#fefce8">
+          <p style="margin:0;font-size:32px;letter-spacing:6px;color:#f59e0b">${verifyStars}</p>
+          <p style="margin:8px 0 0;font-weight:700;color:#0f172a">Rating: ${r.verify_rating}/5</p>
+          ${r.verify_note ? `<p style="margin:8px 0 0;font-style:italic;color:#475569">"${r.verify_note}"</p>` : ''}
+          ${r.verified_at ? `<p style="margin:8px 0 0;font-size:11px;color:#94a3b8">Diverifikasi: ${verifiedDate}${r.verified_by_level ? ' · Level ' + r.verified_by_level : ''}</p>` : ''}
+        </div>
+      </div>
+      ` : ''}
+
+      <div style="margin-top:32px;padding-top:16px;border-top:2px dashed #cbd5e1;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#94a3b8">
+        <div>
+          <p style="margin:0">Dokumen ini digenerate otomatis oleh sistem</p>
+          <p style="margin:4px 0 0">Dicetak: ${new Date().toLocaleString('id-ID')}</p>
+        </div>
+        <div style="text-align:right">
+          <p style="margin:0">Hash Verifikasi</p>
+          <p style="margin:4px 0 0;font-family:monospace;font-weight:700;color:#6366f1;font-size:12px">${verifyHash}</p>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('modalBukti').classList.remove('hidden');
+    document.getElementById('modalBukti').classList.add('flex');
+  } catch (err) {
+    toast(err.message, 'bg-red-600');
+  }
+}
+
+function closeBuktiModal() {
+  document.getElementById('modalBukti').classList.add('hidden');
+  document.getElementById('modalBukti').classList.remove('flex');
+  currentBuktiRecord = null;
+}
+
+async function downloadBuktiPDF() {
+  if (!currentBuktiRecord) return toast('Tidak ada bukti untuk dicetak', 'bg-red-600');
+
+  const btn = document.getElementById('btnDownloadPDF');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Membuat PDF...';
+
+  try {
+    const element = document.getElementById('buktiContent');
+    const filename = `Bukti-Lembur_${String(currentBuktiRecord.id).padStart(5,'0')}_${currentBuktiRecord.employee_name.replace(/\s+/g,'-')}_${currentBuktiRecord.date}.pdf`;
+
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+    };
+
+    await html2pdf().set(opt).from(element).save();
+    toast('✅ PDF berhasil di-download', 'bg-emerald-600');
+  } catch (err) {
+    console.error('PDF error:', err);
+    toast('❌ Gagal buat PDF: ' + err.message, 'bg-red-600');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+// ============================================
+// REKAP EXCEL — dengan hyperlink cetak
+// ============================================
 async function loadRekapEmployees() {
   try {
     const users = await api('/api/admin/users');
@@ -720,21 +890,21 @@ async function previewRekap() {
       <table class="w-full">
         <thead class="text-slate-500 text-[10px] uppercase">
           <tr>
+            <th class="text-left py-1">ID</th>
             <th class="text-left py-1">Nama</th>
-            <th class="text-left py-1">Level</th>
             <th class="text-left py-1">Tanggal</th>
-            <th class="text-left py-1">Jam</th>
             <th class="text-left py-1">Status</th>
+            <th class="text-left py-1">Bukti</th>
           </tr>
         </thead>
         <tbody>
           ${data.slice(0, 20).map(r => `
             <tr class="border-t border-slate-200">
+              <td class="py-1.5 font-mono text-[10px]">#OT-${String(r.id).padStart(5,'0')}</td>
               <td class="py-1.5">${r.employee_name}</td>
-              <td class="py-1.5">${r.employee_level || '-'}</td>
-              <td class="py-1.5">${new Date(r.date).toLocaleDateString('id-ID')} ${r.is_holiday ? '🏖' : '💼'}</td>
-              <td class="py-1.5">${r.start_time}</td>
+              <td class="py-1.5">${new Date(r.date).toLocaleDateString('id-ID')}</td>
               <td class="py-1.5">${statusLabel(r.status)}</td>
+              <td class="py-1.5 text-brand-600">🔗 Cetak</td>
             </tr>
           `).join('')}
         </tbody>
@@ -749,60 +919,99 @@ async function downloadRekap() {
     const data = await fetchRekapData();
     if (data.length === 0) return toast('Tidak ada data', 'bg-amber-600');
 
-    const rows = data.map(r => {
-      const start = r.actual_start ? new Date(r.actual_start) : null;
-      const end = r.actual_end ? new Date(r.actual_end) : null;
-      let durationStr = '-';
-      if (start && end) {
-        const diffMs = end - start;
-        const h = Math.floor(diffMs / 3600000);
-        const m = Math.floor((diffMs % 3600000) / 60000);
-        durationStr = `${h}j ${m}m`;
-      }
-      return {
-        'Nama': r.employee_name,
-        'Email': r.employee_email || '-',
-        'Level': r.employee_level || '-',
-        'Jabatan': r.jabatan || '-',
-        'Tanggal': new Date(r.date).toLocaleDateString('id-ID'),
-        'Jenis Hari': r.is_holiday ? 'Hari Libur' : 'Hari Kerja',
-        'Jam Mulai': r.start_time || '-',
-        'Jam Selesai': end ? end.toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}) : '-',
-        'Durasi Aktual': durationStr,
-        'Durasi Rencana': r.planned_duration || '-',
-        'Kategori': r.reason,
-        'Deskripsi': r.description,
-        'Sumber': r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan',
-        'Status': statusLabel(r.status),
-        'Rating': r.verify_rating || '-',
-        'Diverifikasi Level': r.verified_by_level || '-',
-        'Catatan Atasan': r.verify_note || r.approval_note || '-',
-        'Bukti': r.proof_text || '-'
+    const rows = data.map(r => ({
+      'ID': `#OT-${String(r.id).padStart(5,'0')}`,
+      'Nama': r.employee_name,
+      'Email': r.employee_email || '-',
+      'Level': r.employee_level || '-',
+      'Jabatan': r.jabatan || '-',
+      'Tanggal': new Date(r.date).toLocaleDateString('id-ID'),
+      'Jenis Hari': r.is_holiday ? 'Hari Libur' : 'Hari Kerja',
+      'Jam Mulai': r.start_time || '-',
+      'Jam Selesai': r.actual_end ? new Date(r.actual_end).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}) : '-',
+      'Durasi Aktual': r.actual_hours ? parseFloat(r.actual_hours).toFixed(2) + ' jam' : '-',
+      'Durasi Rencana': r.planned_hours ? r.planned_hours + ' jam' : '-',
+      'Kategori': r.reason,
+      'Deskripsi': r.description,
+      'Sumber': r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan',
+      'Status': statusLabel(r.status),
+      'Rating': r.verify_rating || '-',
+      'Diverifikasi Level': r.verified_by_level || '-',
+      'Catatan Atasan': r.verify_note || r.approval_note || '-',
+      'Bukti Hasil Kerja': r.proof_text || '-',
+      'Ada File Bukti': r.proof_file_name ? 'Ya' : 'Tidak',
+      'Nama File Bukti': r.proof_file_name || '-'
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    // Tambah kolom "Cetak Bukti" dengan hyperlink
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    const extraCol = range.e.c + 1;
+    const headerCell = XLSX.utils.encode_cell({ r: 0, c: extraCol });
+    ws[headerCell] = { v: 'Cetak Bukti', t: 's' };
+    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: range.e.r, c: extraCol } });
+
+    data.forEach((r, idx) => {
+      const rowIdx = idx + 1;
+      const cellRef = XLSX.utils.encode_cell({ r: rowIdx, c: extraCol });
+      const url = `${APP_URL}/admin.html?print=${r.id}`;
+      ws[cellRef] = {
+        v: `🖨 Klik untuk cetak #${r.id}`,
+        t: 's',
+        l: { Target: url, Tooltip: 'Buka sistem & cetak PDF bukti lembur' }
       };
     });
 
-    const ws = XLSX.utils.json_to_sheet(rows);
+    // Set lebar kolom
+    ws['!cols'] = [
+      { wch: 12 }, { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 15 }, { wch: 12 },
+      { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 20 },
+      { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 8 }, { wch: 15 }, { wch: 25 },
+      { wch: 30 }, { wch: 12 }, { wch: 25 }, { wch: 25 }
+    ];
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Rekap Lembur');
-    ws['!cols'] = [
-      { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 20 }, { wch: 12 }, { wch: 12 },
-      { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 30 },
-      { wch: 20 }, { wch: 15 }, { wch: 8 }, { wch: 15 }, { wch: 25 }, { wch: 30 }
-    ];
 
     const start = document.getElementById('rekapStart').value || 'awal';
     const end = document.getElementById('rekapEnd').value || 'akhir';
     XLSX.writeFile(wb, `Rekap-Lembur_${start}_${end}.xlsx`);
-    toast(`✓ Downloaded: ${data.length} record`, 'bg-emerald-600');
+    toast(`✓ Downloaded: ${data.length} record dengan link cetak`, 'bg-emerald-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
+// ============================================
+// AUTO-OPEN dari URL ?print=ID
+// ============================================
+async function checkPrintParam() {
+  const params = new URLSearchParams(window.location.search);
+  const printId = params.get('print');
+  if (printId) {
+    console.log(`🖨 Auto-open bukti untuk record ID: ${printId}`);
+    // Bersihkan URL
+    window.history.replaceState({}, '', window.location.pathname);
+    // Buka tab records dulu
+    switchTab('records');
+    // Tunggu sebentar biar data ke-load
+    await new Promise(r => setTimeout(r, 500));
+    // Buka modal bukti
+    await openBukti(parseInt(printId));
+  }
+}
+
+// ============================================
+// INIT
+// ============================================
 const today = new Date();
 const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
 document.getElementById('rekapStart').valueAsDate = firstDay;
 document.getElementById('rekapEnd').valueAsDate = today;
 
 switchTab('dashboard');
+
+// Cek URL param setelah data siap
+setTimeout(checkPrintParam, 800);
 </script>
 </body>
 </html>
