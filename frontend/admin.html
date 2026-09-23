@@ -36,7 +36,7 @@ tailwind.config = {
 <header class="fixed top-0 left-0 right-0 h-16 bg-ink-900 text-white z-40 border-b border-slate-800">
   <div class="h-full px-5 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <img src="logo-cimory.png" alt="Cimory" class="w-20 h-20 mx-auto mb-4 object-contain">
+      <img src="logo-cimory.png" alt="Cimory" class="w-10 h-10 object-contain bg-white rounded-lg p-0.5">
       <div>
         <p class="text-sm font-bold">Admin Panel</p>
         <p class="text-[10px] text-slate-400">Sistem Monitoring Lembur</p>
@@ -250,69 +250,66 @@ tailwind.config = {
 
 </main>
 
-<div id="userModal" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4 overflow-y-auto">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 modal-in my-8">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="font-extrabold text-slate-800 text-lg" id="userModalTitle">Tambah User</h3>
-      <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
-    </div>
-    <input type="hidden" id="userId">
-    <div class="space-y-3">
-      <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Nama Lengkap *</label>
-        <input type="text" id="userFullName" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+<div id="userModal" class="fixed inset-0 bg-slate-900/70 hidden z-50 overflow-y-auto">
+  <div class="min-h-full flex items-start justify-center p-4 py-8">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 modal-in">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-extrabold text-slate-800 text-lg" id="userModalTitle">Tambah User</h3>
+        <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
       </div>
-      <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Email *</label>
-        <input type="email" id="userEmail" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="nama@cimory.com">
-      </div>
-      <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Password *</label>
-        <input type="password" id="userPassword" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Minimal 6 karakter">
-      </div>
-      <div class="grid grid-cols-2 gap-3">
+      <input type="hidden" id="userId">
+      <div class="space-y-3">
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Role *</label>
-          <select id="userRole" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
-            <option value="employee">Karyawan</option>
-            <option value="manager">Atasan</option>
-            <option value="admin">Admin</option>
-          </select>
+          <label class="text-xs font-bold text-slate-600 uppercase">Nama Lengkap *</label>
+          <input type="text" id="userFullName" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Level *</label>
-          <select id="userLevel" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
-            <option value="">— Pilih level —</option>
-            <option value="1a">1a</option>
-            <option value="1b">1b</option>
-            <option value="1c">1c</option>
-            <option value="2a">2a</option>
-            <option value="2b">2b</option>
-            <option value="2c">2c</option>
-            <option value="3a">3a</option>
-            <option value="3b">3b</option>
-            <option value="3c">3c</option>
-            <option value="4a">4a</option>
-            <option value="4b">4b</option>
-            <option value="4c">4c</option>
-            <option value="5a">5a</option>
-            <option value="5b">5b</option>
-          </select>
+          <label class="text-xs font-bold text-slate-600 uppercase">Email *</label>
+          <input type="email" id="userEmail" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="nama@cimory.com">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 uppercase">Password *</label>
+          <input type="password" id="userPassword" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Minimal 6 karakter">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-bold text-slate-600 uppercase">Role *</label>
+            <select id="userRole" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+              <option value="employee">Karyawan</option>
+              <option value="manager">Atasan</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600 uppercase">Level *</label>
+            <select id="userLevel" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm">
+              <option value="">— Pilih level —</option>
+              <option value="1a">1a</option>
+              <option value="2a">2a</option>
+              <option value="3a">3a</option>
+              <option value="4a">4a</option>
+              <option value="5a">5a</option>
+              <option value="6a">6a</option>
+              <option value="7a">7a</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 uppercase">Jabatan</label>
+          <input type="text" id="userJabatan" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Contoh: Staff Keuangan">
+        </div>
+        <div>
+          <label class="text-xs font-bold text-slate-600 uppercase">Atasan Langsung (bisa lebih dari satu)</label>
+          <div id="approverList" class="mt-1.5 border border-slate-200 rounded-lg p-2 max-h-40 overflow-y-auto space-y-1 bg-slate-50">
+            <p class="text-xs text-slate-400 text-center py-2">Memuat atasan...</p>
+          </div>
+          <p class="text-[10px] text-slate-400 mt-1">Centang atasan yang membawahi user ini</p>
         </div>
       </div>
-      <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Jabatan</label>
-        <input type="text" id="userDept" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm" placeholder="Contoh: Keuangan">
+      <div class="flex gap-2 mt-5 pt-4 border-t border-slate-100">
+        <button onclick="closeUserModal()" class="flex-1 border border-slate-200 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-50">Batal</button>
+        <button onclick="saveUser()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white py-2.5 rounded-xl text-sm font-bold">Simpan</button>
       </div>
-      <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Atasan Langsung (bisa lebih dari satu)</label>
-        <select id="userApprovers" multiple class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm h-32"></select>
-        <p class="text-[10px] text-slate-400 mt-1">Tahan Ctrl (Windows) atau Cmd (Mac) untuk pilih lebih dari satu</p>
-      </div>
-    </div>
-    <div class="flex gap-2 mt-5">
-      <button onclick="closeUserModal()" class="flex-1 border border-slate-200 py-2.5 rounded-xl text-sm font-medium hover:bg-slate-50">Batal</button>
-      <button onclick="saveUser()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white py-2.5 rounded-xl text-sm font-bold">Simpan</button>
     </div>
   </div>
 </div>
@@ -371,7 +368,6 @@ function switchTab(tab) {
   if (tab === 'rekap') loadRekapEmployees();
 }
 
-// ================= DASHBOARD =================
 async function loadStats() {
   try {
     const s = await api('/api/admin/stats');
@@ -409,15 +405,28 @@ function statusLabel(s) {
   return map[s] || s;
 }
 
-// ================= USERS =================
 async function loadApprovers() {
+  const el = document.getElementById('approverList');
+  el.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">Memuat atasan...</p>';
   try {
     allApprovers = await api('/api/admin/approvers');
-    const sel = document.getElementById('userApprovers');
-    sel.innerHTML = allApprovers.map(a =>
-      `<option value="${a.id}">${a.full_name} (${a.level || '-'}) — ${a.role}</option>`
-    ).join('');
-  } catch (err) { console.error(err); }
+    if (allApprovers.length === 0) {
+      el.innerHTML = '<p class="text-xs text-amber-600 text-center py-2">Belum ada user dengan role Atasan/Admin. Buat dulu.</p>';
+      return;
+    }
+    el.innerHTML = allApprovers.map(a => `
+      <label class="flex items-center gap-2 p-2 rounded hover:bg-white cursor-pointer">
+        <input type="checkbox" class="approver-checkbox" value="${a.id}">
+        <span class="text-xs">
+          <span class="font-semibold text-slate-700">${a.full_name}</span>
+          <span class="text-slate-500">(${a.level || '-'} · ${a.role})</span>
+        </span>
+      </label>
+    `).join('');
+  } catch (err) {
+    el.innerHTML = `<p class="text-xs text-red-600 text-center py-2">Gagal memuat: ${err.message}</p>`;
+    console.error('loadApprovers error:', err);
+  }
 }
 
 async function loadUsers() {
@@ -468,22 +477,19 @@ function openUserModal(editData = null) {
   document.getElementById('userPassword').value = '';
   document.getElementById('userRole').value = editData?.role || 'employee';
   document.getElementById('userLevel').value = editData?.level || '';
-  document.getElementById('userDept').value = editData?.jabatan || '';
+  document.getElementById('userJabatan').value = editData?.jabatan || '';
   document.getElementById('userEmail').disabled = !!editData;
 
-  const sel = document.getElementById('userApprovers');
   const approverIds = (editData?.approver_ids || []).map(x => parseInt(x));
-  Array.from(sel.options).forEach(opt => {
-    opt.selected = approverIds.includes(parseInt(opt.value));
+  document.querySelectorAll('.approver-checkbox').forEach(cb => {
+    cb.checked = approverIds.includes(parseInt(cb.value));
   });
 
   document.getElementById('userModal').classList.remove('hidden');
-  document.getElementById('userModal').classList.add('flex');
 }
 
 function closeUserModal() {
   document.getElementById('userModal').classList.add('hidden');
-  document.getElementById('userModal').classList.remove('flex');
 }
 
 async function saveUser() {
@@ -493,10 +499,10 @@ async function saveUser() {
   const password = document.getElementById('userPassword').value;
   const role = document.getElementById('userRole').value;
   const level = document.getElementById('userLevel').value;
-  const jabatan = document.getElementById('userDept').value.trim();
+  const jabatan = document.getElementById('userJabatan').value.trim();
 
-  const sel = document.getElementById('userApprovers');
-  const approver_ids = Array.from(sel.selectedOptions).map(o => parseInt(o.value));
+  const approver_ids = Array.from(document.querySelectorAll('.approver-checkbox:checked'))
+    .map(cb => parseInt(cb.value));
 
   if (!full_name) return toast('Nama wajib', 'bg-red-600');
   if (!level) return toast('Level wajib', 'bg-red-600');
@@ -517,13 +523,18 @@ async function saveUser() {
     }
     closeUserModal();
     loadUsers();
-  } catch (err) { toast(err.message, 'bg-red-600'); }
+  } catch (err) {
+    console.error('saveUser error:', err);
+    toast('Gagal: ' + err.message, 'bg-red-600');
+  }
 }
 
 async function editUser(id) {
-  const users = await api('/api/admin/users');
-  const u = users.find(x => x.id === id);
-  if (u) openUserModal(u);
+  try {
+    const users = await api('/api/admin/users');
+    const u = users.find(x => x.id === id);
+    if (u) openUserModal(u);
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 async function deleteUser(id) {
@@ -535,7 +546,6 @@ async function deleteUser(id) {
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ================= RECORDS =================
 async function loadRecords() {
   const params = new URLSearchParams();
   const status = document.getElementById('filterStatus').value;
@@ -582,7 +592,6 @@ function resetFilter() {
   loadRecords();
 }
 
-// ================= REKAP =================
 async function loadRekapEmployees() {
   try {
     const users = await api('/api/admin/users');
@@ -684,7 +693,7 @@ async function downloadRekap() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Rekap Lembur');
     ws['!cols'] = [
-      { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 15 }, { wch: 12 }, { wch: 12 },
+      { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 20 }, { wch: 12 }, { wch: 12 },
       { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 20 }, { wch: 30 },
       { wch: 20 }, { wch: 15 }, { wch: 8 }, { wch: 15 }, { wch: 25 }, { wch: 30 }
     ];
