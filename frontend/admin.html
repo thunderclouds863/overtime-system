@@ -442,7 +442,7 @@ async function loadUsers() {
         <td class="px-4 py-3">
           <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-purple-100 text-purple-700">${u.level || '-'}</span>
         </td>
-        <td class="px-4 py-3 text-slate-600 text-xs">${u.department || '-'}</td>
+        <td class="px-4 py-3 text-slate-600 text-xs">${u.jabatan || '-'}</td>
         <td class="px-4 py-3 text-slate-600 text-xs">
           ${(u.approvers || []).map(a => `${a.full_name} (${a.level || '-'})`).join(', ') || '-'}
         </td>
@@ -468,7 +468,7 @@ function openUserModal(editData = null) {
   document.getElementById('userPassword').value = '';
   document.getElementById('userRole').value = editData?.role || 'employee';
   document.getElementById('userLevel').value = editData?.level || '';
-  document.getElementById('userDept').value = editData?.department || '';
+  document.getElementById('userDept').value = editData?.jabatan || '';
   document.getElementById('userEmail').disabled = !!editData;
 
   const sel = document.getElementById('userApprovers');
@@ -493,7 +493,7 @@ async function saveUser() {
   const password = document.getElementById('userPassword').value;
   const role = document.getElementById('userRole').value;
   const level = document.getElementById('userLevel').value;
-  const department = document.getElementById('userDept').value.trim();
+  const jabatan = document.getElementById('userDept').value.trim();
 
   const sel = document.getElementById('userApprovers');
   const approver_ids = Array.from(sel.selectedOptions).map(o => parseInt(o.value));
@@ -503,7 +503,7 @@ async function saveUser() {
 
   try {
     if (id) {
-      const payload = { full_name, role, department, level, approver_ids };
+      const payload = { full_name, role, jabatan, level, approver_ids };
       if (password) payload.password = password;
       await api(`/api/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
       toast('User diupdate', 'bg-emerald-600');
@@ -511,7 +511,7 @@ async function saveUser() {
       if (!email || !password) return toast('Email & password wajib', 'bg-red-600');
       await api('/api/admin/users', {
         method: 'POST',
-        body: JSON.stringify({ email, password, full_name, role, department, level, approver_ids })
+        body: JSON.stringify({ email, password, full_name, role, jabatan, level, approver_ids })
       });
       toast('User ditambahkan', 'bg-emerald-600');
     }
