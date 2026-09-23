@@ -15,6 +15,7 @@ const OFFICE = {
 const SUBMIT_DEADLINE_HOUR = 18;
 const START_HOUR_WEEKDAY = 17;
 const START_HOUR_HOLIDAY = 8;
+const MIN_OVERTIME_HOURS = 1;
 
 function isHoliday(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
@@ -39,6 +40,23 @@ async function notifyUser(userId, templateName, data) {
     return r.success ? 1 : 0;
   } catch (err) {
     console.error('notifyUser error:', err.message);
+    return 0;
+  }
+}
+
+async function notifyAllManagers(templateName, data) {
+  try {
+    const result = await query(
+      "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
+    );
+    let sent = 0;
+    for (const row of result.rows) {
+      const r = await sendEmail({ to: row.email, ...templates[templateName](data) });
+      if (r.success) sent++;
+    }
+    return sent;
+  } catch (err) {
+    console.error('notifyAllManagers error:', err.message);
     return 0;
   }
 }
@@ -73,6 +91,11 @@ router.post('/', requireAuth, async (req, res) => {
 
   if (!date || !duration_hours || !reason || !description) {
     return res.status(400).json({ error: 'Semua field wajib diisi' });
+  }
+
+  const durationNum = parseInt(duration_hours);
+  if (!durationNum || durationNum < 1) {
+    return res.status(400).json({ error: 'Durasi minimal 1 jam' });
   }
 
   const holiday = isHoliday(date);
@@ -124,7 +147,7 @@ router.post('/', requireAuth, async (req, res) => {
       [
         targetId, targetName,
         date, finalStartTime,
-        `${duration_hours} hours`,
+        `${durationNum} hours`,
         plannedStart.toISOString(),
         reason, description,
         isManager ? 'manager' : 'employee',
@@ -136,7 +159,7 @@ router.post('/', requireAuth, async (req, res) => {
     );
 
     const record = result.rows[0];
-    console.log(`✅ Record created: ID=${record.id}, status=${record.status}, employee=${record.employee_name}`);
+    console.log(`✅ Record created: ID=${record.id}, status=${record.status}, duration=${durationNum}j, employee=${record.employee_name}`);
 
     let emailSent = 0;
 
@@ -167,7 +190,7 @@ router.post('/', requireAuth, async (req, res) => {
           ...templates.newRequest({
             employeeName: targetName,
             date, startTime: finalStartTime,
-            duration: duration_hours,
+            duration: durationNum,
             reason, desc: description,
             approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
             rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
@@ -189,13 +212,18 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// GET / — List records
+// GET / — List records dengan planned_hours & actual_hours
 // ============================================
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user;
   const { status, limit = 100 } = req.query;
 
-  let sql = 'SELECT * FROM overtime_records';
+  let sql = `
+    SELECT *,
+      ROUND(COALESCE(EXTRACT(EPOCH FROM planned_duration), 0) / 3600.0, 2) as planned_hours,
+      ROUND(COALESCE(EXTRACT(EPOCH FROM actual_duration), 0) / 3600.0, 2) as actual_hours
+    FROM overtime_records
+  `;
   const params = [];
   let idx = 1;
 
@@ -219,6 +247,7 @@ router.get('/', requireAuth, async (req, res) => {
     console.log(`📋 GET /records: ${user.name} (${user.role}) → ${result.rows.length} records`);
     res.json(result.rows);
   } catch (err) {
+    console.error('GET /records error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -257,7 +286,77 @@ router.post('/:id/start', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/finish — Selesai lembur + upload bukti
+// POST /:id/auto-stop — Auto stop karena keluar radius
+// ============================================
+router.post('/:id/auto-stop', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const { lat, lng, reason } = req.body;
+  const user = req.user;
+
+  if (!lat || !lng) return res.status(400).json({ error: 'Koordinat GPS wajib' });
+
+  const distance = Math.round(haversine(lat, lng, OFFICE.lat, OFFICE.lng));
+
+  try {
+    const result = await query(
+      `UPDATE overtime_records
+       SET status = 'cancelled',
+           cancel_reason = $1,
+           cancelled_at = NOW(),
+           actual_end = NOW(),
+           actual_duration = NOW() - actual_start,
+           gps_lat = $2, gps_lng = $3, gps_distance = $4,
+           updated_at = NOW()
+       WHERE id = $5
+         AND employee_id = $6
+         AND status = 'active'
+       RETURNING *`,
+      [
+        reason || `Keluar radius kantor (${distance}m)`,
+        lat, lng, distance,
+        id, user.id
+      ]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Record tidak aktif / tidak ditemukan' });
+    }
+
+    const record = result.rows[0];
+    console.log(`⚠️ Record ${id} auto-stopped: keluar radius (${distance}m)`);
+
+    // Email ke manager
+    try {
+      const managersResult = await query(
+        "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
+      );
+      for (const mgr of managersResult.rows) {
+        await sendEmail({
+          to: mgr.email,
+          subject: `[Lembur] ⚠️ Auto-stop: ${record.employee_name} keluar radius`,
+          html: `
+            <div style="font-family:sans-serif;max-width:600px;margin:auto;padding:20px">
+              <h2 style="color:#dc2626">⚠️ Auto-Stop Lembur</h2>
+              <p><strong>${record.employee_name}</strong> keluar dari radius kantor.</p>
+              <p>Jarak: <strong>${distance}m</strong> (maks ${OFFICE.radius}m)</p>
+              <p>Lembur dihentikan otomatis pada ${new Date().toLocaleString('id-ID')}.</p>
+            </div>
+          `
+        });
+      }
+    } catch (emailErr) {
+      console.error('Email auto-stop error:', emailErr.message);
+    }
+
+    res.json(record);
+  } catch (err) {
+    console.error('auto-stop error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// POST /:id/finish — Selesai lembur + upload bukti + validasi min 1 jam
 // ============================================
 router.post('/:id/finish', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -267,45 +366,135 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
   if (!proof_text) return res.status(400).json({ error: 'Deskripsi bukti wajib' });
 
   try {
+    const recordCheck = await query(
+      'SELECT actual_start, employee_name, status FROM overtime_records WHERE id = $1',
+      [id]
+    );
+    const rec = recordCheck.rows[0];
+    if (!rec || !rec.actual_start) {
+      return res.status(404).json({ error: 'Record tidak ditemukan / belum dimulai' });
+    }
+    if (rec.status !== 'active') {
+      return res.status(400).json({ error: 'Record tidak dalam status aktif' });
+    }
+
+    const durationMs = Date.now() - new Date(rec.actual_start).getTime();
+    const durationHours = durationMs / 3600000;
+
+    console.log(`⏱ Durasi aktual: ${durationHours.toFixed(2)} jam (min: ${MIN_OVERTIME_HOURS} jam)`);
+
+    // Kalau < 1 jam → cancelled, tidak dihitung
+    if (durationHours < MIN_OVERTIME_HOURS) {
+      const result = await query(
+        `UPDATE overtime_records
+         SET status = 'cancelled',
+             cancel_reason = $1,
+             cancelled_at = NOW(),
+             actual_end = NOW(),
+             actual_duration = NOW() - actual_start,
+             proof_text = $2,
+             proof_file_name = $3,
+             proof_uploaded_at = NOW(),
+             updated_at = NOW()
+         WHERE id = $4
+           AND (employee_id = $5 OR $6 IN ('manager', 'admin'))
+           AND status = 'active'
+         RETURNING *`,
+        [
+          `Durasi kurang dari ${MIN_OVERTIME_HOURS} jam (${durationHours.toFixed(2)} jam) — tidak dihitung lembur`,
+          proof_text,
+          proof_file_name || null,
+          id, user.id, user.role
+        ]
+      );
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Record tidak ditemukan / tidak aktif' });
+      }
+
+      const record = result.rows[0];
+      console.log(`❌ Record ${id} TIDAK DIHITUNG: durasi ${durationHours.toFixed(2)} jam < 1 jam`);
+
+      try {
+        const managersResult = await query(
+          "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
+        );
+        for (const mgr of managersResult.rows) {
+          await sendEmail({
+            to: mgr.email,
+            subject: `[Lembur] ❌ ${record.employee_name} — lembur < 1 jam`,
+            html: `
+              <div style="font-family:sans-serif;max-width:600px;margin:auto;padding:20px">
+                <h2 style="color:#dc2626">❌ Lembur Tidak Dihitung</h2>
+                <p><strong>${record.employee_name}</strong> menyelesaikan lembur dengan durasi <strong>${durationHours.toFixed(2)} jam</strong>.</p>
+                <p>Karena kurang dari minimal <strong>1 jam</strong>, lembur ini <strong>tidak dihitung</strong>.</p>
+              </div>
+            `
+          });
+        }
+      } catch (emailErr) {
+        console.error('Email error:', emailErr.message);
+      }
+
+      return res.json({
+        ...record,
+        not_counted: true,
+        message: `Durasi ${durationHours.toFixed(2)} jam < 1 jam, tidak dihitung lembur`
+      });
+    }
+
+    // Durasi >= 1 jam → normal
     const result = await query(
       `UPDATE overtime_records
-       SET status = 'pending_verification', actual_end = NOW(),
+       SET status = 'pending_verification',
+           actual_end = NOW(),
            actual_duration = NOW() - actual_start,
-           proof_text = $1, proof_file_name = $2, proof_uploaded_at = NOW(),
+           proof_text = $1,
+           proof_file_name = $2,
+           proof_uploaded_at = NOW(),
            updated_at = NOW()
-       WHERE id = $3 AND (employee_id = $4 OR $5 IN ('manager', 'admin'))
+       WHERE id = $3
+         AND (employee_id = $4 OR $5 IN ('manager', 'admin'))
          AND status = 'active'
        RETURNING *`,
       [proof_text, proof_file_name || null, id, user.id, user.role]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan / tidak aktif' });
 
-    const record = result.rows[0];
-    console.log(`✅ Record ${record.id} selesai`);
-
-    const managersResult = await query(
-      "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
-    );
-    let emailSent = 0;
-    for (const mgr of managersResult.rows) {
-      const r = await sendEmail({
-        to: mgr.email,
-        ...templates.proofSubmitted({
-          employeeName: record.employee_name,
-          duration: record.actual_duration
-        })
-      });
-      if (r.success) emailSent++;
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Record tidak ditemukan / tidak aktif' });
     }
 
-    res.json({ ...record, email_sent: emailSent });
+    const record = result.rows[0];
+    console.log(`✅ Record ${id} selesai, durasi ${durationHours.toFixed(2)} jam`);
+
+    let emailSent = 0;
+    try {
+      const managersResult = await query(
+        "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
+      );
+      for (const mgr of managersResult.rows) {
+        const r = await sendEmail({
+          to: mgr.email,
+          ...templates.proofSubmitted({
+            employeeName: record.employee_name,
+            duration: `${durationHours.toFixed(2)} jam`
+          })
+        });
+        if (r.success) emailSent++;
+      }
+    } catch (emailErr) {
+      console.error('Email error:', emailErr.message);
+    }
+
+    res.json({ ...record, email_sent: emailSent, not_counted: false });
   } catch (err) {
+    console.error('finish error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
 // ============================================
-// POST /:id/cancel — Batalkan lembur
+// POST /:id/cancel — Batalkan lembur manual
 // ============================================
 router.post('/:id/cancel', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -316,6 +505,7 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
     const result = await query(
       `UPDATE overtime_records
        SET status = 'cancelled', cancel_reason = $1, cancelled_at = NOW(),
+           actual_end = NOW(),
            actual_duration = NOW() - actual_start, updated_at = NOW()
        WHERE id = $2 AND (employee_id = $3 OR $4 IN ('manager', 'admin'))
          AND status = 'active'
@@ -330,7 +520,7 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/revise — Revisi pengajuan (bisa ubah tanggal, jam, durasi)
+// POST /:id/revise — Revisi pengajuan
 // ============================================
 router.post('/:id/revise', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -373,18 +563,13 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Jam mulai sudah terlewat' });
     }
 
-    // Durasi: dari request, atau dari record lama
     let finalDuration = duration_hours ? parseInt(duration_hours) : null;
     if (!finalDuration) {
-      // Parse dari interval PostgreSQL "HH:MM:SS"
       const durationStr = String(record.planned_duration || '');
       const hours = durationStr.split(':')[0];
-      finalDuration = hours ? parseInt(hours) : 2;
+      finalDuration = hours ? parseInt(hours) : 1;
     }
-
-    if (finalDuration < 1) {
-      return res.status(400).json({ error: 'Durasi minimal 1 jam' });
-    }
+    if (finalDuration < 1) finalDuration = 1;
 
     const result = await query(
       `UPDATE overtime_records
@@ -418,40 +603,44 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     const updated = result.rows[0];
     console.log(`✅ Record ${id} direvisi: date=${finalDate}, start=${finalStartTime}, duration=${finalDuration}j`);
 
-    const managersResult = await query(
-      "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
-    );
-
-    const JWT_SECRET = process.env.JWT_SECRET;
-    const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
     let emailSent = 0;
-
-    for (const mgr of managersResult.rows) {
-      const approveToken = jwt.sign(
-        { recordId: updated.id, action: 'approve', managerId: mgr.id },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-      const rejectToken = jwt.sign(
-        { recordId: updated.id, action: 'reject', managerId: mgr.id },
-        JWT_SECRET,
-        { expiresIn: '24h' }
+    try {
+      const managersResult = await query(
+        "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
       );
 
-      const r = await sendEmail({
-        to: mgr.email,
-        ...templates.newRequest({
-          employeeName: updated.employee_name,
-          date: finalDate,
-          startTime: finalStartTime,
-          duration: finalDuration,
-          reason: reason || record.reason,
-          desc: description,
-          approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
-          rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
-        })
-      });
-      if (r.success) emailSent++;
+      const JWT_SECRET = process.env.JWT_SECRET;
+      const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
+
+      for (const mgr of managersResult.rows) {
+        const approveToken = jwt.sign(
+          { recordId: updated.id, action: 'approve', managerId: mgr.id },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+        const rejectToken = jwt.sign(
+          { recordId: updated.id, action: 'reject', managerId: mgr.id },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+
+        const r = await sendEmail({
+          to: mgr.email,
+          ...templates.newRequest({
+            employeeName: updated.employee_name,
+            date: finalDate,
+            startTime: finalStartTime,
+            duration: finalDuration,
+            reason: reason || record.reason,
+            desc: description,
+            approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
+            rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
+          })
+        });
+        if (r.success) emailSent++;
+      }
+    } catch (emailErr) {
+      console.error('Email error:', emailErr.message);
     }
 
     res.json({ ...updated, email_sent: emailSent });
@@ -483,20 +672,10 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
 
     const record = result.rows[0];
-    const managersResult = await query(
-      "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
-    );
-    let emailSent = 0;
-    for (const mgr of managersResult.rows) {
-      const r = await sendEmail({
-        to: mgr.email,
-        ...templates.proofSubmitted({
-          employeeName: record.employee_name,
-          duration: record.actual_duration
-        })
-      });
-      if (r.success) emailSent++;
-    }
+    const emailSent = await notifyAllManagers('proofSubmitted', {
+      employeeName: record.employee_name,
+      duration: record.actual_duration
+    });
 
     res.json({ ...record, email_sent: emailSent });
   } catch (err) {
