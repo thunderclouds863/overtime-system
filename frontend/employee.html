@@ -20,7 +20,7 @@ tailwind.config = {
       colors: {
         brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'},
         ink: {900:'#0f0f1e',800:'#1a1a2e',700:'#25253d',600:'#33334f'},
-        neon: {pink:'#ec4899',violet:'#8b5cf6',cyan:'#06b6d4',lime:'#84cc16',orange:'#fb923c'}
+        neon: {pink:'#ec4899',violet:'#8b5cf6',cyan:'#06b6d4',lime:'#84cc16'}
       }
     }
   }
@@ -69,8 +69,6 @@ tailwind.config = {
   .stat-grad-4 { background: linear-gradient(135deg, #10b981, #059669); }
   .modal-in { animation: modalIn 0.3s cubic-bezier(.2,.9,.3,1); }
   @keyframes modalIn { from {opacity:0; transform: scale(0.94) translateY(20px);} to {opacity:1; transform:scale(1) translateY(0);} }
-  .slide-up { animation: slideUp 0.3s cubic-bezier(.2,.9,.3,1); }
-  @keyframes slideUp { from {opacity:0; transform: translateY(30px);} to {opacity:1; transform: translateY(0);} }
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
   @media (max-width: 767px) {
     main { padding-bottom: 90px; }
@@ -79,11 +77,10 @@ tailwind.config = {
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
-<!-- TOP BAR -->
 <header class="fixed top-0 left-0 right-0 h-14 md:h-16 bg-ink-900 text-white z-40 border-b border-slate-800">
   <div class="h-full px-3 md:px-5 flex items-center justify-between">
     <div class="flex items-center gap-2 md:gap-3">
-      <img src="logo-cimory.png" alt="Cimory" class="w-9 h-9 md:w-10 md:h-10 object-contain bg-white rounded-xl p-0.5">
+      <img src="logo-cimory.png" alt="Cimory" class="w-9 h-9 md:w-10 md:h-10 object-contain">
       <div class="hidden sm:block">
         <p class="text-xs md:text-sm font-bold">Employee Portal</p>
         <p class="text-[9px] md:text-[10px] text-slate-400">Overtime Management</p>
@@ -106,7 +103,6 @@ tailwind.config = {
   </div>
 </header>
 
-<!-- SIDEBAR (Desktop) -->
 <aside class="hidden md:flex fixed top-16 left-0 bottom-0 w-60 bg-ink-900 text-slate-400 z-30 flex-col border-r border-slate-800">
   <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
     <p class="text-[10px] uppercase text-slate-500 px-3 pt-2 pb-1 font-bold tracking-wider">Menu</p>
@@ -131,7 +127,6 @@ tailwind.config = {
   </div>
 </aside>
 
-<!-- BOTTOM NAV (Mobile) -->
 <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 z-40 safe-bottom">
   <div class="flex items-center justify-around px-2 py-2">
     <button onclick="switchTab('emp-dashboard')" data-mobile-tab="emp-dashboard" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
@@ -151,7 +146,6 @@ tailwind.config = {
 
 <main class="md:ml-60 pt-16 md:pt-20 pb-24 md:pb-8 px-3 md:px-8 max-w-[1400px]">
 
-  <!-- DASHBOARD -->
   <section id="tab-emp-dashboard" class="tab-content space-y-4">
     <div class="flex items-end justify-between flex-wrap gap-2">
       <div>
@@ -161,7 +155,6 @@ tailwind.config = {
       <p class="text-[10px] md:text-xs text-slate-500" id="todayDate"></p>
     </div>
 
-    <!-- GPS BANNER -->
     <div id="gpsBanner" class="rounded-3xl border-2 transition-all duration-300 p-4 md:p-5">
       <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
         <div class="shrink-0">
@@ -199,7 +192,6 @@ tailwind.config = {
       </div>
     </div>
 
-    <!-- LIVE TIMER -->
     <div id="activeCard" class="hidden relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 text-white shadow-2xl shadow-emerald-900/30">
       <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 30%, white 1.5px, transparent 1.5px); background-size: 24px 24px;"></div>
       <div class="relative p-5 md:p-6">
@@ -236,7 +228,6 @@ tailwind.config = {
       </div>
     </div>
 
-    <!-- STAT CARDS -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="stat-grad-1 rounded-2xl p-4 text-white shadow-lg shadow-violet-500/25 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
@@ -264,7 +255,6 @@ tailwind.config = {
       </div>
     </div>
 
-    <!-- UPCOMING -->
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-5">
       <div class="flex items-center justify-between mb-3">
         <h2 class="font-bold text-slate-800 text-sm md:text-base">📅 Jadwal Disetujui</h2>
@@ -275,7 +265,6 @@ tailwind.config = {
       </div>
     </div>
 
-    <!-- RECENT -->
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-5">
       <h2 class="font-bold text-slate-800 mb-3 text-sm md:text-base">🔥 Aktivitas Terbaru</h2>
       <div id="empRecent" class="space-y-2">
@@ -284,7 +273,6 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- AJUKAN -->
   <section id="tab-emp-ajukan" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">✍️ Ajukan Lembur</h1>
@@ -328,9 +316,9 @@ tailwind.config = {
           </div>
         </div>
         <div class="mt-4 bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 text-xs text-brand-900">
-          <strong>💡 Info jam:</strong> Hari kerja mulai <strong>17:00</strong>. Hari libur (Sabtu/Minggu) mulai <strong>08:00</strong>. Lembur hari kerja >5 jam dipotong 1 jam istirahat otomatis.
+          <strong>💡 Info jam:</strong> Hari kerja mulai <strong>17:00</strong>. Hari libur (Sabtu/Minggu) mulai <strong>08:00</strong>. Batas pengajuan hari ini jam <strong>18:00</strong>.
         </div>
-        <button onclick="submitRequest()" class="mt-5 w-full bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/30 text-sm transition active:scale-[0.98]">
+        <button onclick="submitRequest()" id="btnSubmitRequest" class="mt-5 w-full bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/30 text-sm transition active:scale-[0.98]">
           Kirim Pengajuan 🚀
         </button>
       </div>
@@ -342,16 +330,14 @@ tailwind.config = {
         <ul class="space-y-3 text-xs text-slate-300">
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari kerja: mulai <strong class="text-white">17:00</strong></span></li>
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari libur: mulai <strong class="text-white">08:00</strong></span></li>
-          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari kerja >5 jam dipotong <strong class="text-white">1 jam</strong></span></li>
+          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Batas pengajuan hari ini: <strong class="text-white">18:00</strong></span></li>
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>GPS radius <strong class="text-white">100m</strong></span></li>
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Auto-start saat jam tiba ⚡</span></li>
-          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Approval bertingkat</span></li>
         </ul>
       </div>
     </div>
   </section>
 
-  <!-- RIWAYAT -->
   <section id="tab-emp-riwayat" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">📜 Riwayat Saya</h1>
@@ -438,24 +424,54 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- EDIT MODAL -->
+<!-- EDIT MODAL — BISA UBAH TANGGAL, JAM, DURASI -->
 <div id="modalEdit" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <h3 class="font-extrabold text-slate-800 text-lg">✏️ Revisi Pengajuan</h3>
-    <p class="text-xs text-slate-500 mt-1 mb-4">Perbaiki data lalu kirim ulang</p>
+    <p class="text-xs text-slate-500 mt-1 mb-4">Perbaiki tanggal, jam, atau detail lalu kirim ulang</p>
+
     <div id="editNote" class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 mb-4"></div>
-    <label class="text-xs font-bold text-slate-600 uppercase">Kategori</label>
-    <select id="editReason" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50">
-      <option>Pekerjaan mendesak</option><option>Target proyek</option><option>Pengganti rekan</option><option>Closing bulanan</option><option>Lainnya</option>
+
+    <label class="text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
+    <input type="date" id="editDate" onchange="updateEditStartTime()"
+      class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+
+    <div class="grid grid-cols-2 gap-3 mt-3">
+      <div>
+        <label class="text-xs font-bold text-slate-600 uppercase">Jam Mulai <span class="text-red-500">*</span></label>
+        <input type="time" id="editStart"
+          class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+      </div>
+      <div>
+        <label class="text-xs font-bold text-slate-600 uppercase">Durasi (jam) <span class="text-red-500">*</span></label>
+        <input type="number" id="editDurasi" min="1" max="24"
+          class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+      </div>
+    </div>
+
+    <div id="editJenisHari" class="mt-2 text-xs text-slate-500 italic">Info jenis hari akan muncul setelah pilih tanggal</div>
+
+    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Kategori</label>
+    <select id="editReason" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
+      <option>Pekerjaan mendesak</option>
+      <option>Target proyek</option>
+      <option>Pengganti rekan</option>
+      <option>Closing bulanan</option>
+      <option>Lainnya</option>
     </select>
-    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Rencana Pekerjaan</label>
-    <textarea id="editDesc" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50"></textarea>
-    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Bukti/Keterangan</label>
-    <textarea id="editProof" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50"></textarea>
-    <div class="flex gap-2 mt-5">
+
+    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Rencana Pekerjaan <span class="text-red-500">*</span></label>
+    <textarea id="editDesc" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"></textarea>
+
+    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Bukti / Keterangan</label>
+    <textarea id="editProof" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"></textarea>
+
+    <div class="flex gap-2 mt-5 pt-4 border-t border-slate-100">
       <button onclick="closeModal('modalEdit')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Batal</button>
-      <button onclick="submitRevision()" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold">Kirim Ulang</button>
+      <button onclick="submitRevision()" id="btnSubmitRevision" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg active:scale-[0.98] transition">
+        Kirim Ulang
+      </button>
     </div>
   </div>
 </div>
@@ -478,10 +494,8 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- TOAST -->
 <div id="toast" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 bg-ink-900 text-white px-4 py-3 rounded-2xl text-sm hidden z-[60] shadow-2xl max-w-xs modal-in"></div>
 
-<!-- AUTO-START NOTIF -->
 <div id="autoStartNotif" class="fixed top-20 right-4 md:right-6 bg-white border-l-4 border-emerald-500 rounded-2xl shadow-2xl p-4 hidden z-50 notif-slide max-w-sm">
   <div class="flex items-start gap-3">
     <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-bold shrink-0">⚡</div>
@@ -527,7 +541,7 @@ function haversine(lat1, lon1, lat2, lon2) {
 function fmtTime(d) { return new Date(d).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}); }
 function fmtDate(d) { return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
 function fmtDur(ms) { const s = Math.floor(ms/1000); return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
-function fmtDurShort(ms) { const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000); return `${h}j ${m}m`; }
+function fmtDurShort(ms) { if (!ms) return '-'; const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000); return `${h}j ${m}m`; }
 function timeToDate(dateStr, timeStr) { const [h,m]=timeStr.split(':').map(Number); const d=new Date(dateStr+'T00:00:00'); d.setHours(h,m,0,0); return d; }
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
 function parseInterval(iv) {
@@ -748,7 +762,7 @@ function updateStartTime() {
   const dateStr = document.getElementById('inpDate').value;
   if (!dateStr) return;
   const holiday = isHoliday(dateStr);
-  const startTime = holiday ? '08:00' : '18:00';
+  const startTime = holiday ? '08:00' : '17:00';
   document.getElementById('inpStart').value = startTime;
   document.getElementById('jenisHari').innerHTML = holiday
     ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (08:00)</span>'
@@ -796,21 +810,28 @@ async function loadRecords() {
 }
 
 async function submitRequest() {
+  const btn = document.getElementById('btnSubmitRequest');
   const date = document.getElementById('inpDate').value;
   const durasi = parseInt(document.getElementById('inpDurasi').value);
   const start = document.getElementById('inpStart').value;
   const reason = document.getElementById('inpReason').value;
   const desc = document.getElementById('inpDesc').value.trim();
+
   if (!date || !reason || !desc) return toast('Lengkapi semua field *', 'bg-red-600');
   if (durasi < 1) return toast('Durasi minimal 1 jam', 'bg-red-600');
   const planned = timeToDate(date, start);
   if (planned < new Date()) return toast('Jam mulai sudah terlewat', 'bg-red-600');
 
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Mengirim...';
+
   try {
-    await api('/api/records', {
+    const result = await api('/api/records', {
       method: 'POST',
       body: JSON.stringify({ date, start_time: start, duration_hours: durasi, reason, description: desc })
     });
+
     document.getElementById('inpDate').value = '';
     document.getElementById('inpReason').value = '';
     document.getElementById('inpDesc').value = '';
@@ -818,10 +839,22 @@ async function submitRequest() {
     document.getElementById('inpStart').value = '';
     document.getElementById('jenisHari').textContent = 'Pilih tanggal dulu';
     document.getElementById('jenisHari').className = 'w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600';
-    toast('Pengajuan terkirim 🚀', 'bg-brand-600');
+
+    const emailSent = result.email_sent || 0;
+    if (emailSent > 0) {
+      toast(`✅ Pengajuan terkirim! Email ke ${emailSent} atasan.`, 'bg-emerald-600');
+    } else {
+      toast('✅ Pengajuan terkirim (email tidak terkirim)', 'bg-amber-600');
+    }
+
     await loadRecords();
     switchTab('emp-riwayat');
-  } catch (err) { toast(err.message, 'bg-red-600'); }
+  } catch (err) {
+    toast('❌ ' + err.message, 'bg-red-600');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
 async function manualStart(recId) {
@@ -884,32 +917,83 @@ async function submitProof() {
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
+// ============================================
+// EDIT / REVISI — Bisa ubah tanggal, jam, durasi
+// ============================================
 function openEdit(id) {
   const r = records.find(x => x.id === id);
   if (!r) return;
   editTargetId = id;
+
   document.getElementById('editNote').innerHTML = `<strong>Catatan atasan:</strong> ${r.note || '-'}`;
+  document.getElementById('editDate').value = r.date;
+  document.getElementById('editStart').value = r.startTime;
+  document.getElementById('editDurasi').value = Math.round(r.plannedDuration / 3600000);
   document.getElementById('editReason').value = r.reason;
   document.getElementById('editDesc').value = r.desc;
   document.getElementById('editProof').value = r.proof || '';
+
+  updateEditStartTime();
+
   document.getElementById('modalEdit').classList.remove('hidden');
   document.getElementById('modalEdit').classList.add('flex');
 }
+
+function updateEditStartTime() {
+  const dateStr = document.getElementById('editDate').value;
+  if (!dateStr) return;
+  const holiday = isHoliday(dateStr);
+  const startTime = holiday ? '08:00' : '17:00';
+  document.getElementById('editStart').value = startTime;
+  document.getElementById('editJenisHari').innerHTML = holiday
+    ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (default 08:00)</span>'
+    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (default 17:00)</span>';
+}
+
 async function submitRevision() {
   const r = records.find(x => x.id === editTargetId);
   if (!r) return;
+
+  const date = document.getElementById('editDate').value;
+  const start_time = document.getElementById('editStart').value;
+  const duration_hours = parseInt(document.getElementById('editDurasi').value);
   const reason = document.getElementById('editReason').value;
   const description = document.getElementById('editDesc').value.trim();
   const proof = document.getElementById('editProof').value.trim();
-  if (!description) return toast('Deskripsi wajib', 'bg-red-600');
+
+  if (!date || !start_time || !duration_hours || !description) {
+    return toast('Tanggal, jam, durasi, dan deskripsi wajib diisi', 'bg-red-600');
+  }
+  if (duration_hours < 1) return toast('Durasi minimal 1 jam', 'bg-red-600');
+
+  const btn = document.getElementById('btnSubmitRevision');
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = '⏳ Mengirim...';
+
   try {
-    await api(`/api/records/${r.id}/revise`, { method: 'POST', body: JSON.stringify({ reason, description, proof }) });
+    await api(`/api/records/${r.id}/revise`, {
+      method: 'POST',
+      body: JSON.stringify({
+        date, start_time, duration_hours,
+        reason, description, proof
+      })
+    });
+
     closeModal('modalEdit');
     await loadRecords();
-    toast('Pengajuan dikirim ulang', 'bg-brand-600');
-  } catch (err) { toast(err.message, 'bg-red-600'); }
+    toast('✅ Pengajuan direvisi & dikirim ulang ke atasan', 'bg-emerald-600');
+  } catch (err) {
+    toast('❌ ' + err.message, 'bg-red-600');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
 }
 
+// ============================================
+// EDIT PROOF
+// ============================================
 function openEditProof(id) {
   const r = records.find(x => x.id === id);
   if (!r) return;
