@@ -78,7 +78,6 @@ router.post('/', requireAuth, async (req, res) => {
   const holiday = isHoliday(date);
   const now = new Date();
 
-  // Validasi batas pengajuan jam 18:00 untuk hari ini
   const todayStr = now.toISOString().slice(0, 10);
   const isToday = date === todayStr;
 
@@ -101,7 +100,6 @@ router.post('/', requireAuth, async (req, res) => {
   const targetName = isManager && employee_name ? employee_name : user.name;
   const initialStatus = isManager ? 'approved' : 'pending';
 
-  // Approval chain = ID semua manager
   let approvalChainIds = [];
   if (!isManager) {
     try {
@@ -143,7 +141,6 @@ router.post('/', requireAuth, async (req, res) => {
     let emailSent = 0;
 
     if (!isManager) {
-      // Ambil manager dengan ID untuk generate token per-manager
       const managersResult = await query(
         "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
       );
@@ -154,13 +151,11 @@ router.post('/', requireAuth, async (req, res) => {
       const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
 
       for (const mgr of managersResult.rows) {
-        // Token approve
         const approveToken = jwt.sign(
           { recordId: record.id, action: 'approve', managerId: mgr.id },
           JWT_SECRET,
           { expiresIn: '24h' }
         );
-        // Token reject
         const rejectToken = jwt.sign(
           { recordId: record.id, action: 'reject', managerId: mgr.id },
           JWT_SECRET,
@@ -194,7 +189,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// GET / — List records (manager lihat semua)
+// GET / — List records
 // ============================================
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user;
@@ -288,7 +283,6 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
     const record = result.rows[0];
     console.log(`✅ Record ${record.id} selesai`);
 
-    // Kirim ke semua manager
     const managersResult = await query(
       "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
     );
@@ -336,29 +330,94 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/revise — Revisi pengajuan
+// POST /:id/revise — Revisi pengajuan (bisa ubah tanggal, jam, durasi)
 // ============================================
 router.post('/:id/revise', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const { reason, description, proof } = req.body;
+  const { date, start_time, duration_hours, reason, description, proof } = req.body;
   const user = req.user;
+
   if (!description) return res.status(400).json({ error: 'Deskripsi wajib' });
+
   try {
+    const existing = await query('SELECT * FROM overtime_records WHERE id = $1', [id]);
+    const record = existing.rows[0];
+
+    if (!record) return res.status(404).json({ error: 'Record tidak ditemukan' });
+    if (!['revision', 'rejected'].includes(record.status)) {
+      return res.status(400).json({ error: 'Hanya bisa revisi yang statusnya REVISI atau DITOLAK' });
+    }
+    if (record.employee_id !== user.id && !['manager', 'admin'].includes(user.role)) {
+      return res.status(403).json({ error: 'Bukan record kamu' });
+    }
+
+    const finalDate = date || record.date;
+    const holiday = isHoliday(finalDate);
+
+    const now = new Date();
+    const todayStr = now.toISOString().slice(0, 10);
+    const isToday = finalDate === todayStr;
+
+    if (isToday && now.getHours() >= SUBMIT_DEADLINE_HOUR) {
+      return res.status(400).json({
+        error: `Batas pengajuan untuk hari ini sudah lewat (maks jam ${SUBMIT_DEADLINE_HOUR}:00).`
+      });
+    }
+
+    const defaultHour = holiday ? START_HOUR_HOLIDAY : START_HOUR_WEEKDAY;
+    const finalStartTime = start_time || `${String(defaultHour).padStart(2, '0')}:00`;
+
+    const plannedStart = new Date(`${finalDate}T${finalStartTime}:00`);
+
+    if (isToday && plannedStart < now) {
+      return res.status(400).json({ error: 'Jam mulai sudah terlewat' });
+    }
+
+    // Durasi: dari request, atau dari record lama
+    let finalDuration = duration_hours ? parseInt(duration_hours) : null;
+    if (!finalDuration) {
+      // Parse dari interval PostgreSQL "HH:MM:SS"
+      const durationStr = String(record.planned_duration || '');
+      const hours = durationStr.split(':')[0];
+      finalDuration = hours ? parseInt(hours) : 2;
+    }
+
+    if (finalDuration < 1) {
+      return res.status(400).json({ error: 'Durasi minimal 1 jam' });
+    }
+
     const result = await query(
       `UPDATE overtime_records
-       SET reason = $1, description = $2, proof_text = $3,
-           status = 'pending', revision_count = revision_count + 1,
-           approval_progress = 0, updated_at = NOW()
-       WHERE id = $4 AND (employee_id = $5 OR $6 IN ('manager', 'admin'))
-         AND status IN ('revision', 'rejected')
+       SET date = $1,
+           start_time = $2,
+           planned_duration = $3,
+           planned_start = $4,
+           is_holiday = $5,
+           reason = $6,
+           description = $7,
+           proof_text = $8,
+           status = 'pending',
+           revision_count = revision_count + 1,
+           approval_progress = 0,
+           updated_at = NOW()
+       WHERE id = $9
        RETURNING *`,
-      [reason, description, proof || null, id, user.id, user.role]
+      [
+        finalDate,
+        finalStartTime,
+        `${finalDuration} hours`,
+        plannedStart.toISOString(),
+        holiday,
+        reason || record.reason,
+        description,
+        proof || record.proof_text,
+        id
+      ]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak bisa direvisi' });
 
-    const record = result.rows[0];
+    const updated = result.rows[0];
+    console.log(`✅ Record ${id} direvisi: date=${finalDate}, start=${finalStartTime}, duration=${finalDuration}j`);
 
-    // Kirim ulang email ke manager dengan tombol baru
     const managersResult = await query(
       "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
     );
@@ -369,12 +428,12 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
 
     for (const mgr of managersResult.rows) {
       const approveToken = jwt.sign(
-        { recordId: record.id, action: 'approve', managerId: mgr.id },
+        { recordId: updated.id, action: 'approve', managerId: mgr.id },
         JWT_SECRET,
         { expiresIn: '24h' }
       );
       const rejectToken = jwt.sign(
-        { recordId: record.id, action: 'reject', managerId: mgr.id },
+        { recordId: updated.id, action: 'reject', managerId: mgr.id },
         JWT_SECRET,
         { expiresIn: '24h' }
       );
@@ -382,11 +441,11 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
       const r = await sendEmail({
         to: mgr.email,
         ...templates.newRequest({
-          employeeName: user.name,
-          date: record.date,
-          startTime: record.start_time,
-          duration: record.planned_duration,
-          reason,
+          employeeName: updated.employee_name,
+          date: finalDate,
+          startTime: finalStartTime,
+          duration: finalDuration,
+          reason: reason || record.reason,
           desc: description,
           approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
           rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
@@ -395,8 +454,9 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
       if (r.success) emailSent++;
     }
 
-    res.json({ ...record, email_sent: emailSent });
+    res.json({ ...updated, email_sent: emailSent });
   } catch (err) {
+    console.error('POST /:id/revise error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
