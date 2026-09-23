@@ -21,12 +21,8 @@ router.post('/check', async (req, res) => {
     for (const record of dueResult.rows) {
       const updateResult = await query(
         `UPDATE overtime_records
-         SET status = 'active',
-             actual_start = NOW(),
-             auto_started = TRUE,
-             updated_at = NOW()
-         WHERE id = $1
-         RETURNING *`,
+         SET status = 'active', actual_start = NOW(), auto_started = TRUE, updated_at = NOW()
+         WHERE id = $1 RETURNING *`,
         [record.id]
       );
 
@@ -36,38 +32,20 @@ router.post('/check', async (req, res) => {
            VALUES ($1, NULL, 'SYSTEM', 'auto_started', $2)`,
           [record.id, JSON.stringify({ planned_start: record.planned_start })]
         );
-
-        results.push({
-          id: record.id,
-          employee: record.employee_name,
-          success: true
-        });
+        results.push({ id: record.id, employee: record.employee_name, success: true });
       }
     }
 
-    res.json({
-      message: `${results.length} record diproses`,
-      timestamp: now.toISOString(),
-      records: results
-    });
+    res.json({ message: `${results.length} record diproses`, timestamp: now.toISOString(), records: results });
   } catch (err) {
-    console.error('Scheduler error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
 router.get('/status', async (req, res) => {
   try {
-    const result = await query(
-      `SELECT COUNT(*) as approved_count 
-       FROM overtime_records 
-       WHERE status = 'approved'`
-    );
-    res.json({
-      scheduler: 'running',
-      pending_auto_start: parseInt(result.rows[0].approved_count),
-      server_time: new Date().toISOString()
-    });
+    const result = await query(`SELECT COUNT(*) as approved_count FROM overtime_records WHERE status = 'approved'`);
+    res.json({ scheduler: 'running', pending_auto_start: parseInt(result.rows[0].approved_count), server_time: new Date().toISOString() });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
