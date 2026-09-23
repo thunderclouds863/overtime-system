@@ -84,7 +84,7 @@ async function buildApprovalChain(employeeId) {
 router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
   try {
     const result = await query(
-      `SELECT id, email, full_name, department, level FROM users 
+      `SELECT id, email, full_name, jabatan, level FROM users 
        WHERE role = 'employee' AND is_active = true ORDER BY full_name`
     );
     res.json(result.rows);
