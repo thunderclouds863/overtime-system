@@ -212,7 +212,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// GET / — List records dengan planned_hours & actual_hours
+// GET / — List records
 // ============================================
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user;
@@ -296,6 +296,7 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
   if (!lat || !lng) return res.status(400).json({ error: 'Koordinat GPS wajib' });
 
   const distance = Math.round(haversine(lat, lng, OFFICE.lat, OFFICE.lng));
+  console.log(`🚨 AUTO-STOP request: record=${id}, distance=${distance}m, user=${user.name}`);
 
   try {
     const result = await query(
@@ -319,13 +320,13 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
     );
 
     if (result.rows.length === 0) {
+      console.warn(`⚠️ Auto-stop: record ${id} tidak ditemukan / bukan active`);
       return res.status(404).json({ error: 'Record tidak aktif / tidak ditemukan' });
     }
 
     const record = result.rows[0];
-    console.log(`⚠️ Record ${id} auto-stopped: keluar radius (${distance}m)`);
+    console.log(`✅ Record ${id} AUTO-STOPPED: ${record.employee_name} keluar radius (${distance}m)`);
 
-    // Email ke manager
     try {
       const managersResult = await query(
         "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
@@ -344,8 +345,8 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
           `
         });
       }
-    } catch (emailErr) {
-      console.error('Email auto-stop error:', emailErr.message);
+    } catch (e) {
+      console.error('Email error:', e.message);
     }
 
     res.json(record);
@@ -356,7 +357,7 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/finish — Selesai lembur + upload bukti + validasi min 1 jam
+// POST /:id/finish — Selesai lembur + upload bukti
 // ============================================
 router.post('/:id/finish', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -383,7 +384,6 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
 
     console.log(`⏱ Durasi aktual: ${durationHours.toFixed(2)} jam (min: ${MIN_OVERTIME_HOURS} jam)`);
 
-    // Kalau < 1 jam → cancelled, tidak dihitung
     if (durationHours < MIN_OVERTIME_HOURS) {
       const result = await query(
         `UPDATE overtime_records
@@ -415,26 +415,9 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
       const record = result.rows[0];
       console.log(`❌ Record ${id} TIDAK DIHITUNG: durasi ${durationHours.toFixed(2)} jam < 1 jam`);
 
-      try {
-        const managersResult = await query(
-          "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
-        );
-        for (const mgr of managersResult.rows) {
-          await sendEmail({
-            to: mgr.email,
-            subject: `[Lembur] ❌ ${record.employee_name} — lembur < 1 jam`,
-            html: `
-              <div style="font-family:sans-serif;max-width:600px;margin:auto;padding:20px">
-                <h2 style="color:#dc2626">❌ Lembur Tidak Dihitung</h2>
-                <p><strong>${record.employee_name}</strong> menyelesaikan lembur dengan durasi <strong>${durationHours.toFixed(2)} jam</strong>.</p>
-                <p>Karena kurang dari minimal <strong>1 jam</strong>, lembur ini <strong>tidak dihitung</strong>.</p>
-              </div>
-            `
-          });
-        }
-      } catch (emailErr) {
-        console.error('Email error:', emailErr.message);
-      }
+      await notifyAllManagers('verifyRejected', {
+        note: `Durasi ${durationHours.toFixed(2)} jam < 1 jam, tidak dihitung lembur`
+      });
 
       return res.json({
         ...record,
@@ -443,7 +426,6 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
       });
     }
 
-    // Durasi >= 1 jam → normal
     const result = await query(
       `UPDATE overtime_records
        SET status = 'pending_verification',
@@ -467,24 +449,10 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
     const record = result.rows[0];
     console.log(`✅ Record ${id} selesai, durasi ${durationHours.toFixed(2)} jam`);
 
-    let emailSent = 0;
-    try {
-      const managersResult = await query(
-        "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
-      );
-      for (const mgr of managersResult.rows) {
-        const r = await sendEmail({
-          to: mgr.email,
-          ...templates.proofSubmitted({
-            employeeName: record.employee_name,
-            duration: `${durationHours.toFixed(2)} jam`
-          })
-        });
-        if (r.success) emailSent++;
-      }
-    } catch (emailErr) {
-      console.error('Email error:', emailErr.message);
-    }
+    const emailSent = await notifyAllManagers('proofSubmitted', {
+      employeeName: record.employee_name,
+      duration: `${durationHours.toFixed(2)} jam`
+    });
 
     res.json({ ...record, email_sent: emailSent, not_counted: false });
   } catch (err) {
@@ -494,7 +462,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/cancel — Batalkan lembur manual
+// POST /:id/cancel — Batalkan lembur
 // ============================================
 router.post('/:id/cancel', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -603,44 +571,40 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     const updated = result.rows[0];
     console.log(`✅ Record ${id} direvisi: date=${finalDate}, start=${finalStartTime}, duration=${finalDuration}j`);
 
+    const managersResult = await query(
+      "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
+    );
+
+    const JWT_SECRET = process.env.JWT_SECRET;
+    const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
     let emailSent = 0;
-    try {
-      const managersResult = await query(
-        "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
+
+    for (const mgr of managersResult.rows) {
+      const approveToken = jwt.sign(
+        { recordId: updated.id, action: 'approve', managerId: mgr.id },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+      const rejectToken = jwt.sign(
+        { recordId: updated.id, action: 'reject', managerId: mgr.id },
+        JWT_SECRET,
+        { expiresIn: '24h' }
       );
 
-      const JWT_SECRET = process.env.JWT_SECRET;
-      const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
-
-      for (const mgr of managersResult.rows) {
-        const approveToken = jwt.sign(
-          { recordId: updated.id, action: 'approve', managerId: mgr.id },
-          JWT_SECRET,
-          { expiresIn: '24h' }
-        );
-        const rejectToken = jwt.sign(
-          { recordId: updated.id, action: 'reject', managerId: mgr.id },
-          JWT_SECRET,
-          { expiresIn: '24h' }
-        );
-
-        const r = await sendEmail({
-          to: mgr.email,
-          ...templates.newRequest({
-            employeeName: updated.employee_name,
-            date: finalDate,
-            startTime: finalStartTime,
-            duration: finalDuration,
-            reason: reason || record.reason,
-            desc: description,
-            approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
-            rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
-          })
-        });
-        if (r.success) emailSent++;
-      }
-    } catch (emailErr) {
-      console.error('Email error:', emailErr.message);
+      const r = await sendEmail({
+        to: mgr.email,
+        ...templates.newRequest({
+          employeeName: updated.employee_name,
+          date: finalDate,
+          startTime: finalStartTime,
+          duration: finalDuration,
+          reason: reason || record.reason,
+          desc: description,
+          approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
+          rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
+        })
+      });
+      if (r.success) emailSent++;
     }
 
     res.json({ ...updated, email_sent: emailSent });
