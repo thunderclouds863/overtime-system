@@ -15,7 +15,7 @@ console.log('📧 Mailer init:', {
 let brevo = null;
 if (BREVO_API_KEY) {
   brevo = new BrevoClient({ apiKey: BREVO_API_KEY });
-  console.log('✅ Brevo API siap (tracking disabled)');
+  console.log('✅ Brevo API siap');
 } else {
   console.error('❌ BREVO_API_KEY tidak di-set!');
 }
@@ -32,35 +32,19 @@ export async function sendEmail({ to, subject, html }) {
 
   try {
     console.log(`📧 [SEND] Ke: ${to} | Subj: ${subject}`);
-
     const result = await brevo.transactionalEmails.sendTransacEmail({
       sender: { email: SENDER_EMAIL, name: SENDER_NAME },
       to: [{ email: to }],
       subject,
       htmlContent: html,
-
-      // Matikan tracking di semua level
       headers: {
-        'X-Mailin-custom': 'disable-tracking',
-        'X-Mailin-Opens': '0',
-        'X-Mailin-Clicks': '0',
-        'X-Mailin-track': '0',
-        'X-Mailin-track-opens': '0',
-        'X-Mailin-track-clicks': '0'
+        'X-Mailin-custom': 'disable-tracking'
       },
-
       params: {
         trackClicks: false,
-        trackOpens: false,
-        track: false
-      },
-
-      // Matikan mirror link & custom tracking
-      mirrorActive: false,
-      trackClicks: false,
-      trackOpens: false
+        trackOpens: false
+      }
     });
-
     console.log(`✅ [OK] ${to} | ID: ${result.messageId}`);
     return { success: true, messageId: result.messageId };
   } catch (error) {
@@ -97,7 +81,23 @@ export const templates = {
         <tr><td style="padding:8px;color:#64748b;font-size:12px">Kategori</td><td style="padding:8px">${d.reason}</td></tr>
         <tr><td style="padding:8px;color:#64748b;font-size:12px">Rencana</td><td style="padding:8px">${d.desc}</td></tr>
       </table>
-      <p>Silakan buka sistem untuk review.</p>
+      ${d.approveUrl && d.rejectUrl ? `
+        <div style="margin:24px 0;padding:20px;background:#f8fafc;border-radius:16px;text-align:center;border:1px solid #e2e8f0">
+          <p style="margin:0 0 16px;font-size:13px;color:#475569;font-weight:600">⚡ Setujui langsung dari email:</p>
+          <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 auto">
+            <tr>
+              <td style="padding:0 6px">
+                <a href="${d.approveUrl}" style="display:inline-block;padding:14px 32px;background:#10b981;color:white;text-decoration:none;font-weight:700;font-size:14px;border-radius:12px">✓ Setujui</a>
+              </td>
+              <td style="padding:0 6px">
+                <a href="${d.rejectUrl}" style="display:inline-block;padding:14px 32px;background:#ef4444;color:white;text-decoration:none;font-weight:700;font-size:14px;border-radius:12px">✕ Tolak</a>
+              </td>
+            </tr>
+          </table>
+          <p style="margin:16px 0 0;font-size:11px;color:#94a3b8">Link berlaku 24 jam · Satu kali pakai</p>
+        </div>
+      ` : ''}
+      <p style="margin:0;font-size:12px;color:#94a3b8;line-height:1.5">Atau buka sistem untuk review lengkap dengan catatan.</p>
     `)
   }),
 
@@ -117,6 +117,10 @@ export const templates = {
     subject: '[Lembur] ❌ Pengajuan ditolak',
     html: wrap('❌ Pengajuan Ditolak', '#ef4444,#dc2626', `
       <p>Pengajuan lembur Anda <strong>ditolak</strong>.</p>
+      <table style="width:100%;border-collapse:collapse;margin:16px 0">
+        <tr><td style="padding:8px;color:#64748b;font-size:12px">Tanggal</td><td style="padding:8px">${d.date}</td></tr>
+        <tr><td style="padding:8px;color:#64748b;font-size:12px">Jam</td><td style="padding:8px">${d.startTime}</td></tr>
+      </table>
       <div style="background:#fee2e2;padding:12px;border-radius:12px;margin:16px 0">
         <p style="margin:0;color:#991b1b"><strong>Alasan:</strong> ${d.note}</p>
       </div>
@@ -153,7 +157,6 @@ export const templates = {
         <p style="font-size:32px;margin:0">${'★'.repeat(d.rating)}${'☆'.repeat(5 - d.rating)}</p>
         <p style="margin:4px 0 0;font-size:12px;color:#065f46">Rating: ${d.rating}/5</p>
       </div>
-      <p>Lembur Anda akan masuk ke perhitungan penggajian.</p>
     `)
   }),
 
@@ -170,7 +173,7 @@ export const templates = {
   verifyRejected: (d) => ({
     subject: '[Lembur] ❌ Hasil kerja ditolak',
     html: wrap('❌ Hasil Ditolak', '#ef4444,#dc2626', `
-      <p>Hasil kerja lembur Anda <strong>ditolak</strong>. Lembur tidak akan dihitung.</p>
+      <p>Hasil kerja lembur Anda <strong>ditolak</strong>.</p>
       <div style="background:#fee2e2;padding:12px;border-radius:12px;margin:16px 0">
         <p style="margin:0;color:#991b1b"><strong>Alasan:</strong> ${d.note}</p>
       </div>
