@@ -1,61 +1,55 @@
-import nodemailer from 'nodemailer';
+import * as brevo from '@getbrevo/brevo';
 import dotenv from 'dotenv';
 dotenv.config();
 
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const SENDER_EMAIL = process.env.BREVO_SENDER_EMAIL || 'hrdcimory1@gmail.com';
+const SENDER_NAME = process.env.BREVO_SENDER_NAME || 'Sistem Lembur Cimory';
+
 console.log('📧 Mailer config:', {
-  user: process.env.GMAIL_USER ? '✓ set' : '✗ MISSING',
-  pass: process.env.GMAIL_APP_PASSWORD ? '✓ set' : '✗ MISSING'
+  provider: 'Brevo API',
+  apiKey: BREVO_API_KEY ? '✓ set' : '✗ MISSING',
+  sender: SENDER_EMAIL
 });
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASSWORD
-  },
-  connectionTimeout: 10000,
-  greetingTimeout: 10000,
-  socketTimeout: 15000
-});
-
-// Verify saat startup
-transporter.verify((err, success) => {
-  if (err) {
-    console.error('❌ SMTP GAGAL:', err.message);
-    console.error('   Cek: GMAIL_USER, GMAIL_APP_PASSWORD di Render Environment');
-  } else {
-    console.log('✅ SMTP siap kirim email');
-  }
-});
+let emailApi = null;
+if (BREVO_API_KEY) {
+  const apiInstance = new brevo.TransactionalEmailsApi();
+  apiInstance.setApiKey(brevo.TransactionalEmailsApiApiKeys.apiKey, BREVO_API_KEY);
+  emailApi = apiInstance;
+  console.log('✅ Brevo API siap');
+} else {
+  console.error('❌ BREVO_API_KEY tidak di-set!');
+}
 
 export async function sendEmail({ to, subject, html }) {
   if (!to) {
     console.warn('⚠️ sendEmail: alamat email kosong, skip');
     return { success: false, error: 'no recipient' };
   }
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
-    console.warn('⚠️ sendEmail: Gmail credentials tidak di-set, skip');
-    return { success: false, error: 'no credentials' };
+  if (!emailApi) {
+    console.warn('⚠️ sendEmail: Brevo tidak siap, skip');
+    return { success: false, error: 'no api key' };
   }
 
   try {
     console.log(`📧 Mengirim email ke ${to}...`);
-    const info = await transporter.sendMail({
-      from: `"Sistem Lembur Cimory" <${process.env.GMAIL_USER}>`,
-      to,
-      subject,
-      html
-    });
-    console.log(`✅ Email terkirim ke ${to}: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    const sendSmtpEmail = new brevo.SendSmtpEmail();
+    sendSmtpEmail.sender = { email: SENDER_EMAIL, name: SENDER_NAME };
+    sendSmtpEmail.to = [{ email: to }];
+    sendSmtpEmail.subject = subject;
+    sendSmtpEmail.htmlContent = html;
+
+    const result = await emailApi.sendTransacEmail(sendSmtpEmail);
+    console.log(`✅ Email terkirim ke ${to}: ${result.messageId}`);
+    return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error(`❌ Email GAGAL ke ${to}:`, error.message);
     return { success: false, error: error.message };
   }
 }
 
+// Template sama seperti versi sebelumnya, tidak perlu diubah
 const wrap = (title, color, content) => `
   <div style="font-family:'Segoe UI',system-ui,sans-serif;max-width:600px;margin:auto;background:#f7f7fb;padding:20px">
     <div style="background:white;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08)">
