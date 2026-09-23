@@ -23,7 +23,7 @@ export function generateToken(user) {
       level: user.level
     },
     JWT_SECRET,
-    { expiresIn: '5B' }
+    { expiresIn: '7d' }
   );
 }
 
