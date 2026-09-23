@@ -11,7 +11,6 @@ const OFFICE = {
   radius: 100
 };
 
-// Helper: cek level (format: "3a", "4a", "5b")
 function levelNum(level) {
   if (!level) return 0;
   const match = String(level).match(/^(\d+)/);
@@ -20,12 +19,8 @@ function levelNum(level) {
 
 function isHoliday(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
-  const day = d.getDay(); // 0 = Minggu, 6 = Sabtu
+  const day = d.getDay();
   return day === 0 || day === 6;
-}
-
-function getDefaultStartTime(dateStr) {
-  return isHoliday(dateStr) ? '08:00' : '18:00';
 }
 
 function haversine(lat1, lon1, lat2, lon2) {
@@ -36,7 +31,7 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Bangun approval chain: cari atasan sampai ketemu level >= 4a
+// Cari atasan sampai level >= 4a (untuk approval chain)
 async function buildApprovalChain(employeeId) {
   const chain = [];
   let currentId = employeeId;
@@ -52,39 +47,30 @@ async function buildApprovalChain(employeeId) {
     );
     const user = result.rows[0];
     if (!user) break;
+    if (levelNum(user.level) >= 4) break;
 
-    // Kalau level >= 4a, sudah cukup
-    if (levelNum(user.level) >= 4) {
-      break;
-    }
-
-    // Cari approver
     const approverIds = user.approver_ids || [];
     if (approverIds.length === 0) break;
 
-    // Ambil approver pertama yang aktif
     const approverResult = await query(
-      'SELECT id, level, role FROM users WHERE id = ANY($1) AND is_active = true ORDER BY level DESC LIMIT 1',
+      'SELECT id, level, role, email, full_name FROM users WHERE id = ANY($1) AND is_active = true ORDER BY level DESC LIMIT 1',
       [approverIds]
     );
     const approver = approverResult.rows[0];
     if (!approver) break;
 
-    chain.push(approver.id);
+    chain.push({ id: approver.id, email: approver.email, name: approver.full_name });
     currentId = approver.id;
 
-    // Kalau approver sudah level >= 4a, stop
     if (levelNum(approver.level) >= 4) break;
   }
-
   return chain;
 }
 
-// List employees untuk dropdown manager
 router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
   try {
     const result = await query(
-      `SELECT id, email, full_name, jabatan, level FROM users 
+      `SELECT id, email, full_name, jabatan, level FROM users
        WHERE role = 'employee' AND is_active = true ORDER BY full_name`
     );
     res.json(result.rows);
@@ -109,14 +95,12 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Semua field wajib' });
   }
 
-  // Validasi: karyawan biasa hanya boleh ajukan kalau level < 3a
   if (!isManager && userLevel >= 3) {
-    return res.status(403).json({ error: 'Level kamu tidak bisa mengajukan lembur sendiri. Hubungi atasan.' });
+    return res.status(403).json({ error: 'Level kamu tidak bisa mengajukan lembur sendiri' });
   }
 
-  // Tentukan jam mulai otomatis
   const holiday = isHoliday(date);
-  const finalStartTime = start_time || getDefaultStartTime(date);
+  const finalStartTime = start_time || (holiday ? '08:00' : '18:00');
 
   const plannedStart = new Date(`${date}T${finalStartTime}:00`);
   if (plannedStart < new Date()) {
@@ -127,31 +111,33 @@ router.post('/', requireAuth, async (req, res) => {
   const targetName = isManager && employee_name ? employee_name : user.name;
 
   // Bangun approval chain
-  let approvalChain = [];
+  let approvalChainIds = [];
   let initialStatus = 'pending';
+  let notifyEmails = [];
 
   if (isManager && employee_id) {
-    // Manager assign ke employee
+    // Manager assign
     if (userLevel >= 4) {
-      // Level >= 4a bisa langsung approve
-      approvalChain = [];
       initialStatus = 'approved';
     } else {
-      // Manager level < 4a → perlu approval atasannya
-      approvalChain = await buildApprovalChain(user.id);
-      initialStatus = 'pending';
+      const chain = await buildApprovalChain(user.id);
+      approvalChainIds = chain.map(c => c.id);
+      notifyEmails = chain.slice(0, 1).map(c => c.email);
     }
   } else {
-    // Employee ajukan sendiri
-    approvalChain = await buildApprovalChain(user.id);
-    if (approvalChain.length === 0 && userLevel >= 4) {
+    // Employee ajukan
+    const chain = await buildApprovalChain(user.id);
+    approvalChainIds = chain.map(c => c.id);
+    if (approvalChainIds.length === 0 && userLevel >= 4) {
       initialStatus = 'approved';
+    } else {
+      notifyEmails = chain.slice(0, 1).map(c => c.email);
     }
   }
 
   try {
     const result = await query(
-      `INSERT INTO overtime_records 
+      `INSERT INTO overtime_records
        (employee_id, employee_name, date, start_time, planned_duration,
         planned_start, reason, description, source, status, is_holiday,
         approval_chain, approval_progress)
@@ -166,44 +152,50 @@ router.post('/', requireAuth, async (req, res) => {
         isManager ? 'manager' : 'employee',
         initialStatus,
         holiday,
-        approvalChain,
+        approvalChainIds,
         0
       ]
     );
 
     const record = result.rows[0];
 
-    // Kirim email ke approver pertama atau langsung ke manager kalau approved
-    if (initialStatus === 'pending' && approvalChain.length > 0) {
-      const approver = await query('SELECT email, full_name FROM users WHERE id = $1', [approvalChain[0]]);
-      if (approver.rows[0]) {
-        await sendEmail({
-          to: approver.rows[0].email,
+    // KIRIM EMAIL
+    let emailResult = { success: true, sent: 0 };
+    if (initialStatus === 'pending' && notifyEmails.length > 0) {
+      for (const email of notifyEmails) {
+        const r = await sendEmail({
+          to: email,
           ...templates.newRequest({
-            employeeName: user.name,
+            employeeName: targetName,
             date, startTime: finalStartTime,
             duration: duration_hours,
             reason, desc: description
           })
         });
+        if (r.success) emailResult.sent++;
       }
     } else if (initialStatus === 'approved') {
       const emp = await query('SELECT email FROM users WHERE id = $1', [targetId]);
-      if (emp.rows[0]) {
-        await sendEmail({
+      if (emp.rows[0]?.email) {
+        const r = await sendEmail({
           to: emp.rows[0].email,
           ...templates.approved({ date, startTime: finalStartTime })
         });
+        if (r.success) emailResult.sent++;
       }
     }
 
-    res.json(record);
+    res.json({
+      ...record,
+      email_sent: emailResult.sent,
+      email_recipients: notifyEmails
+    });
   } catch (err) {
+    console.error('POST /records error:', err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// Ambil daftar record — dengan filter role & level
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user;
   const { status, limit = 100 } = req.query;
@@ -213,14 +205,12 @@ router.get('/', requireAuth, async (req, res) => {
   let idx = 1;
 
   if (user.role === 'admin') {
-    // Admin lihat semua
+    // all
   } else if (user.role === 'manager') {
-    // Manager lihat: record sendiri + record yang dia approver-nya
     sql += ` WHERE (employee_id = $1 OR $1 = ANY(approval_chain))`;
     params.push(user.id);
     idx = 2;
   } else {
-    // Employee lihat record sendiri
     sql += ` WHERE employee_id = $1`;
     params.push(user.id);
     idx = 2;
@@ -243,21 +233,17 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-// Mulai lembur dengan verifikasi GPS
+// Mulai lembur
 router.post('/:id/start', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { lat, lng, accuracy } = req.body;
   const user = req.user;
 
-  if (!lat || !lng) {
-    return res.status(400).json({ error: 'Koordinat GPS wajib' });
-  }
+  if (!lat || !lng) return res.status(400).json({ error: 'Koordinat GPS wajib' });
 
   const distance = Math.round(haversine(lat, lng, OFFICE.lat, OFFICE.lng));
   if (distance > OFFICE.radius) {
-    return res.status(400).json({
-      error: `Di luar radius kantor (${distance}m > ${OFFICE.radius}m)`
-    });
+    return res.status(400).json({ error: `Di luar radius kantor (${distance}m > ${OFFICE.radius}m)` });
   }
 
   try {
@@ -271,24 +257,12 @@ router.post('/:id/start', requireAuth, async (req, res) => {
        RETURNING *`,
       [lat, lng, accuracy, distance, id, user.id, user.role]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Record tidak ditemukan / tidak bisa dimulai' });
-    }
-
-    await query(
-      `INSERT INTO activity_logs (record_id, actor_id, actor_name, action, details)
-       VALUES ($1, $2, $3, 'started', $4)`,
-      [result.rows[0].id, user.id, user.name, JSON.stringify({ distance, accuracy })]
-    );
-
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan / tidak bisa dimulai' });
     res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Selesai lembur + upload bukti
+// Selesai lembur
 router.post('/:id/finish', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { proof_text, proof_file_name } = req.body;
@@ -308,45 +282,33 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
        RETURNING *`,
       [proof_text, proof_file_name || null, id, user.id, user.role]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Record tidak ditemukan' });
-    }
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan' });
 
     const record = result.rows[0];
 
-    // Notif ke approver terakhir di chain
-    const notifIds = record.approval_chain?.length > 0
-      ? [record.approval_chain[record.approval_chain.length - 1]]
-      : [];
-
-    for (const aid of notifIds) {
-      const approver = await query('SELECT email FROM users WHERE id = $1', [aid]);
-      if (approver.rows[0]) {
-        await sendEmail({
-          to: approver.rows[0].email,
-          ...templates.proofSubmitted({
-            employeeName: record.employee_name,
-            duration: record.actual_duration
-          })
-        });
-      }
+    // Kirim email ke semua manager aktif
+    const managers = await query("SELECT email FROM users WHERE role = 'manager' AND is_active = true");
+    let sent = 0;
+    for (const m of managers.rows) {
+      const r = await sendEmail({
+        to: m.email,
+        ...templates.proofSubmitted({
+          employeeName: record.employee_name,
+          duration: record.actual_duration
+        })
+      });
+      if (r.success) sent++;
     }
 
-    res.json(record);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+    res.json({ ...record, email_sent: sent });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Batalkan
 router.post('/:id/cancel', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { reason } = req.body;
   const user = req.user;
-
   if (!reason) return res.status(400).json({ error: 'Alasan wajib' });
-
   try {
     const result = await query(
       `UPDATE overtime_records
@@ -357,22 +319,16 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
        RETURNING *`,
       [reason, id, user.id, user.role]
     );
-
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
     res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Revisi pengajuan
 router.post('/:id/revise', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { reason, description, proof } = req.body;
   const user = req.user;
-
   if (!description) return res.status(400).json({ error: 'Deskripsi wajib' });
-
   try {
     const result = await query(
       `UPDATE overtime_records
@@ -384,41 +340,30 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
        RETURNING *`,
       [reason, description, proof || null, id, user.id, user.role]
     );
-
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak bisa direvisi' });
 
     const record = result.rows[0];
-
-    if (record.approval_chain?.length > 0) {
-      const approver = await query('SELECT email FROM users WHERE id = $1', [record.approval_chain[0]]);
-      if (approver.rows[0]) {
-        await sendEmail({
-          to: approver.rows[0].email,
-          ...templates.newRequest({
-            employeeName: user.name,
-            date: record.date,
-            startTime: record.start_time,
-            duration: record.planned_duration,
-            reason, desc: description
-          })
-        });
-      }
+    const managers = await query("SELECT email FROM users WHERE role = 'manager' AND is_active = true");
+    for (const m of managers.rows) {
+      await sendEmail({
+        to: m.email,
+        ...templates.newRequest({
+          employeeName: user.name,
+          date: record.date, startTime: record.start_time,
+          duration: record.planned_duration,
+          reason, desc: description
+        })
+      });
     }
-
     res.json(record);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Revisi bukti
 router.post('/:id/revise-proof', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { proof_text, proof_file_name } = req.body;
   const user = req.user;
-
   if (!proof_text) return res.status(400).json({ error: 'Deskripsi wajib' });
-
   try {
     const result = await query(
       `UPDATE overtime_records
@@ -430,12 +375,9 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
        RETURNING *`,
       [proof_text, proof_file_name || null, id, user.id, user.role]
     );
-
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
     res.json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 export default router;
