@@ -2,165 +2,195 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f0f1e">
 <title>Atasan — Sistem Lembur</title>
 <link rel="icon" type="image/png" href="logo-cimory.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
   theme: {
     extend: {
-      fontFamily: { sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'] },
+      fontFamily: {
+        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
+        display: ['Space Grotesk', 'system-ui', 'sans-serif']
+      },
       colors: {
-        brand: {50:'#eff6ff',100:'#dbeafe',200:'#bfdbfe',300:'#93c5fd',400:'#60a5fa',500:'#3b82f6',600:'#2563eb',700:'#1d4ed8',800:'#1e40af',900:'#1e3a8a'},
-        ink: {900:'#0b1220',800:'#131c31',700:'#1e293b',600:'#334155'}
+        brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'},
+        ink: {900:'#0f0f1e',800:'#1a1a2e',700:'#25253d',600:'#33334f'},
+        neon: {pink:'#ec4899',violet:'#8b5cf6',cyan:'#06b6d4',lime:'#84cc16'}
       }
     }
   }
 }
 </script>
 <style>
-  * { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; }
-  .fade-in { animation: fadeIn 0.25s ease-out; }
-  @keyframes fadeIn { from {opacity:0; transform: translateY(6px);} to {opacity:1; transform:translateY(0);} }
-  .modal-in { animation: modalIn 0.22s cubic-bezier(.2,.9,.3,1); }
-  @keyframes modalIn { from {opacity:0; transform: scale(0.94);} to {opacity:1; transform:scale(1);} }
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-  .nav-item { position: relative; transition: all 0.18s ease; }
-  .nav-item::before { content:''; position:absolute; left:0; top:50%; transform:translateY(-50%) scaleY(0); width:3px; height:20px; background:#60a5fa; border-radius:0 3px 3px 0; transition: transform 0.2s; }
-  .nav-item.active::before { transform: translateY(-50%) scaleY(1); }
-  .nav-item.active { background: linear-gradient(90deg, rgba(59,130,246,0.15), transparent); color:#fff; }
-  .stat-card { position: relative; overflow: hidden; }
-  .stat-card::after { content:''; position:absolute; right:-30px; top:-30px; width:100px; height:100px; border-radius:50%; background: currentColor; opacity:0.06; }
+  * { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
+  .font-display { font-family: 'Space Grotesk', system-ui, sans-serif; }
+  body { background: #f7f7fb; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 4px; }
+  .nav-item { transition: all 0.2s ease; }
+  .nav-item.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
+  .modal-in { animation: modalIn 0.3s cubic-bezier(.2,.9,.3,1); }
+  @keyframes modalIn { from {opacity:0; transform: scale(0.94) translateY(20px);} to {opacity:1; transform:scale(1) translateY(0);} }
+  .card-hover { transition: all 0.25s; }
+  .card-hover:active { transform: scale(0.99); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+  .stat-grad-1 { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+  .stat-grad-2 { background: linear-gradient(135deg, #f59e0b, #fb923c); }
+  .stat-grad-3 { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
+  .stat-grad-4 { background: linear-gradient(135deg, #10b981, #059669); }
+  .stat-grad-5 { background: linear-gradient(135deg, #ec4899, #f43f5e); }
+  .badge-pulse { animation: badgePulse 1.5s infinite; }
+  @keyframes badgePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.7; } }
+  @media (max-width: 767px) {
+    main { padding-bottom: 90px; }
+  }
 </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
-<header class="fixed top-0 left-0 right-0 h-16 bg-ink-900 text-white z-40 border-b border-slate-800">
-  <div class="h-full px-5 flex items-center justify-between">
-    <div class="flex items-center gap-3">
-      <img src="logo-cimory.png" alt="Cimory" class="w-20 h-20 mx-auto mb-4 object-contain">
+<header class="fixed top-0 left-0 right-0 h-14 md:h-16 bg-ink-900 text-white z-40 border-b border-slate-800">
+  <div class="h-full px-3 md:px-5 flex items-center justify-between">
+    <div class="flex items-center gap-2 md:gap-3">
+      <img src="logo-cimory.png" alt="Cimory" class="w-9 h-9 md:w-10 md:h-10 object-contain">
       <div class="hidden sm:block">
-        <p class="text-sm font-bold">Overtime Management</p>
-        <p class="text-[10px] text-slate-400">Manager Portal</p>
+        <p class="text-xs md:text-sm font-bold">Manager Portal</p>
+        <p class="text-[9px] md:text-[10px] text-slate-400">Overtime Management</p>
       </div>
     </div>
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-2 pl-3 border-l border-slate-800">
-        <div class="text-right hidden sm:block">
+    <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2 pl-2 md:pl-3 border-l border-slate-800">
+        <div class="text-right hidden md:block">
           <p class="text-xs font-semibold" id="userName">-</p>
-          <p class="text-[10px] text-brand-400 font-bold" id="userLevelLabel">ATASAN</p>
+          <p class="text-[10px] text-brand-400 font-bold" id="userLevelLabel">-</p>
         </div>
-        <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center font-bold text-xs" id="userAvatar">-</div>
+        <div class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-brand-500 to-neon-violet flex items-center justify-center font-bold text-xs text-white" id="userAvatar">-</div>
       </div>
-      <button onclick="logout()" class="text-xs bg-red-600/20 hover:bg-red-600/40 border border-red-500/40 text-red-300 px-3 py-1.5 rounded-md transition">Logout</button>
+      <button onclick="logout()" class="text-[10px] md:text-xs bg-red-600/20 hover:bg-red-600/40 border border-red-500/40 text-red-300 px-2 md:px-3 py-1.5 rounded-full transition">🚪</button>
     </div>
   </div>
 </header>
 
-<aside class="fixed top-16 left-0 bottom-0 w-60 bg-ink-900 text-slate-400 z-30 hidden md:flex flex-col border-r border-slate-800">
+<aside class="hidden md:flex fixed top-16 left-0 bottom-0 w-60 bg-ink-900 text-slate-400 z-30 flex-col border-r border-slate-800">
   <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
     <p class="text-[10px] uppercase text-slate-500 px-3 pt-2 pb-1 font-bold tracking-wider">Menu</p>
-    <a onclick="switchTab('mgr-dashboard')" data-tab="mgr-dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer active"><span>📊</span> Dashboard</a>
-    <a onclick="switchTab('mgr-tugas')" data-tab="mgr-tugas" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer"><span>✦</span> Tugaskan Lembur</a>
-    <a onclick="switchTab('mgr-approval')" data-tab="mgr-approval" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
-      <span>✓</span> Perlu Review
-      <span id="navBadgeApproval" class="ml-auto text-[10px] bg-amber-500 text-white font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+    <a onclick="switchTab('mgr-dashboard')" data-tab="mgr-dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer active"><span>🏠</span> Dashboard</a>
+    <a onclick="switchTab('mgr-tugas')" data-tab="mgr-tugas" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>✍️</span> Tugaskan</a>
+    <a onclick="switchTab('mgr-approval')" data-tab="mgr-approval" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer relative">
+      <span>⏳</span> Perlu Review
+      <span id="navBadgeApproval" class="ml-auto text-[10px] bg-amber-500 text-white font-bold px-2 py-0.5 rounded-full hidden badge-pulse">0</span>
     </a>
-    <a onclick="switchTab('mgr-verifikasi')" data-tab="mgr-verifikasi" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer">
-      <span>🔍</span> Verifikasi Hasil
-      <span id="navBadgeVerify" class="ml-auto text-[10px] bg-orange-500 text-white font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+    <a onclick="switchTab('mgr-verifikasi')" data-tab="mgr-verifikasi" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer relative">
+      <span>🔍</span> Verifikasi
+      <span id="navBadgeVerify" class="ml-auto text-[10px] bg-orange-500 text-white font-bold px-2 py-0.5 rounded-full hidden badge-pulse">0</span>
     </a>
-    <a onclick="switchTab('mgr-monitor')" data-tab="mgr-monitor" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-md text-sm cursor-pointer"><span>◈</span> Monitoring Tim</a>
+    <a onclick="switchTab('mgr-monitor')" data-tab="mgr-monitor" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>📊</span> Monitoring</a>
   </nav>
   <div class="p-4 border-t border-slate-800">
     <p class="text-[10px] text-slate-500">Login sebagai</p>
     <p class="text-xs text-slate-300 font-semibold" id="mgrEmail">-</p>
-    <p class="text-[10px] text-purple-400 font-bold mt-1" id="mgrLevel">-</p>
+    <p class="text-[10px] text-brand-400 font-bold mt-1" id="mgrLevel">-</p>
   </div>
 </aside>
 
-<div class="md:hidden fixed bottom-0 left-0 right-0 bg-ink-900 border-t border-slate-800 z-40 flex text-slate-400">
-  <button onclick="switchTab('mgr-dashboard')" class="flex-1 py-3 text-[10px]">Dashboard</button>
-  <button onclick="switchTab('mgr-approval')" class="flex-1 py-3 text-[10px]">Review</button>
-  <button onclick="switchTab('mgr-verifikasi')" class="flex-1 py-3 text-[10px]">Verifikasi</button>
-  <button onclick="switchTab('mgr-monitor')" class="flex-1 py-3 text-[10px]">Monitor</button>
-</div>
+<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 z-40 safe-bottom">
+  <div class="flex items-center justify-around px-1 py-2">
+    <button onclick="switchTab('mgr-dashboard')" data-mobile-tab="mgr-dashboard" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px] relative">
+      <span class="text-xl">🏠</span><span class="text-[10px] font-semibold text-slate-600">Home</span>
+    </button>
+    <button onclick="switchTab('mgr-approval')" data-mobile-tab="mgr-approval" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px] relative">
+      <span class="text-xl">⏳</span><span class="text-[10px] font-semibold text-slate-600">Review</span>
+      <span id="mobileBadgeApproval" class="absolute top-0 right-1 text-[9px] bg-amber-500 text-white font-bold px-1.5 rounded-full hidden">0</span>
+    </button>
+    <button onclick="switchTab('mgr-verifikasi')" data-mobile-tab="mgr-verifikasi" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px] relative">
+      <span class="text-xl">🔍</span><span class="text-[10px] font-semibold text-slate-600">Verif</span>
+      <span id="mobileBadgeVerify" class="absolute top-0 right-1 text-[9px] bg-orange-500 text-white font-bold px-1.5 rounded-full hidden">0</span>
+    </button>
+    <button onclick="switchTab('mgr-monitor')" data-mobile-tab="mgr-monitor" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px]">
+      <span class="text-xl">📊</span><span class="text-[10px] font-semibold text-slate-600">Mon</span>
+    </button>
+  </div>
+</nav>
 
-<main class="md:ml-60 pt-20 pb-24 md:pb-8 px-4 md:px-8 max-w-[1400px]">
+<main class="md:ml-60 pt-16 md:pt-20 pb-24 md:pb-8 px-3 md:px-8 max-w-[1400px]">
 
-  <section id="tab-mgr-dashboard" class="tab-content space-y-5">
+  <section id="tab-mgr-dashboard" class="tab-content space-y-4">
     <div>
-      <h1 class="text-2xl font-extrabold text-slate-800">Dashboard Atasan</h1>
-      <p class="text-sm text-slate-500 mt-1">Ringkasan aktivitas tim</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Dashboard Atasan</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Ringkasan aktivitas tim</p>
     </div>
 
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="stat-card bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-emerald-600">
-        <p class="text-[11px] text-slate-500 font-semibold uppercase">Sedang Lembur</p>
-        <p id="mgrStatActive" class="text-3xl font-extrabold text-slate-800 mt-2">0</p>
+      <div class="stat-grad-4 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/25 relative overflow-hidden">
+        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
+        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Sedang Lembur</p>
+        <p id="mgrStatActive" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
       </div>
-      <div class="stat-card bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-amber-600">
-        <p class="text-[11px] text-slate-500 font-semibold uppercase">Menunggu Approval</p>
-        <p id="mgrStatPending" class="text-3xl font-extrabold text-slate-800 mt-2">0</p>
+      <div class="stat-grad-2 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/25 relative overflow-hidden">
+        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
+        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Menunggu</p>
+        <p id="mgrStatPending" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
       </div>
-      <div class="stat-card bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-orange-600">
-        <p class="text-[11px] text-slate-500 font-semibold uppercase">Verifikasi Hasil</p>
-        <p id="mgrStatVerify" class="text-3xl font-extrabold text-slate-800 mt-2">0</p>
+      <div class="stat-grad-5 rounded-2xl p-4 text-white shadow-lg shadow-pink-500/25 relative overflow-hidden">
+        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
+        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Verifikasi</p>
+        <p id="mgrStatVerify" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
       </div>
-      <div class="stat-card bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-brand-600">
-        <p class="text-[11px] text-slate-500 font-semibold uppercase">Total Jam Bulan Ini</p>
-        <p id="mgrStatHours" class="text-3xl font-extrabold text-slate-800 mt-2">0<span class="text-base text-slate-400 font-bold ml-1">j</span></p>
+      <div class="stat-grad-1 rounded-2xl p-4 text-white shadow-lg shadow-violet-500/25 relative overflow-hidden">
+        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
+        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Jam Bulan Ini</p>
+        <p id="mgrStatHours" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
-      <h2 class="font-bold text-slate-800 mb-4">Aktivitas Terbaru Tim</h2>
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-5">
+      <h2 class="font-bold text-slate-800 mb-3 text-sm md:text-base">🔥 Aktivitas Tim</h2>
       <div id="mgrRecent" class="space-y-2">
         <div class="text-center py-8 text-slate-400 text-sm">Memuat...</div>
       </div>
     </div>
   </section>
 
-  <section id="tab-mgr-tugas" class="tab-content hidden space-y-5">
+  <section id="tab-mgr-tugas" class="tab-content hidden space-y-4">
     <div>
-      <h1 class="text-2xl font-extrabold text-slate-800">Tugaskan Lembur</h1>
-      <p class="text-sm text-slate-500 mt-1">Buat penugasan lembur langsung untuk anggota tim</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">✍️ Tugaskan Lembur</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Buat penugasan lembur langsung</p>
     </div>
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 max-w-3xl">
-      <div class="bg-brand-50 border border-brand-100 rounded-xl p-3.5 mb-5 flex gap-3">
-        <span class="text-brand-600 text-lg">✦</span>
-        <p class="text-xs text-brand-800 leading-relaxed"><strong>Penugasan langsung:</strong> karyawan otomatis menerima notifikasi email. Jam mulai otomatis sesuai jenis hari.</p>
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 md:p-6 max-w-3xl">
+      <div class="bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 mb-5 flex gap-3">
+        <span class="text-xl">✨</span>
+        <p class="text-xs text-brand-900 leading-relaxed"><strong>Penugasan langsung:</strong> karyawan otomatis dapat notifikasi. Jam mulai otomatis sesuai jenis hari.</p>
       </div>
-      <div class="grid md:grid-cols-2 gap-4">
+      <div class="grid md:grid-cols-2 gap-3 md:gap-4">
         <div class="md:col-span-2">
-          <label class="text-xs font-bold text-slate-600 uppercase">Pilih Karyawan <span class="text-red-500">*</span></label>
-          <select id="mgrEmp" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
+          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Pilih Karyawan *</label>
+          <select id="mgrEmp" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
             <option value="">— Pilih anggota tim —</option>
           </select>
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
-          <input type="date" id="mgrDate" onchange="updateMgrStartTime()" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
+          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Tanggal *</label>
+          <input type="date" id="mgrDate" onchange="updateMgrStartTime()" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Jenis Hari</label>
-          <div id="mgrJenisHari" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-100 text-slate-600">Pilih tanggal</div>
+          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Jenis Hari</label>
+          <div id="mgrJenisHari" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600">Pilih tanggal</div>
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Jam Mulai (otomatis)</label>
-          <input type="time" id="mgrStart" readonly class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-100 text-slate-600 cursor-not-allowed">
+          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Jam Mulai (auto)</label>
+          <input type="time" id="mgrStart" readonly class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600 cursor-not-allowed">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Durasi (jam) <span class="text-red-500">*</span></label>
-          <input type="number" id="mgrDurasi" min="1" max="24" value="2" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
+          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Durasi (jam) *</label>
+          <input type="number" id="mgrDurasi" min="1" max="24" value="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
         </div>
         <div class="md:col-span-2">
-          <label class="text-xs font-bold text-slate-600 uppercase">Kategori <span class="text-red-500">*</span></label>
-          <select id="mgrReason" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
+          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Kategori *</label>
+          <select id="mgrReason" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
             <option>Target proyek</option>
             <option>Pekerjaan mendesak</option>
             <option>Closing bulanan</option>
@@ -168,36 +198,36 @@ tailwind.config = {
           </select>
         </div>
         <div class="md:col-span-2">
-          <label class="text-xs font-bold text-slate-600 uppercase">Instruksi Kerja <span class="text-red-500">*</span></label>
-          <textarea id="mgrDesc" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white" placeholder="Jelaskan tugas yang harus diselesaikan..."></textarea>
+          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Instruksi Kerja *</label>
+          <textarea id="mgrDesc" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white" placeholder="Jelaskan tugas yang harus diselesaikan..."></textarea>
         </div>
       </div>
-      <div id="mgrApprovalInfo" class="mt-4 bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800 hidden"></div>
-      <button onclick="submitAssignment()" class="mt-5 w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-600/25 text-sm">Tugaskan Lembur</button>
+      <div id="mgrApprovalInfo" class="mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 hidden"></div>
+      <button onclick="submitAssignment()" class="mt-5 w-full bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/25 text-sm transition active:scale-[0.98]">Tugaskan 🚀</button>
     </div>
   </section>
 
-  <section id="tab-mgr-approval" class="tab-content hidden space-y-5">
+  <section id="tab-mgr-approval" class="tab-content hidden space-y-4">
     <div>
-      <h1 class="text-2xl font-extrabold text-slate-800">Perlu Review Pengajuan</h1>
-      <p class="text-sm text-slate-500 mt-1">Fase 1 — Approve jadwal lembur sebelum dijalankan</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">⏳ Perlu Review</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Fase 1 · Approve jadwal lembur</p>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="stat-card bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-emerald-600">
-        <p class="text-[11px] text-slate-500 font-semibold uppercase">Aktif</p>
-        <p id="mgrStatActive2" class="text-3xl font-extrabold text-slate-800 mt-2">0</p>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <p class="text-[10px] text-slate-500 font-bold uppercase">Aktif</p>
+        <p id="mgrStatActive2" class="text-2xl font-extrabold text-slate-800 mt-1.5 font-display">0</p>
       </div>
-      <div class="stat-card bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-amber-600">
-        <p class="text-[11px] text-slate-500 font-semibold uppercase">Menunggu</p>
-        <p id="mgrStatPending2" class="text-3xl font-extrabold text-slate-800 mt-2">0</p>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <p class="text-[10px] text-amber-600 font-bold uppercase">Menunggu</p>
+        <p id="mgrStatPending2" class="text-2xl font-extrabold text-amber-600 mt-1.5 font-display">0</p>
       </div>
-      <div class="stat-card bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-orange-600">
-        <p class="text-[11px] text-slate-500 font-semibold uppercase">Verifikasi</p>
-        <p id="mgrStatVerify2" class="text-3xl font-extrabold text-slate-800 mt-2">0</p>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <p class="text-[10px] text-orange-600 font-bold uppercase">Verifikasi</p>
+        <p id="mgrStatVerify2" class="text-2xl font-extrabold text-orange-600 mt-1.5 font-display">0</p>
       </div>
-      <div class="stat-card bg-white rounded-2xl p-4 shadow-sm border border-slate-100 text-red-600">
-        <p class="text-[11px] text-slate-500 font-semibold uppercase">Revisi/Ditolak</p>
-        <p id="mgrStatRevision" class="text-3xl font-extrabold text-slate-800 mt-2">0</p>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+        <p class="text-[10px] text-red-600 font-bold uppercase">Revisi</p>
+        <p id="mgrStatRevision" class="text-2xl font-extrabold text-red-600 mt-1.5 font-display">0</p>
       </div>
     </div>
     <div id="approvalList" class="space-y-3">
@@ -205,15 +235,15 @@ tailwind.config = {
     </div>
   </section>
 
-  <section id="tab-mgr-verifikasi" class="tab-content hidden space-y-5">
+  <section id="tab-mgr-verifikasi" class="tab-content hidden space-y-4">
     <div>
-      <h1 class="text-2xl font-extrabold text-slate-800">Verifikasi Hasil Kerja</h1>
-      <p class="text-sm text-slate-500 mt-1">Fase 3 — Cek hasil lembur sebelum di-approve sebagai lembur sah</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">🔍 Verifikasi Hasil</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Fase 3 · Cek hasil lembur</p>
     </div>
-    <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 flex gap-3">
-      <span class="text-orange-600 text-lg">🔍</span>
+    <div class="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4 flex gap-3">
+      <span class="text-xl">🔍</span>
       <div class="text-xs text-orange-800 leading-relaxed">
-        <strong>Verifikasi hasil kerja:</strong> karyawan sudah menyelesaikan lembur dan upload bukti. Level ≥ 4a bisa lihat penilaian dari level bawah.
+        <strong>Verifikasi hasil kerja:</strong> karyawan selesai lembur & upload bukti. Level ≥ 4a bisa lihat penilaian dari level bawah.
       </div>
     </div>
     <div id="verifyList" class="space-y-3">
@@ -221,24 +251,23 @@ tailwind.config = {
     </div>
   </section>
 
-  <section id="tab-mgr-monitor" class="tab-content hidden space-y-5">
+  <section id="tab-mgr-monitor" class="tab-content hidden space-y-4">
     <div>
-      <h1 class="text-2xl font-extrabold text-slate-800">Monitoring Tim</h1>
-      <p class="text-sm text-slate-500 mt-1">Rekam jejak lengkap aktivitas lembur tim</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">📊 Monitoring Tim</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Rekam jejak lengkap</p>
     </div>
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
             <tr>
-              <th class="text-left px-4 py-3.5 font-bold">Karyawan</th>
-              <th class="text-left px-4 py-3.5 font-bold">Level</th>
-              <th class="text-left px-4 py-3.5 font-bold">Tanggal</th>
-              <th class="text-left px-4 py-3.5 font-bold">Jam</th>
-              <th class="text-left px-4 py-3.5 font-bold">Durasi</th>
-              <th class="text-left px-4 py-3.5 font-bold">Sumber</th>
-              <th class="text-left px-4 py-3.5 font-bold">Status</th>
-              <th class="text-left px-4 py-3.5 font-bold">Aksi</th>
+              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Karyawan</th>
+              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Level</th>
+              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Tanggal</th>
+              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden lg:table-cell">Jam</th>
+              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Durasi</th>
+              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Status</th>
+              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Aksi</th>
             </tr>
           </thead>
           <tbody id="monitorTable" class="divide-y divide-slate-100"></tbody>
@@ -249,8 +278,10 @@ tailwind.config = {
 
 </main>
 
-<div id="modalReview" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 modal-in max-h-[92vh] overflow-y-auto">
+<!-- MODAL REVIEW -->
+<div id="modalReview" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
+    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <div class="flex items-start justify-between mb-4">
       <div>
         <div class="flex items-center gap-2 mb-1">
@@ -262,18 +293,20 @@ tailwind.config = {
       <button onclick="closeModal('modalReview')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
     </div>
     <div id="reviewContent" class="space-y-3 text-sm"></div>
-    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Catatan untuk karyawan</label>
-    <textarea id="reviewNote" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50" placeholder="Wajib jika minta revisi / tolak"></textarea>
+    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Catatan</label>
+    <textarea id="reviewNote" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50" placeholder="Wajib jika revisi / tolak"></textarea>
     <div class="grid grid-cols-3 gap-2 mt-5">
-      <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-2.5 rounded-xl text-sm font-bold">Tolak</button>
-      <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-2.5 rounded-xl text-sm font-bold">Minta Revisi</button>
-      <button onclick="doApprove()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/25">Setujui</button>
+      <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
+      <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">✏️ Revisi</button>
+      <button onclick="doApprove()" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">✅ Setuju</button>
     </div>
   </div>
 </div>
 
-<div id="modalVerify" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 modal-in max-h-[92vh] overflow-y-auto">
+<!-- MODAL VERIFY -->
+<div id="modalVerify" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
+    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <div class="flex items-start justify-between mb-4">
       <div>
         <div class="flex items-center gap-2 mb-1">
@@ -281,37 +314,35 @@ tailwind.config = {
           <span class="text-[10px] text-slate-400">Verifikasi Hasil</span>
         </div>
         <h3 class="font-extrabold text-slate-800 text-lg">Verifikasi Hasil Lembur</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Cek apakah hasil kerja sesuai rencana</p>
       </div>
       <button onclick="closeModal('modalVerify')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
     </div>
     <div id="verifyContent" class="space-y-3 text-sm"></div>
-    <div class="mt-4 bg-slate-50 rounded-xl p-4 border border-slate-100">
-      <label class="text-xs font-bold text-slate-600 uppercase">Penilaian Hasil Kerja</label>
+    <div class="mt-4 bg-gradient-to-br from-slate-50 to-brand-50 rounded-2xl p-4 border border-slate-100">
+      <label class="text-xs font-bold text-slate-600 uppercase">Penilaian Hasil</label>
       <div class="flex gap-2 mt-2" id="ratingStars">
-        <button onclick="setRating(1)" data-star="1" class="star-btn text-2xl transition hover:scale-110">☆</button>
-        <button onclick="setRating(2)" data-star="2" class="star-btn text-2xl transition hover:scale-110">☆</button>
-        <button onclick="setRating(3)" data-star="3" class="star-btn text-2xl transition hover:scale-110">☆</button>
-        <button onclick="setRating(4)" data-star="4" class="star-btn text-2xl transition hover:scale-110">☆</button>
-        <button onclick="setRating(5)" data-star="5" class="star-btn text-2xl transition hover:scale-110">☆</button>
+        <button onclick="setRating(1)" data-star="1" class="star-btn text-3xl transition hover:scale-110">☆</button>
+        <button onclick="setRating(2)" data-star="2" class="star-btn text-3xl transition hover:scale-110">☆</button>
+        <button onclick="setRating(3)" data-star="3" class="star-btn text-3xl transition hover:scale-110">☆</button>
+        <button onclick="setRating(4)" data-star="4" class="star-btn text-3xl transition hover:scale-110">☆</button>
+        <button onclick="setRating(5)" data-star="5" class="star-btn text-3xl transition hover:scale-110">☆</button>
       </div>
-      <p class="text-[11px] text-slate-500 mt-1">Klik bintang untuk menilai kualitas hasil kerja</p>
+      <p class="text-[11px] text-slate-500 mt-1">Klik bintang untuk nilai hasil kerja</p>
     </div>
-    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Catatan verifikasi</label>
-    <textarea id="verifyNote" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50" placeholder="Wajib jika revisi / tolak"></textarea>
+    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Catatan</label>
+    <textarea id="verifyNote" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50" placeholder="Wajib jika revisi / tolak"></textarea>
     <div class="grid grid-cols-3 gap-2 mt-5">
-      <button onclick="verifyReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-2.5 rounded-xl text-sm font-bold">Tolak Hasil</button>
-      <button onclick="verifyRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-2.5 rounded-xl text-sm font-bold">Revisi Bukti</button>
-      <button onclick="verifyApprove()" class="bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 rounded-xl text-sm font-bold shadow-lg shadow-emerald-600/25">✓ Approve</button>
+      <button onclick="verifyReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
+      <button onclick="verifyRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">📎 Revisi</button>
+      <button onclick="verifyApprove()" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">✓ Approve</button>
     </div>
   </div>
 </div>
 
-<div id="toast" class="fixed bottom-6 right-6 bg-ink-900 text-white px-4 py-3 rounded-xl text-sm hidden z-[60] shadow-2xl fade-in max-w-xs"></div>
+<div id="toast" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 bg-ink-900 text-white px-4 py-3 rounded-2xl text-sm hidden z-[60] shadow-2xl modal-in max-w-xs"></div>
 
 <script>
 const API_URL = 'https://overtime-backend.onrender.com';
-
 const token = localStorage.getItem('token');
 let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
@@ -327,10 +358,9 @@ let currentRating = 0;
 
 function levelNum(level) {
   if (!level) return 0;
-  const match = String(level).match(/^(\d+)/);
-  return match ? parseInt(match[1]) : 0;
+  const m = String(level).match(/^(\d+)/);
+  return m ? parseInt(m[1]) : 0;
 }
-
 function isHoliday(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
   const day = d.getDay();
@@ -352,9 +382,9 @@ async function api(path, opts = {}) {
   return data;
 }
 
-function toast(msg, color = 'bg-ink-900') {
+function toast(msg, color='bg-ink-900') {
   const t = document.getElementById('toast');
-  t.className = `fixed bottom-6 right-6 ${color} text-white px-4 py-3 rounded-xl text-sm z-[60] shadow-2xl fade-in max-w-xs`;
+  t.className = `fixed bottom-24 md:bottom-6 right-4 md:right-6 ${color} text-white px-4 py-3 rounded-2xl text-sm z-[60] shadow-2xl modal-in max-w-xs`;
   t.textContent = msg;
   t.classList.remove('hidden');
   clearTimeout(t._t);
@@ -363,19 +393,14 @@ function toast(msg, color = 'bg-ink-900') {
 
 function logout() { localStorage.clear(); window.location.href = 'index.html'; }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
-
 function fmtTime(d) { return new Date(d).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}); }
 function fmtDate(d) { return new Date(d).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}); }
-function fmtDurShort(ms) {
-  if (!ms) return '-';
-  const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000);
-  return `${h}j ${m}m`;
-}
+function fmtDurShort(ms) { if (!ms) return '-'; const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000); return `${h}j ${m}m`; }
 function parseInterval(iv) {
   if (!iv) return 0;
   if (typeof iv === 'number') return iv;
-  if (iv.includes('PT')) {
-    const m = iv.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
+  if (String(iv).includes('PT')) {
+    const m = String(iv).match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
     if (!m) return 0;
     return ((parseInt(m[1]||0)*60 + parseInt(m[2]||0))*60 + parseFloat(m[3]||0)) * 1000;
   }
@@ -399,6 +424,18 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab)?.classList.remove('hidden');
   document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
   document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
+  document.querySelectorAll('.mobile-nav').forEach(e => {
+    e.classList.remove('bg-brand-600', 'text-white');
+    e.querySelector('span:nth-child(2)').classList.add('text-slate-600');
+    e.querySelector('span:nth-child(2)').classList.remove('text-white');
+  });
+  const mob = document.querySelector(`[data-mobile-tab="${tab}"]`);
+  if (mob) {
+    mob.classList.add('bg-brand-600', 'text-white');
+    mob.querySelector('span:nth-child(2)').classList.add('text-white');
+    mob.querySelector('span:nth-child(2)').classList.remove('text-slate-600');
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function loadRecords() {
@@ -455,12 +492,15 @@ function updateMgrStartTime() {
   document.getElementById('mgrJenisHari').innerHTML = holiday
     ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (08:00)</span>'
     : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (18:00)</span>';
+  document.getElementById('mgrJenisHari').className = holiday
+    ? 'w-full mt-1.5 border border-emerald-200 rounded-2xl px-3 py-3 text-sm bg-emerald-50'
+    : 'w-full mt-1.5 border border-blue-200 rounded-2xl px-3 py-3 text-sm bg-blue-50';
 
   const myLevel = levelNum(currentUser.level);
   const info = document.getElementById('mgrApprovalInfo');
   if (myLevel > 0 && myLevel < 4) {
     info.classList.remove('hidden');
-    info.innerHTML = `<strong>⚠ Perlu approval bertingkat:</strong> Level kamu (${currentUser.level}) di bawah 4a. Penugasan ini akan dikirim ke atasan kamu untuk di-approve terlebih dahulu.`;
+    info.innerHTML = `<strong>⚠ Perlu approval bertingkat:</strong> Level kamu (${currentUser.level}) di bawah 4a. Penugasan ini akan dikirim ke atasan kamu dulu.`;
   } else {
     info.classList.add('hidden');
   }
@@ -476,7 +516,6 @@ async function submitAssignment() {
 
   if (!empValue || !date || !desc) return toast('Lengkapi semua field *', 'bg-red-600');
   if (durasi < 1) return toast('Durasi minimal 1 jam', 'bg-red-600');
-
   const [empId, empName] = empValue.split('|');
 
   try {
@@ -489,7 +528,6 @@ async function submitAssignment() {
         employee_name: empName
       })
     });
-
     document.getElementById('mgrEmp').value = '';
     document.getElementById('mgrDate').value = '';
     document.getElementById('mgrDesc').value = '';
@@ -497,8 +535,7 @@ async function submitAssignment() {
     document.getElementById('mgrStart').value = '';
     document.getElementById('mgrJenisHari').textContent = 'Pilih tanggal';
     document.getElementById('mgrApprovalInfo').classList.add('hidden');
-
-    toast('Lembur ditugaskan', 'bg-emerald-600');
+    toast('Lembur ditugaskan ✓', 'bg-emerald-600');
     await loadRecords();
     switchTab('mgr-monitor');
   } catch (err) { toast(err.message, 'bg-red-600'); }
@@ -511,7 +548,7 @@ function openReview(id) {
   const chainLen = r.approvalChain.length;
   const progress = r.approvalProgress;
   document.getElementById('reviewContent').innerHTML = `
-    <div class="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-100">
+    <div class="bg-gradient-to-br from-slate-50 to-brand-50 rounded-2xl p-4 space-y-2 border border-slate-100">
       <div class="flex justify-between text-xs"><span class="text-slate-500">Karyawan</span><span class="font-bold">${r.employee}</span></div>
       <div class="flex justify-between text-xs"><span class="text-slate-500">Level</span><span class="font-bold">${r.employeeLevel}</span></div>
       <div class="flex justify-between text-xs"><span class="text-slate-500">Tanggal</span><span class="font-bold">${fmtDate(r.date)} ${r.isHoliday ? '🏖' : '💼'}</span></div>
@@ -521,7 +558,7 @@ function openReview(id) {
     </div>
     <div><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Kategori</p><p>${r.reason}</p></div>
     <div><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Rencana Pekerjaan</p><p>${r.desc}</p></div>
-    ${r.note ? `<div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800"><strong>Catatan:</strong> ${r.note}</div>` : ''}
+    ${r.note ? `<div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800"><strong>Catatan:</strong> ${r.note}</div>` : ''}
   `;
   document.getElementById('reviewNote').value = '';
   document.getElementById('modalReview').classList.remove('hidden');
@@ -536,11 +573,7 @@ async function doApprove() {
     });
     closeModal('modalReview');
     await loadRecords();
-    if (result.final) {
-      toast('Disetujui final. Auto-start akan jalan saat jam tiba ⚡', 'bg-emerald-600');
-    } else {
-      toast('Disetujui. Diteruskan ke approver berikutnya.', 'bg-brand-600');
-    }
+    toast(result.final ? '✓ Disetujui final ⚡' : '✓ Diteruskan ke approver berikutnya', 'bg-emerald-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
@@ -548,10 +581,7 @@ async function doReject() {
   const note = document.getElementById('reviewNote').value.trim();
   if (!note) return toast('Catatan wajib diisi', 'bg-red-600');
   try {
-    await api(`/api/approval/${reviewTargetId}/reject`, {
-      method: 'POST',
-      body: JSON.stringify({ note })
-    });
+    await api(`/api/approval/${reviewTargetId}/reject`, { method: 'POST', body: JSON.stringify({ note }) });
     closeModal('modalReview');
     await loadRecords();
     toast('Pengajuan ditolak', 'bg-red-600');
@@ -562,10 +592,7 @@ async function doRevision() {
   const note = document.getElementById('reviewNote').value.trim();
   if (!note) return toast('Catatan revisi wajib', 'bg-red-600');
   try {
-    await api(`/api/approval/${reviewTargetId}/request-revision`, {
-      method: 'POST',
-      body: JSON.stringify({ note })
-    });
+    await api(`/api/approval/${reviewTargetId}/request-revision`, { method: 'POST', body: JSON.stringify({ note }) });
     closeModal('modalReview');
     await loadRecords();
     toast('Revisi diminta', 'bg-amber-600');
@@ -587,21 +614,21 @@ function openVerify(id) {
   verifyTargetId = id;
   currentRating = r.verifyRating || 0;
   document.getElementById('verifyContent').innerHTML = `
-    <div class="bg-slate-50 rounded-xl p-4 space-y-2 border border-slate-100">
+    <div class="bg-gradient-to-br from-slate-50 to-brand-50 rounded-2xl p-4 space-y-2 border border-slate-100">
       <div class="flex justify-between text-xs"><span class="text-slate-500">Karyawan</span><span class="font-bold">${r.employee} (${r.employeeLevel})</span></div>
       <div class="flex justify-between text-xs"><span class="text-slate-500">Tanggal</span><span class="font-bold">${fmtDate(r.date)} ${r.isHoliday ? '🏖' : '💼'}</span></div>
       <div class="flex justify-between text-xs"><span class="text-slate-500">Aktual</span><span class="font-bold">${r.start ? fmtTime(r.start) : '-'} — ${r.end ? fmtTime(r.end) : '-'} · ${fmtDurShort(r.duration)}</span></div>
-      <div class="flex justify-between text-xs"><span class="text-slate-500">Rencana</span><span class="font-bold">${Math.round(r.plannedDuration/3600000)} jam · ${r.source === 'manager' ? 'Ditugaskan atasan' : 'Pengajuan karyawan'}</span></div>
+      <div class="flex justify-between text-xs"><span class="text-slate-500">Rencana</span><span class="font-bold">${Math.round(r.plannedDuration/3600000)} jam</span></div>
       ${r.verifyRevisionCount > 0 ? `<div class="flex justify-between text-xs text-amber-600"><span>Revisi bukti ke-</span><span class="font-bold">${r.verifyRevisionCount}</span></div>` : ''}
     </div>
     <div><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Rencana Pekerjaan</p><p>${r.desc}</p></div>
     <div><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Bukti Hasil Kerja</p>
-      <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+      <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-3">
         <p class="text-sm">📎 ${r.proof || '-'}</p>
         ${r.proofFile ? `<p class="text-xs text-slate-500 mt-1">File: ${r.proofFile}</p>` : ''}
       </div>
     </div>
-    ${r.verifyNote ? `<div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-800"><strong>Catatan sebelumnya:</strong> ${r.verifyNote}</div>` : ''}
+    ${r.verifyNote ? `<div class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800"><strong>Catatan sebelumnya:</strong> ${r.verifyNote}</div>` : ''}
   `;
   document.getElementById('verifyNote').value = '';
   updateStars();
@@ -614,7 +641,7 @@ function updateStars() {
   document.querySelectorAll('#ratingStars .star-btn').forEach(b => {
     const star = parseInt(b.dataset.star);
     b.textContent = star <= currentRating ? '★' : '☆';
-    b.className = `star-btn text-2xl transition hover:scale-110 ${star <= currentRating ? 'text-amber-500' : 'text-slate-300'}`;
+    b.className = `star-btn text-3xl transition hover:scale-110 ${star <= currentRating ? 'text-amber-500' : 'text-slate-300'}`;
   });
 }
 
@@ -623,11 +650,7 @@ async function verifyApprove() {
   try {
     await api(`/api/approval/${verifyTargetId}/verify-result`, {
       method: 'POST',
-      body: JSON.stringify({
-        action: 'approve',
-        rating: currentRating,
-        note: document.getElementById('verifyNote').value.trim() || null
-      })
+      body: JSON.stringify({ action: 'approve', rating: currentRating, note: document.getElementById('verifyNote').value.trim() || null })
     });
     closeModal('modalVerify');
     await loadRecords();
@@ -639,10 +662,7 @@ async function verifyRevision() {
   const note = document.getElementById('verifyNote').value.trim();
   if (!note) return toast('Catatan revisi wajib', 'bg-red-600');
   try {
-    await api(`/api/approval/${verifyTargetId}/verify-result`, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'revision', note })
-    });
+    await api(`/api/approval/${verifyTargetId}/verify-result`, { method: 'POST', body: JSON.stringify({ action: 'revision', note }) });
     closeModal('modalVerify');
     await loadRecords();
     toast('Bukti dikembalikan untuk revisi', 'bg-amber-600');
@@ -653,31 +673,28 @@ async function verifyReject() {
   const note = document.getElementById('verifyNote').value.trim();
   if (!note) return toast('Alasan wajib', 'bg-red-600');
   try {
-    await api(`/api/approval/${verifyTargetId}/verify-result`, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'reject', note })
-    });
+    await api(`/api/approval/${verifyTargetId}/verify-result`, { method: 'POST', body: JSON.stringify({ action: 'reject', note }) });
     closeModal('modalVerify');
     await loadRecords();
-    toast('Hasil kerja ditolak — lembur tidak dihitung', 'bg-red-600');
+    toast('Hasil kerja ditolak', 'bg-red-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 function statusBadge(s) {
   const map = {
-    pending: ['bg-amber-100 text-amber-700', 'PENDING'],
-    approved: ['bg-brand-100 text-brand-700', 'DISETUJUI'],
-    rejected: ['bg-red-100 text-red-700', 'DITOLAK'],
-    revision: ['bg-orange-100 text-orange-700', 'REVISI'],
-    active: ['bg-emerald-100 text-emerald-700', 'AKTIF'],
-    pending_verification: ['bg-orange-100 text-orange-700', 'VERIFIKASI'],
-    proof_revision: ['bg-amber-100 text-amber-700', 'REVISI BUKTI'],
-    verify_rejected: ['bg-red-100 text-red-700', 'HASIL DITOLAK'],
-    completed: ['bg-teal-100 text-teal-700', 'SELESAI ✓'],
-    cancelled: ['bg-slate-200 text-slate-700', 'DIBATALKAN']
+    pending: ['bg-amber-100 text-amber-700', '⏳ PENDING'],
+    approved: ['bg-brand-100 text-brand-700', '✅ DISETUJUI'],
+    rejected: ['bg-red-100 text-red-700', '❌ DITOLAK'],
+    revision: ['bg-orange-100 text-orange-700', '✏️ REVISI'],
+    active: ['bg-emerald-100 text-emerald-700', '🔴 AKTIF'],
+    pending_verification: ['bg-orange-100 text-orange-700', '🔍 VERIFIKASI'],
+    proof_revision: ['bg-amber-100 text-amber-700', '📎 REVISI BUKTI'],
+    verify_rejected: ['bg-red-100 text-red-700', '❌ HASIL DITOLAK'],
+    completed: ['bg-teal-100 text-teal-700', '✓ SELESAI'],
+    cancelled: ['bg-slate-200 text-slate-700', '🚫 DIBATALKAN']
   };
   const [c, l] = map[s] || ['bg-slate-100 text-slate-600', s?.toUpperCase()];
-  return `<span class="text-[10px] font-bold px-2 py-1 rounded-full ${c}">${l}</span>`;
+  return `<span class="text-[10px] font-bold px-2 py-1 rounded-full ${c} whitespace-nowrap">${l}</span>`;
 }
 
 function renderAll() {
@@ -694,8 +711,16 @@ function renderNavBadges() {
   const verify = records.filter(r => r.status === 'pending_verification').length;
   const bA = document.getElementById('navBadgeApproval');
   const bV = document.getElementById('navBadgeVerify');
-  if (pending > 0) { bA.textContent = pending; bA.classList.remove('hidden'); } else bA.classList.add('hidden');
-  if (verify > 0) { bV.textContent = verify; bV.classList.remove('hidden'); } else bV.classList.add('hidden');
+  const bMA = document.getElementById('mobileBadgeApproval');
+  const bMV = document.getElementById('mobileBadgeVerify');
+  if (pending > 0) {
+    bA.textContent = pending; bA.classList.remove('hidden');
+    bMA.textContent = pending; bMA.classList.remove('hidden');
+  } else { bA.classList.add('hidden'); bMA.classList.add('hidden'); }
+  if (verify > 0) {
+    bV.textContent = verify; bV.classList.remove('hidden');
+    bMV.textContent = verify; bMV.classList.remove('hidden');
+  } else { bV.classList.add('hidden'); bMV.classList.add('hidden'); }
 }
 
 function renderStats() {
@@ -708,7 +733,7 @@ function renderStats() {
   document.getElementById('mgrStatActive').textContent = active;
   document.getElementById('mgrStatPending').textContent = pending;
   document.getElementById('mgrStatVerify').textContent = verify;
-  document.getElementById('mgrStatHours').innerHTML = `${hours.toFixed(1)}<span class="text-base text-slate-400 font-bold ml-1">j</span>`;
+  document.getElementById('mgrStatHours').innerHTML = `${hours.toFixed(1)}<span class="text-sm opacity-80 ml-0.5">j</span>`;
 
   document.getElementById('mgrStatActive2').textContent = active;
   document.getElementById('mgrStatPending2').textContent = pending;
@@ -724,11 +749,11 @@ function renderRecent() {
     return;
   }
   el.innerHTML = recent.map(r => `
-    <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition">
-      <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-sm">${r.isHoliday ? '🏖' : '💼'}</div>
+    <div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition card-hover">
+      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-sm">${r.isHoliday ? '🏖' : '💼'}</div>
       <div class="flex-1 min-w-0">
-        <p class="text-sm font-semibold text-slate-800 truncate">${r.employee} — ${r.reason}</p>
-        <p class="text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime}</p>
+        <p class="text-xs md:text-sm font-semibold text-slate-800 truncate">${r.employee} — ${r.reason}</p>
+        <p class="text-[10px] md:text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime}</p>
       </div>
       ${statusBadge(r.status)}
     </div>
@@ -746,26 +771,25 @@ function renderApprovalList() {
     const chainLen = r.approvalChain.length;
     const progress = r.approvalProgress;
     const chainInfo = chainLen > 0
-      ? `<p class="text-purple-600 text-[10px] font-bold">📋 Approval ${progress + 1}/${chainLen} level</p>`
-      : '';
+      ? `<p class="text-purple-600 text-[10px] font-bold">📋 Approval ${progress + 1}/${chainLen} level</p>` : '';
     return `
-    <div class="bg-white rounded-2xl shadow-sm border ${r.status === 'pending' ? 'border-amber-200' : 'border-slate-100'} p-5">
+    <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border ${r.status === 'pending' ? 'border-amber-200' : 'border-slate-100'} p-4 md:p-5 card-hover">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
-        <div>
-          <p class="font-bold text-slate-800">${r.employee} ${r.isHoliday ? '🏖' : '💼'}</p>
-          <p class="text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime} · ${Math.round(r.plannedDuration/3600000)} jam · Level ${r.employeeLevel}</p>
+        <div class="min-w-0">
+          <p class="font-bold text-slate-800 text-sm md:text-base">${r.employee} ${r.isHoliday ? '🏖' : '💼'}</p>
+          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · ${r.startTime} · ${Math.round(r.plannedDuration/3600000)} jam · Level ${r.employeeLevel}</p>
         </div>
         ${statusBadge(r.status)}
       </div>
-      <div class="bg-slate-50 rounded-xl p-3.5 text-xs text-slate-600 space-y-1 mb-3">
+      <div class="bg-slate-50 rounded-2xl p-3 text-[11px] md:text-xs text-slate-600 space-y-1 mb-3">
         <p>📋 ${r.reason}</p>
         <p>📝 ${r.desc}</p>
         ${chainInfo}
         ${r.revisionCount > 0 ? `<p class="text-amber-600">🔄 Revisi ke-${r.revisionCount}</p>` : ''}
       </div>
       ${r.status === 'pending'
-        ? `<button onclick="openReview(${r.id})" class="w-full bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold py-2.5 rounded-xl shadow-lg shadow-brand-600/20">🔍 Review & Beri Keputusan</button>`
-        : `<button onclick="reopenRecord(${r.id})" class="w-full border border-amber-200 text-amber-700 hover:bg-amber-50 text-sm font-bold py-2.5 rounded-xl">↺ Buka Kembali</button>`}
+        ? `<button onclick="openReview(${r.id})" class="w-full bg-gradient-to-r from-brand-600 to-neon-violet text-white text-xs md:text-sm font-bold py-3 rounded-2xl shadow-lg active:scale-[0.98] transition">🔍 Review & Keputusan</button>`
+        : `<button onclick="reopenRecord(${r.id})" class="w-full border border-amber-200 text-amber-700 hover:bg-amber-50 text-xs md:text-sm font-bold py-3 rounded-2xl transition">↺ Buka Kembali</button>`}
     </div>
   `}).join('');
 }
@@ -778,27 +802,24 @@ function renderVerifyList() {
     return;
   }
   el.innerHTML = need.map(r => `
-    <div class="bg-white rounded-2xl shadow-sm border border-orange-200 border-l-4 border-l-orange-400 p-5">
+    <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border border-orange-200 border-l-4 border-l-orange-400 p-4 md:p-5 card-hover">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
-        <div>
-          <p class="font-bold text-slate-800">${r.employee} (${r.employeeLevel}) ${r.isHoliday ? '🏖' : '💼'}</p>
-          <p class="text-xs text-slate-500">${fmtDate(r.date)} · ${r.start ? fmtTime(r.start) : '-'} — ${r.end ? fmtTime(r.end) : '-'} · ${fmtDurShort(r.duration)}</p>
+        <div class="min-w-0">
+          <p class="font-bold text-slate-800 text-sm md:text-base">${r.employee} (${r.employeeLevel}) ${r.isHoliday ? '🏖' : '💼'}</p>
+          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · ${r.start ? fmtTime(r.start) : '-'} — ${r.end ? fmtTime(r.end) : '-'} · ${fmtDurShort(r.duration)}</p>
         </div>
         ${statusBadge(r.status)}
       </div>
-      <div class="bg-slate-50 rounded-xl p-3.5 text-xs text-slate-600 space-y-1.5 mb-3">
+      <div class="bg-slate-50 rounded-2xl p-3 text-[11px] md:text-xs text-slate-600 space-y-1.5 mb-3">
         <p><strong>Rencana:</strong> ${r.desc}</p>
-        <p><strong>Kategori:</strong> ${r.reason}</p>
-        <div class="bg-emerald-50 rounded-lg p-2.5 mt-1 border border-emerald-100">
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-2.5 mt-1 border border-emerald-100">
           <p class="text-[10px] text-emerald-700 font-bold uppercase mb-1">Bukti Hasil Kerja</p>
           <p>📎 ${r.proof || '-'}</p>
-          ${r.proofFile ? `<p class="text-[11px] text-slate-500 mt-0.5">File: ${r.proofFile}</p>` : ''}
+          ${r.proofFile ? `<p class="text-[10px] text-slate-500 mt-0.5">File: ${r.proofFile}</p>` : ''}
         </div>
         ${r.verifyRevisionCount > 0 ? `<p class="text-amber-600">🔄 Revisi bukti ke-${r.verifyRevisionCount}</p>` : ''}
       </div>
-      <button onclick="openVerify(${r.id})" class="w-full bg-orange-600 hover:bg-orange-700 text-white text-sm font-bold py-2.5 rounded-xl shadow-lg shadow-orange-600/20">
-        🔍 Verifikasi Hasil Kerja
-      </button>
+      <button onclick="openVerify(${r.id})" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs md:text-sm font-bold py-3 rounded-2xl shadow-lg active:scale-[0.98] transition">🔍 Verifikasi Hasil</button>
     </div>
   `).join('');
 }
@@ -806,26 +827,25 @@ function renderVerifyList() {
 function renderMonitorTable() {
   const tb = document.getElementById('monitorTable');
   if (records.length === 0) {
-    tb.innerHTML = '<tr><td colspan="8" class="text-center py-10 text-slate-400 text-sm">Belum ada data</td></tr>';
+    tb.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-slate-400 text-sm">Belum ada data</td></tr>';
     return;
   }
   tb.innerHTML = records.map(r => `
     <tr class="hover:bg-slate-50 transition">
-      <td class="px-4 py-3 font-semibold text-slate-800 text-sm">${r.employee}</td>
-      <td class="px-4 py-3 text-xs">
+      <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">
+        ${r.employee}
+        <p class="text-[10px] text-slate-400 md:hidden font-normal">Level ${r.employeeLevel}</p>
+      </td>
+      <td class="px-3 md:px-4 py-3 text-xs hidden md:table-cell">
         <span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">${r.employeeLevel}</span>
       </td>
-      <td class="px-4 py-3 text-slate-600 text-sm">${fmtDate(r.date)} ${r.isHoliday ? '🏖' : '💼'}</td>
-      <td class="px-4 py-3 text-slate-600 text-xs">${r.startTime}${r.end ? ' — ' + fmtTime(r.end) : ''}</td>
-      <td class="px-4 py-3 text-slate-600 text-sm">${r.duration ? fmtDurShort(r.duration) : (Math.round(r.plannedDuration/3600000) + 'j (rencana)')}</td>
-      <td class="px-4 py-3">
-        ${r.source === 'manager' ? '<span class="text-[10px] bg-purple-100 text-purple-700 font-bold px-2 py-1 rounded-full">ATASAN</span>' : '<span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-1 rounded-full">KARYAWAN</span>'}
-        ${r.autoStarted ? ' <span class="text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded-full">⚡</span>' : ''}
-      </td>
-      <td class="px-4 py-3">${statusBadge(r.status)}</td>
-      <td class="px-4 py-3">
+      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm">${fmtDate(r.date)} ${r.isHoliday ? '🏖' : '💼'}</td>
+      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">${r.startTime}${r.end ? ' — ' + fmtTime(r.end) : ''}</td>
+      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm hidden md:table-cell">${r.duration ? fmtDurShort(r.duration) : (Math.round(r.plannedDuration/3600000) + 'j')}</td>
+      <td class="px-3 md:px-4 py-3">${statusBadge(r.status)}</td>
+      <td class="px-3 md:px-4 py-3">
         ${r.status === 'pending' ? `<button onclick="openReview(${r.id})" class="text-brand-600 hover:text-brand-800 text-xs font-bold">Review</button>` : ''}
-        ${r.status === 'pending_verification' ? `<button onclick="openVerify(${r.id})" class="text-orange-600 hover:text-orange-800 text-xs font-bold">Verifikasi</button>` : ''}
+        ${r.status === 'pending_verification' ? `<button onclick="openVerify(${r.id})" class="text-orange-600 hover:text-orange-800 text-xs font-bold">Verif</button>` : ''}
         ${['rejected','revision'].includes(r.status) ? `<button onclick="reopenRecord(${r.id})" class="text-amber-600 hover:text-amber-800 text-xs font-bold">Buka</button>` : ''}
         ${['approved','completed','cancelled','active','proof_revision','verify_rejected'].includes(r.status) ? '<span class="text-xs text-slate-300">—</span>' : ''}
       </td>
