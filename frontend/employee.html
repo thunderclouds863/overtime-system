@@ -124,13 +124,16 @@ tailwind.config = {
 <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 z-40 safe-bottom">
   <div class="flex items-center justify-around px-2 py-2">
     <button onclick="switchTab('emp-dashboard')" data-mobile-tab="emp-dashboard" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
-      <span class="text-xl">🏠</span><span class="text-[10px] font-semibold text-slate-600">Home</span>
+      <span class="text-xl">🏠</span>
+      <span class="text-[10px] font-semibold text-slate-600">Home</span>
     </button>
     <button onclick="switchTab('emp-ajukan')" data-mobile-tab="emp-ajukan" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
-      <span class="text-xl">✍️</span><span class="text-[10px] font-semibold text-slate-600">Ajukan</span>
+      <span class="text-xl">✍️</span>
+      <span class="text-[10px] font-semibold text-slate-600">Ajukan</span>
     </button>
     <button onclick="switchTab('emp-riwayat')" data-mobile-tab="emp-riwayat" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
-      <span class="text-xl">📜</span><span class="text-[10px] font-semibold text-slate-600">Riwayat</span>
+      <span class="text-xl">📜</span>
+      <span class="text-[10px] font-semibold text-slate-600">Riwayat</span>
     </button>
   </div>
 </nav>
@@ -212,9 +215,13 @@ tailwind.config = {
             <p id="activeLocation" class="text-emerald-200 text-[10px] mt-0.5"></p>
           </div>
         </div>
-        <div class="mt-4 bg-white/10 rounded-2xl p-3 text-[11px] text-emerald-100 border border-white/20">
-          ⚠️ Jangan keluar dari radius kantor, nanti lembur otomatis berhenti
+
+        <!-- RADIUS STATUS — dinamis -->
+        <div id="radiusStatus" class="mt-4 bg-white/10 rounded-2xl p-3 text-[11px] text-emerald-100 border border-white/20 flex items-center gap-2">
+          <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
+          <span>Memantau radius kantor...</span>
         </div>
+
         <div class="grid grid-cols-2 gap-2 mt-3">
           <button onclick="cancelOvertime()" class="bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold py-3 rounded-2xl text-xs md:text-sm transition active:scale-95">✕ Batal</button>
           <button onclick="endOvertime()" class="bg-white text-emerald-700 hover:bg-emerald-50 font-bold py-3 rounded-2xl text-xs md:text-sm shadow-lg transition active:scale-95">✓ Selesai</button>
@@ -303,7 +310,7 @@ tailwind.config = {
           <div class="md:col-span-2">
             <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Durasi (jam) <span class="text-red-500">*</span></label>
             <input type="number" id="inpDurasi" min="1" max="24" value="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition">
-            <p class="text-[10px] text-slate-400 mt-1">Minimal 1 jam. Lembur < 1 jam tidak dihitung.</p>
+            <p class="text-[10px] text-slate-400 mt-1">Minimal 1 jam. Lembur &lt; 1 jam tidak dihitung.</p>
           </div>
           <div class="md:col-span-2">
             <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Rencana Pekerjaan <span class="text-red-500">*</span></label>
@@ -346,6 +353,7 @@ tailwind.config = {
 
 </main>
 
+<!-- GPS MODAL -->
 <div id="modalGPS" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -375,6 +383,7 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- BUKTI MODAL -->
 <div id="modalBukti" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -403,6 +412,7 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- CANCEL MODAL -->
 <div id="modalCancel" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-sm w-full p-6 modal-in">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -420,6 +430,7 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- EDIT MODAL -->
 <div id="modalEdit" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -458,6 +469,7 @@ tailwind.config = {
   </div>
 </div>
 
+<!-- EDIT PROOF MODAL -->
 <div id="modalEditProof" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -502,7 +514,6 @@ let records = [];
 let activeRecord = null;
 let activeTimer = null;
 let radiusMonitor = null;
-let outOfRadiusCount = 0;
 let editTargetId = null;
 let editProofTargetId = null;
 let gpsState = { status: 'idle', lat: null, lng: null, acc: null, distance: null };
@@ -571,36 +582,48 @@ async function fetchGPS() {
 }
 
 // ============================================
-// RADIUS MONITOR — Auto stop kalau keluar radius
+// RADIUS MONITOR — Cek pertama 3 detik, auto-stop 1x deteksi
 // ============================================
 function startRadiusMonitor() {
   if (radiusMonitor) return;
   console.log('🎯 Monitor radius dimulai');
-  outOfRadiusCount = 0;
+  updateRadiusStatusUI('checking');
 
+  // Cek pertama 3 detik setelah active
+  setTimeout(async () => {
+    if (!activeRecord || activeRecord.status !== 'active') return;
+    await checkRadiusOnce();
+  }, 3000);
+
+  // Cek berkala tiap 15 detik
   radiusMonitor = setInterval(async () => {
     if (!activeRecord || activeRecord.status !== 'active') {
       stopRadiusMonitor();
       return;
     }
-    try {
-      const gps = await fetchGPS();
-      const distance = Math.round(haversine(gps.lat, gps.lng, OFFICE.lat, OFFICE.lng));
+    await checkRadiusOnce();
+  }, 15000);
+}
 
-      if (distance > OFFICE.radius) {
-        outOfRadiusCount++;
-        console.log(`⚠️ Di luar radius (${distance}m) - hit ${outOfRadiusCount}/2`);
-        if (outOfRadiusCount >= 2) {
-          stopRadiusMonitor();
-          await autoStop(activeRecord.id, gps.lat, gps.lng, distance);
-        }
-      } else {
-        outOfRadiusCount = 0;
-      }
-    } catch (err) {
-      console.warn('Monitor radius error:', err.message);
+async function checkRadiusOnce() {
+  try {
+    const gps = await fetchGPS();
+    const distance = Math.round(haversine(gps.lat, gps.lng, OFFICE.lat, OFFICE.lng));
+    const inRadius = distance <= OFFICE.radius;
+
+    console.log(`📍 Cek radius: ${distance}m (max ${OFFICE.radius}m) — ${inRadius ? '✓ DALAM' : '✕ LUAR'}${gps.simulated ? ' (simulasi)' : ''}`);
+
+    if (!inRadius) {
+      console.log(`⚠️ KELUAR radius — AUTO-STOP langsung`);
+      updateRadiusStatusUI('out', distance);
+      stopRadiusMonitor();
+      await autoStop(activeRecord.id, gps.lat, gps.lng, distance);
+    } else {
+      updateRadiusStatusUI('in', distance);
     }
-  }, 30000);
+  } catch (err) {
+    console.warn('Monitor error:', err.message);
+  }
 }
 
 function stopRadiusMonitor() {
@@ -620,14 +643,29 @@ async function autoStop(recordId, lat, lng, distance) {
         reason: `Keluar radius kantor (${distance}m)`
       })
     });
+
+    // ⚡ HENTIKAN SEMUA
     activeRecord = null;
-    clearInterval(activeTimer);
+    if (activeTimer) {
+      clearInterval(activeTimer);
+      activeTimer = null;
+    }
+    stopRadiusMonitor();
+
     await loadRecords();
     showAutoStopNotif(distance);
     toast(`⚠️ Lembur auto-stop: kamu keluar radius (${distance}m)`, 'bg-red-600');
   } catch (err) {
     console.error('autoStop error:', err);
-    toast('Gagal auto-stop: ' + err.message, 'bg-red-600');
+    if (err.message.toLowerCase().includes('tidak aktif') || err.message.toLowerCase().includes('sudah')) {
+      // Server sudah stop duluan, sync state
+      activeRecord = null;
+      if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
+      stopRadiusMonitor();
+      await loadRecords();
+    } else {
+      toast('Gagal auto-stop: ' + err.message, 'bg-red-600');
+    }
   }
 }
 
@@ -642,6 +680,22 @@ function showAutoStopNotif(distance) {
   void n.offsetWidth;
   n.classList.add('notif-slide');
   setTimeout(() => n.classList.add('hidden'), 10000);
+}
+
+function updateRadiusStatusUI(state, distance) {
+  const el = document.getElementById('radiusStatus');
+  if (!el) return;
+
+  if (state === 'in') {
+    el.className = 'mt-4 bg-emerald-500/20 rounded-2xl p-3 text-[11px] text-emerald-100 border border-emerald-400/30 flex items-center gap-2';
+    el.innerHTML = `<span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span><span>✓ Dalam radius kantor (${distance}m) · Timer berjalan</span>`;
+  } else if (state === 'out') {
+    el.className = 'mt-4 bg-red-500/30 rounded-2xl p-3 text-[11px] text-red-100 border-2 border-red-400/50 flex items-center gap-2 animate-pulse';
+    el.innerHTML = `<span class="w-2 h-2 bg-red-400 rounded-full"></span><span>⚠️ KELUAR radius (${distance}m) · Lembur berhenti!</span>`;
+  } else {
+    el.className = 'mt-4 bg-white/10 rounded-2xl p-3 text-[11px] text-emerald-100 border border-white/20 flex items-center gap-2';
+    el.innerHTML = `<span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span><span>Memantau radius kantor...</span>`;
+  }
 }
 
 async function runGPSVerification(source = 'banner') {
@@ -817,6 +871,19 @@ function updateStartTime() {
     : 'w-full mt-1.5 border border-blue-200 rounded-2xl px-3 py-3 text-sm bg-blue-50';
 }
 
+async function loadStatsSummary() {
+  try {
+    const s = await api('/api/records/stats/summary');
+    document.getElementById('empStatHours').innerHTML = `${parseFloat(s.total_hours).toFixed(1)}<span class="text-sm opacity-80 ml-0.5">j</span>`;
+    document.getElementById('empStatPending').textContent = s.pending_count;
+    document.getElementById('empStatVerify').textContent = s.pending_verify_count;
+    document.getElementById('empStatApproved').textContent = s.completed_count;
+    console.log(`📊 Stats: ${s.total_hours}j total, ${s.completed_count} completed`);
+  } catch (err) {
+    console.error('stats error:', err);
+  }
+}
+
 async function loadRecords() {
   try {
     const raw = await api('/api/records');
@@ -850,15 +917,29 @@ async function loadRecords() {
       revisionCount: r.revision_count,
       cancelReason: r.cancel_reason
     }));
+
     const active = records.find(r => r.status === 'active');
     if (active) {
-      activeRecord = active;
-      startLiveTimer();
-      startRadiusMonitor();
+      // Cek kalau activeRecord beda dengan yang sebelumnya
+      if (!activeRecord || activeRecord.id !== active.id) {
+        console.log(`▶️ Detected active record: ${active.id}`);
+        activeRecord = active;
+        startLiveTimer();
+        startRadiusMonitor();
+      } else {
+        activeRecord = active; // Refresh data
+      }
     } else {
-      stopRadiusMonitor();
+      if (activeRecord) {
+        console.log('⏹ Tidak ada active record, stop monitor');
+        activeRecord = null;
+        if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
+        stopRadiusMonitor();
+      }
     }
+
     renderAll();
+    await loadStatsSummary();
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
@@ -938,7 +1019,7 @@ async function confirmCancel() {
   try {
     await api(`/api/records/${activeRecord.id}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) });
     activeRecord = null;
-    clearInterval(activeTimer);
+    if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
     stopRadiusMonitor();
     closeModal('modalCancel');
     await loadRecords();
@@ -977,7 +1058,7 @@ async function submitProof() {
     });
 
     activeRecord = null;
-    clearInterval(activeTimer);
+    if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
     stopRadiusMonitor();
     closeModal('modalBukti');
     document.getElementById('proofText').value = '';
@@ -1089,9 +1170,13 @@ async function submitProofRevision() {
 }
 
 function startLiveTimer() {
-  clearInterval(activeTimer);
+  if (activeTimer) clearInterval(activeTimer);
   activeTimer = setInterval(() => {
-    if (!activeRecord) return;
+    if (!activeRecord) {
+      clearInterval(activeTimer);
+      activeTimer = null;
+      return;
+    }
     const el = document.getElementById('activeDuration');
     if (el) el.textContent = fmtDur(Date.now() - new Date(activeRecord.start).getTime());
   }, 1000);
@@ -1117,7 +1202,6 @@ function statusBadge(s) {
 }
 
 function renderAll() {
-  renderEmpStats();
   renderEmpUpcoming();
   renderEmpRecent();
   renderEmpHistory();
@@ -1138,16 +1222,6 @@ function renderActiveCard() {
   } else {
     card.classList.add('hidden');
   }
-}
-
-function renderEmpStats() {
-  const mine = records;
-  const totalMs = mine.filter(r => r.status === 'completed').reduce((s, r) => s + (r.duration || 0), 0);
-  const hours = totalMs / 3600000;
-  document.getElementById('empStatHours').innerHTML = `${hours.toFixed(1)}<span class="text-sm opacity-80 ml-0.5">j</span>`;
-  document.getElementById('empStatPending').textContent = mine.filter(r => r.status === 'pending').length;
-  document.getElementById('empStatVerify').textContent = mine.filter(r => ['pending_verification', 'proof_revision'].includes(r.status)).length;
-  document.getElementById('empStatApproved').textContent = mine.filter(r => r.status === 'completed').length;
 }
 
 function renderEmpUpcoming() {
@@ -1245,7 +1319,7 @@ function fullCard(r) {
         <p>📋 ${r.reason}</p>
         <p>📝 ${r.desc}</p>
         ${r.proof ? `<p>📎 ${r.proof}</p>` : ''}
-        ${r.actualHours > 0 ? `<p>⏱ Aktual: ${r.actualHours.toFixed(1)} jam</p>` : ''}
+        ${r.actualHours > 0 ? `<p>⏱ Aktual: ${r.actualHours.toFixed(2)} jam</p>` : ''}
         ${isNotCounted ? `
           <div class="bg-slate-100 rounded-xl p-2.5 mt-2 border border-slate-200">
             <p class="text-slate-700 font-bold text-[10px] mb-1">⚪ Lembur Tidak Dihitung</p>
