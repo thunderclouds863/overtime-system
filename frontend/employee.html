@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Karyawan — Sistem Lembur</title>
+<link rel="icon" type="image/png" href="logo-cimory.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -56,8 +57,6 @@ tailwind.config = {
   .progress-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #2563eb); transition: width 0.4s ease; }
   .shake { animation: shake 0.4s; }
   @keyframes shake { 0%,100%{transform:translateX(0);} 20%,60%{transform:translateX(-6px);} 40%,80%{transform:translateX(6px);} }
-  .countdown-ring { transform: rotate(-90deg); }
-  .countdown-ring circle { transition: stroke-dashoffset 1s linear; }
   .ready-badge { position: relative; }
   .ready-badge::before { content:''; position:absolute; inset:-4px; border-radius: 12px; background: linear-gradient(135deg, #10b981, #059669); opacity: 0.15; animation: readyPulse 2s infinite; }
   @keyframes readyPulse { 0%,100%{opacity:0.15;} 50%{opacity:0.35;} }
@@ -88,7 +87,7 @@ tailwind.config = {
       <div class="flex items-center gap-2 pl-3 border-l border-slate-800">
         <div class="text-right hidden sm:block">
           <p class="text-xs font-semibold" id="userName">-</p>
-          <p class="text-[10px] text-slate-400">Karyawan</p>
+          <p class="text-[10px] text-slate-400" id="userLevelLabel">-</p>
         </div>
         <div class="w-9 h-9 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center font-bold text-xs" id="userAvatar">-</div>
       </div>
@@ -112,7 +111,6 @@ tailwind.config = {
       </div>
       <p class="text-[11px] text-slate-300 font-mono" id="gpsSideCoord">-6.1920, 106.7376</p>
     </button>
-    <button onclick="forceCheckScheduler()" class="w-full text-xs bg-brand-600/20 hover:bg-brand-600/30 border border-brand-500/40 text-brand-300 font-semibold py-2 rounded-md transition">⚡ Cek Scheduler</button>
   </div>
 </aside>
 
@@ -154,28 +152,6 @@ tailwind.config = {
           </div>
         </div>
         <div class="shrink-0"><button onclick="runGPSVerification('banner')" id="gpsBannerBtn" class="bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-lg shadow-brand-600/25 transition whitespace-nowrap">Cek Lokasi</button></div>
-      </div>
-    </div>
-
-    <div id="autoStartCard" class="hidden bg-gradient-to-br from-amber-500 to-orange-600 rounded-2xl shadow-2xl p-5 text-white relative overflow-hidden">
-      <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 80% 20%, white 1.5px, transparent 1.5px); background-size: 28px 28px;"></div>
-      <div class="relative flex items-center gap-5">
-        <div class="shrink-0 relative w-24 h-24">
-          <svg class="countdown-ring w-24 h-24" viewBox="0 0 100 100">
-            <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="8"/>
-            <circle id="countdownRing" cx="50" cy="50" r="42" fill="none" stroke="white" stroke-width="8" stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="0"/>
-          </svg>
-          <div class="absolute inset-0 flex items-center justify-center"><p id="countdownNum" class="text-2xl font-extrabold tabular-nums">60</p></div>
-        </div>
-        <div class="flex-1">
-          <div class="flex items-center gap-2 mb-1">
-            <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-            <p class="text-xs font-bold uppercase">Auto-Start Segera</p>
-          </div>
-          <p class="text-lg font-extrabold" id="autoStartTitle">Lembur akan mulai otomatis</p>
-          <p class="text-sm text-amber-100 mt-0.5" id="autoStartDesc">Timer akan berjalan otomatis setelah verifikasi GPS</p>
-          <button onclick="cancelAutoStart()" class="mt-3 bg-white/20 hover:bg-white/30 border border-white/30 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition">Batalkan Jadwal</button>
-        </div>
       </div>
     </div>
 
@@ -247,40 +223,55 @@ tailwind.config = {
         <h2 class="font-bold text-slate-800 mb-1">Form Pengajuan</h2>
         <p class="text-xs text-slate-500 mb-5">Semua field bertanda <span class="text-red-500">*</span> wajib diisi</p>
         <div class="grid md:grid-cols-2 gap-4">
-          <div><label class="text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
-            <input type="date" id="inpDate" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white"></div>
-          <div><label class="text-xs font-bold text-slate-600 uppercase">Durasi <span class="text-red-500">*</span></label>
-            <select id="inpDurasi" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
-              <option value="1">1 jam</option><option value="2">2 jam</option><option value="3">3 jam</option><option value="4" selected>4 jam</option>
-            </select></div>
-          <div><label class="text-xs font-bold text-slate-600 uppercase">Jam Mulai <span class="text-red-500">*</span></label>
-            <input type="time" id="inpStart" value="18:00" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white"></div>
-          <div><label class="text-xs font-bold text-slate-600 uppercase">Kategori <span class="text-red-500">*</span></label>
+          <div>
+            <label class="text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
+            <input type="date" id="inpDate" onchange="updateStartTime()" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600 uppercase">Kategori <span class="text-red-500">*</span></label>
             <select id="inpReason" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
               <option value="">— Pilih —</option>
-              <option>Pekerjaan mendesak</option><option>Target proyek</option><option>Pengganti rekan</option><option>Closing bulanan</option><option>Lainnya</option>
-            </select></div>
-          <div class="md:col-span-2"><label class="text-xs font-bold text-slate-600 uppercase">Rencana Pekerjaan <span class="text-red-500">*</span></label>
-            <textarea id="inpDesc" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white" placeholder="Jelaskan apa yang akan diselesaikan..."></textarea></div>
+              <option>Pekerjaan mendesak</option>
+              <option>Target proyek</option>
+              <option>Pengganti rekan</option>
+              <option>Closing bulanan</option>
+              <option>Lainnya</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600 uppercase">Jenis Hari</label>
+            <div id="jenisHari" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-100 text-slate-600">Pilih tanggal dulu</div>
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600 uppercase">Jam Mulai (otomatis)</label>
+            <input type="time" id="inpStart" readonly class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-100 text-slate-600 cursor-not-allowed">
+          </div>
+          <div>
+            <label class="text-xs font-bold text-slate-600 uppercase">Durasi (jam) <span class="text-red-500">*</span></label>
+            <input type="number" id="inpDurasi" min="1" max="24" value="2" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white">
+          </div>
+          <div class="md:col-span-2">
+            <label class="text-xs font-bold text-slate-600 uppercase">Rencana Pekerjaan <span class="text-red-500">*</span></label>
+            <textarea id="inpDesc" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-50 focus:bg-white" placeholder="Jelaskan apa yang akan diselesaikan..."></textarea>
+          </div>
         </div>
-        <div class="mt-4 flex items-start gap-2.5 text-xs text-slate-600 bg-brand-50/50 border border-brand-100 p-3.5 rounded-lg">
-          <input type="checkbox" id="inpMeal" class="mt-0.5">
-          <label for="inpMeal">Saya konfirmasi lembur ≥4 jam disertai istirahat sesuai regulasi</label>
+        <div class="mt-4 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-800">
+          <strong>Catatan jam:</strong> Hari kerja mulai <strong>18:00</strong>. Hari libur (Sabtu/Minggu) mulai <strong>08:00</strong>. Lembur hari kerja >5 jam akan dipotong 1 jam istirahat otomatis.
         </div>
         <button onclick="submitRequest()" class="mt-5 w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-brand-600/25 text-sm">Kirim Pengajuan</button>
-        <p class="text-[11px] text-slate-400 mt-2.5 text-center">Setelah disetujui, timer akan otomatis berjalan pada jam yang ditentukan</p>
       </div>
       <div class="bg-gradient-to-br from-slate-800 to-ink-900 rounded-2xl p-5 text-white shadow-lg">
         <div class="flex items-center gap-2 mb-4">
           <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-sm">ℹ</div>
-          <h3 class="font-bold text-sm">Ketentuan Lembur</h3>
+          <h3 class="font-bold text-sm">Ketentuan</h3>
         </div>
         <ul class="space-y-3 text-xs text-slate-300">
-          <li>▸ Maksimal <strong class="text-white">4 jam/hari</strong>, <strong class="text-white">18 jam/minggu</strong></li>
-          <li>▸ Lembur ≥4 jam wajib istirahat</li>
+          <li>▸ Jam hari kerja: <strong class="text-white">18:00</strong></li>
+          <li>▸ Jam hari libur: <strong class="text-white">08:00</strong></li>
+          <li>▸ Lembur hari kerja >5 jam dipotong <strong class="text-white">1 jam istirahat</strong></li>
           <li>▸ Verifikasi GPS radius <strong class="text-white">100m</strong></li>
           <li>▸ <strong class="text-white">Timer auto-start</strong> saat jam tiba</li>
-          <li>▸ Hasil kerja <strong class="text-white">diverifikasi atasan</strong></li>
+          <li>▸ Approval bertingkat sesuai level</li>
         </ul>
       </div>
     </div>
@@ -296,7 +287,6 @@ tailwind.config = {
 
 </main>
 
-<!-- GPS Modal -->
 <div id="modalGPS" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 modal-in">
     <div class="flex items-start justify-between mb-4">
@@ -319,7 +309,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- Bukti Modal -->
 <div id="modalBukti" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 modal-in">
     <div class="flex items-start justify-between mb-4">
@@ -341,7 +330,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- Cancel Modal -->
 <div id="modalCancel" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 modal-in">
     <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3"><span class="text-red-600 text-xl">!</span></div>
@@ -356,7 +344,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- Edit Pengajuan Modal -->
 <div id="modalEdit" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 modal-in">
     <h3 class="font-extrabold text-slate-800 text-lg">Revisi Pengajuan</h3>
@@ -377,7 +364,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- Edit Bukti Modal -->
 <div id="modalEditProof" class="fixed inset-0 bg-slate-900/70 hidden items-center justify-center z-50 p-4">
   <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 modal-in">
     <h3 class="font-extrabold text-slate-800 text-lg">Revisi Bukti Hasil Kerja</h3>
@@ -404,44 +390,23 @@ tailwind.config = {
 </div>
 
 <script>
-const API_URL = 'https://overtime-backend-wd4c.onrender.com';
+const API_URL = 'https://overtime-backend.onrender.com';
 const OFFICE = { lat: -6.192028366395371, lng: 106.73758715254144, radius: 100 };
-const AUTO_START_TICK_MS = 30000;
 
 const token = localStorage.getItem('token');
 let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
-if (!token || !currentUser || currentUser.role !== 'employee') {
+if (!token || !currentUser) {
   window.location.href = 'index.html';
 }
 
 let records = [];
 let activeRecord = null;
 let activeTimer = null;
-let schedulerTimer = null;
-let countdownTimer = null;
-let pendingAutoStart = null;
 let editTargetId = null;
 let editProofTargetId = null;
 let gpsState = { status: 'idle', lat: null, lng: null, acc: null, distance: null };
 
-// ================= API =================
-async function api(path, opts = {}) {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...(opts.headers || {})
-    }
-  });
-  if (res.status === 401) { logout(); return; }
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request gagal');
-  return data;
-}
-
-// ================= UTIL =================
 function toast(msg, color='bg-ink-900') {
   const t = document.getElementById('toast');
   t.className = `fixed bottom-6 right-6 ${color} text-white px-4 py-3 rounded-xl text-sm z-[60] shadow-2xl fade-in max-w-xs`;
@@ -459,16 +424,43 @@ function haversine(lat1, lon1, lat2, lon2) {
 }
 function fmtTime(d) { return new Date(d).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}); }
 function fmtDate(d) { return new Date(d).toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}); }
-function fmtDateTime(d) { return new Date(d).toLocaleString('id-ID',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}); }
 function fmtDur(ms) { const s = Math.floor(ms/1000); return `${String(Math.floor(s/3600)).padStart(2,'0')}:${String(Math.floor((s%3600)/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
 function fmtDurShort(ms) { const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000); return `${h}j ${m}m`; }
 function timeToDate(dateStr, timeStr) { const [h,m]=timeStr.split(':').map(Number); const d=new Date(dateStr+'T00:00:00'); d.setHours(h,m,0,0); return d; }
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function parseInterval(iv) {
+  if (!iv) return 0;
+  if (typeof iv === 'number') return iv;
+  if (String(iv).includes('PT')) {
+    const m = String(iv).match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
+    if (!m) return 0;
+    return ((parseInt(m[1]||0)*60 + parseInt(m[2]||0))*60 + parseFloat(m[3]||0)) * 1000;
+  }
+  const parts = String(iv).split(':').map(parseFloat);
+  if (parts.length === 3) return ((parts[0]*60 + parts[1])*60 + parts[2]) * 1000;
+  if (parts.length === 2) return (parts[0]*60 + parts[1]) * 60 * 1000;
+  return 0;
+}
 
-// ================= INIT USER =================
+async function api(path, opts = {}) {
+  const res = await fetch(`${API_URL}${path}`, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+      ...(opts.headers || {})
+    }
+  });
+  if (res.status === 401) { logout(); return; }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request gagal');
+  return data;
+}
+
 document.getElementById('userName').textContent = currentUser.full_name;
 document.getElementById('welcomeName').textContent = currentUser.full_name;
-document.getElementById('userAvatar').textContent = currentUser.full_name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+document.getElementById('userLevelLabel').textContent = currentUser.level || 'Karyawan';
+document.getElementById('userAvatar').textContent = currentUser.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
 const today = new Date();
 document.getElementById('inpDate').valueAsDate = today;
 document.getElementById('todayDate').textContent = today.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
@@ -491,7 +483,6 @@ async function fetchGPS() {
     return { lat: OFFICE.lat + 0.0003, lng: OFFICE.lng + 0.0003, acc: 15, simulated: true };
   }
 }
-
 async function runGPSVerification(source = 'banner') {
   gpsState.status = 'checking';
   updateGPSUI();
@@ -538,7 +529,6 @@ async function runGPSVerification(source = 'banner') {
   updateGPSUI();
   return inRadius;
 }
-
 function setStep(id, state) {
   const el = document.getElementById(id);
   const t = el.textContent.replace(/^[◌✓✕]\s*/, '').trim();
@@ -611,7 +601,7 @@ function updateGPSUI() {
   } else if (gpsState.status === 'fail') {
     document.getElementById('gpsBannerLabel').textContent = 'Di Luar Radius';
     document.getElementById('gpsBannerTitle').textContent = '✕ Kamu di luar area kantor';
-    document.getElementById('gpsBannerDesc').textContent = `Jarak ${gpsState.distance}m (maks ${OFFICE.radius}m) · akurasi ±${Math.round(gpsState.acc)}m`;
+    document.getElementById('gpsBannerDesc').textContent = `Jarak ${gpsState.distance}m (maks ${OFFICE.radius}m)`;
     btn.textContent = 'Coba Lagi';
     btn.className = 'bg-red-600 hover:bg-red-700 text-white font-bold text-sm px-5 py-3 rounded-xl shadow-lg shadow-red-600/25 transition whitespace-nowrap';
   }
@@ -626,6 +616,7 @@ function openGPSModal() {
   document.getElementById('modalGPS').classList.add('flex');
   runGPSVerification('modal');
 }
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
 
 // ================= NAV =================
 function switchTab(tab) {
@@ -634,14 +625,32 @@ function switchTab(tab) {
   document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
   document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
 }
-function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
 
-// ================= LOAD DATA =================
+function isHoliday(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = d.getDay();
+  return day === 0 || day === 6;
+}
+
+function updateStartTime() {
+  const dateStr = document.getElementById('inpDate').value;
+  if (!dateStr) return;
+  const holiday = isHoliday(dateStr);
+  const startTime = holiday ? '08:00' : '18:00';
+  document.getElementById('inpStart').value = startTime;
+  document.getElementById('jenisHari').innerHTML = holiday
+    ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (08:00)</span>'
+    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (18:00)</span>';
+  document.getElementById('jenisHari').className = holiday
+    ? 'w-full mt-1.5 border border-emerald-200 rounded-lg px-3 py-2.5 text-sm bg-emerald-50'
+    : 'w-full mt-1.5 border border-blue-200 rounded-lg px-3 py-2.5 text-sm bg-blue-50';
+}
+
+// ================= LOAD =================
 async function loadRecords() {
   try {
-    records = await api('/api/records');
-    // Normalize field dari DB ke format frontend
-    records = records.map(r => ({
+    const raw = await api('/api/records');
+    records = raw.map(r => ({
       id: r.id,
       employee: r.employee_name,
       date: r.date,
@@ -652,54 +661,32 @@ async function loadRecords() {
       desc: r.description,
       source: r.source,
       status: r.status,
+      isHoliday: r.is_holiday,
       start: r.actual_start,
       end: r.actual_end,
       duration: parseInterval(r.actual_duration),
-      location: r.gps_distance ? { lat: r.gps_lat, lng: r.gps_lng, distance: r.gps_distance } : null,
       autoStarted: r.auto_started,
+      location: r.gps_distance ? { distance: r.gps_distance } : null,
       proof: r.proof_text,
       proofFile: r.proof_file_name,
       proofAt: r.proof_uploaded_at,
       note: r.approval_note,
       verifyNote: r.verify_note,
       verifyRating: r.verify_rating,
+      verifiedBy: r.verified_by_level,
       verifyRevisionCount: r.proof_revision_count,
       revisionCount: r.revision_count,
       cancelReason: r.cancel_reason
     }));
 
-    // Set activeRecord kalau ada yang status 'active'
     const active = records.find(r => r.status === 'active');
-    if (active) {
-      activeRecord = active;
-      startLiveTimer();
-    }
+    if (active) { activeRecord = active; startLiveTimer(); }
 
     renderAll();
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-function parseInterval(iv) {
-  // PostgreSQL interval: "04:00:00" atau ISO 8601 "PT4H"
-  if (!iv) return 0;
-  if (typeof iv === 'number') return iv;
-  if (iv.includes('PT')) {
-    const m = iv.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
-    if (!m) return 0;
-    const h = parseInt(m[1] || 0);
-    const min = parseInt(m[2] || 0);
-    const s = parseFloat(m[3] || 0);
-    return ((h * 60 + min) * 60 + s) * 1000;
-  }
-  const parts = iv.split(':').map(parseFloat);
-  if (parts.length === 3) return ((parts[0] * 60 + parts[1]) * 60 + parts[2]) * 1000;
-  if (parts.length === 2) return (parts[0] * 60 + parts[1]) * 60 * 1000;
-  return 0;
-}
-
-// ================= SUBMIT REQUEST =================
+// ================= SUBMIT =================
 async function submitRequest() {
   const date = document.getElementById('inpDate').value;
   const durasi = parseInt(document.getElementById('inpDurasi').value);
@@ -708,42 +695,35 @@ async function submitRequest() {
   const desc = document.getElementById('inpDesc').value.trim();
 
   if (!date || !reason || !desc) return toast('Lengkapi semua field *', 'bg-red-600');
+  if (durasi < 1) return toast('Durasi minimal 1 jam', 'bg-red-600');
   const planned = timeToDate(date, start);
   if (planned < new Date()) return toast('Jam mulai sudah terlewat', 'bg-red-600');
 
   try {
     await api('/api/records', {
       method: 'POST',
-      body: JSON.stringify({
-        date,
-        start_time: start,
-        duration_hours: durasi,
-        reason,
-        description: desc
-      })
+      body: JSON.stringify({ date, start_time: start, duration_hours: durasi, reason, description: desc })
     });
 
     document.getElementById('inpDate').value = '';
     document.getElementById('inpReason').value = '';
     document.getElementById('inpDesc').value = '';
-    document.getElementById('inpMeal').checked = false;
+    document.getElementById('inpDurasi').value = 2;
+    document.getElementById('inpStart').value = '';
+    document.getElementById('jenisHari').textContent = 'Pilih tanggal dulu';
+    document.getElementById('jenisHari').className = 'w-full mt-1.5 border border-slate-200 rounded-lg px-3 py-2.5 text-sm bg-slate-100 text-slate-600';
+
     toast('Pengajuan terkirim. Menunggu approval.', 'bg-brand-600');
     await loadRecords();
     switchTab('emp-riwayat');
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ================= MANUAL START =================
 async function manualStart(recId) {
   toast('Verifikasi GPS...', 'bg-brand-600');
   const gps = await fetchGPS();
   const distance = Math.round(haversine(gps.lat, gps.lng, OFFICE.lat, OFFICE.lng));
-
-  if (distance > OFFICE.radius) {
-    return toast(`Di luar radius (${distance}m)`, 'bg-red-600');
-  }
+  if (distance > OFFICE.radius) return toast(`Di luar radius (${distance}m)`, 'bg-red-600');
 
   try {
     await api(`/api/records/${recId}/start`, {
@@ -753,23 +733,18 @@ async function manualStart(recId) {
     toast(`Lembur dimulai ✓ (${distance}m)`, 'bg-emerald-600');
     await loadRecords();
     switchTab('emp-dashboard');
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ================= CANCEL =================
 function cancelOvertime() {
   if (!activeRecord) return;
   document.getElementById('cancelReason').value = '';
   document.getElementById('modalCancel').classList.remove('hidden');
   document.getElementById('modalCancel').classList.add('flex');
 }
-
 async function confirmCancel() {
   const reason = document.getElementById('cancelReason').value.trim();
   if (!reason) return toast('Alasan wajib', 'bg-red-600');
-
   try {
     await api(`/api/records/${activeRecord.id}/cancel`, {
       method: 'POST',
@@ -780,30 +755,22 @@ async function confirmCancel() {
     closeModal('modalCancel');
     await loadRecords();
     toast('Lembur dibatalkan', 'bg-red-600');
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ================= END / PROOF =================
 function endOvertime() {
   if (!activeRecord) return;
   document.getElementById('modalBukti').classList.remove('hidden');
   document.getElementById('modalBukti').classList.add('flex');
 }
-
 async function submitProof() {
   const text = document.getElementById('proofText').value.trim();
   const file = document.getElementById('proofFile').files[0];
   if (!text) return toast('Deskripsi wajib', 'bg-red-600');
-
   try {
     await api(`/api/records/${activeRecord.id}/finish`, {
       method: 'POST',
-      body: JSON.stringify({
-        proof_text: text,
-        proof_file_name: file ? file.name : null
-      })
+      body: JSON.stringify({ proof_text: text, proof_file_name: file ? file.name : null })
     });
     activeRecord = null;
     clearInterval(activeTimer);
@@ -813,12 +780,9 @@ async function submitProof() {
     await loadRecords();
     toast('Bukti terkirim. Menunggu verifikasi atasan.', 'bg-orange-600');
     switchTab('emp-riwayat');
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ================= EDIT & REVISI =================
 function openEdit(id) {
   const r = records.find(x => x.id === id);
   if (!r) return;
@@ -830,7 +794,6 @@ function openEdit(id) {
   document.getElementById('modalEdit').classList.remove('hidden');
   document.getElementById('modalEdit').classList.add('flex');
 }
-
 async function submitRevision() {
   const r = records.find(x => x.id === editTargetId);
   if (!r) return;
@@ -838,7 +801,6 @@ async function submitRevision() {
   const description = document.getElementById('editDesc').value.trim();
   const proof = document.getElementById('editProof').value.trim();
   if (!description) return toast('Deskripsi wajib', 'bg-red-600');
-
   try {
     await api(`/api/records/${r.id}/revise`, {
       method: 'POST',
@@ -847,9 +809,7 @@ async function submitRevision() {
     closeModal('modalEdit');
     await loadRecords();
     toast('Pengajuan dikirim ulang', 'bg-brand-600');
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 function openEditProof(id) {
@@ -861,31 +821,23 @@ function openEditProof(id) {
   document.getElementById('modalEditProof').classList.remove('hidden');
   document.getElementById('modalEditProof').classList.add('flex');
 }
-
 async function submitProofRevision() {
   const r = records.find(x => x.id === editProofTargetId);
   if (!r) return;
   const text = document.getElementById('editProofText').value.trim();
   const file = document.getElementById('editProofFile').files[0];
   if (!text) return toast('Deskripsi wajib', 'bg-red-600');
-
   try {
     await api(`/api/records/${r.id}/revise-proof`, {
       method: 'POST',
-      body: JSON.stringify({
-        proof_text: text,
-        proof_file_name: file ? file.name : null
-      })
+      body: JSON.stringify({ proof_text: text, proof_file_name: file ? file.name : null })
     });
     closeModal('modalEditProof');
     await loadRecords();
     toast('Bukti revisi terkirim', 'bg-brand-600');
-  } catch (err) {
-    toast(err.message, 'bg-red-600');
-  }
+  } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ================= LIVE TIMER =================
 function startLiveTimer() {
   clearInterval(activeTimer);
   activeTimer = setInterval(() => {
@@ -895,59 +847,6 @@ function startLiveTimer() {
   }, 1000);
   const el = document.getElementById('activeDuration');
   if (el && activeRecord) el.textContent = fmtDur(Date.now() - new Date(activeRecord.start).getTime());
-}
-
-// ================= SCHEDULER (polling) =================
-function startScheduler() {
-  if (schedulerTimer) clearInterval(schedulerTimer);
-  schedulerTimer = setInterval(checkScheduler, AUTO_START_TICK_MS);
-  checkScheduler();
-}
-
-function forceCheckScheduler() {
-  toast('Cek scheduler...', 'bg-brand-600');
-  // Trigger backend scheduler
-  fetch(`${API_URL}/api/scheduler/check`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })
-    .then(() => loadRecords())
-    .catch(() => {});
-}
-
-async function checkScheduler() {
-  // Reload records untuk cek update dari backend
-  await loadRecords();
-}
-
-// ================= AUTO-START DETECTION =================
-// Karena backend yang handle auto-start via cron, frontend hanya refresh data
-// Kalau ada record yang berubah jadi active, kasih notif
-let lastActiveIds = new Set();
-
-function detectNewActive() {
-  records.filter(r => r.status === 'active').forEach(r => {
-    if (!lastActiveIds.has(r.id)) {
-      if (r.autoStarted) {
-        showAutoStartNotif('⚡ Lembur Dimulai Otomatis', `${r.reason} · ${r.startTime}`);
-      }
-      lastActiveIds.add(r.id);
-    }
-  });
-}
-
-function showAutoStartNotif(title, desc) {
-  document.getElementById('notifTitle').textContent = title;
-  document.getElementById('notifDesc').textContent = desc;
-  const n = document.getElementById('autoStartNotif');
-  n.classList.remove('hidden');
-  n.classList.remove('notif-slide');
-  void n.offsetWidth;
-  n.classList.add('notif-slide');
-  setTimeout(() => n.classList.add('hidden'), 8000);
-}
-
-function cancelAutoStart() {
-  // Backend yang handle auto-start, jadi cancel = cancel record (kalau belum active)
-  if (!confirm('Batalkan jadwal auto-start ini?')) return;
-  toast('Hubungi atasan untuk membatalkan jadwal', 'bg-amber-600');
 }
 
 // ================= RENDER =================
@@ -974,7 +873,6 @@ function renderAll() {
   renderEmpRecent();
   renderEmpHistory();
   renderActiveCard();
-  detectNewActive();
 }
 
 function renderActiveCard() {
@@ -983,7 +881,7 @@ function renderActiveCard() {
     card.classList.remove('hidden');
     document.getElementById('activeStart').textContent = fmtTime(activeRecord.start);
     document.getElementById('activePlan').textContent = `Rencana ${activeRecord.startTime} · ${Math.round(activeRecord.plannedDuration/3600000)}j`;
-    document.getElementById('activeLocation').textContent = activeRecord.location ? `${activeRecord.location.distance}m dari kantor` : '-';
+    document.getElementById('activeLocation').textContent = activeRecord.location ? `${activeRecord.location.distance}m` : '-';
     document.getElementById('activeSource').textContent = activeRecord.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Sendiri';
     const autoTag = document.getElementById('activeAutoTag');
     if (activeRecord.autoStarted) autoTag.classList.remove('hidden');
@@ -995,10 +893,8 @@ function renderActiveCard() {
 
 function renderEmpStats() {
   const mine = records;
-  const totalMs = mine.filter(r => r.status === 'completed')
-    .reduce((s, r) => s + (r.duration || 0), 0);
+  const totalMs = mine.filter(r => r.status === 'completed').reduce((s, r) => s + (r.duration || 0), 0);
   const hours = totalMs / 3600000;
-
   document.getElementById('empStatHours').innerHTML = `${hours.toFixed(1)}<span class="text-base text-slate-400 font-bold ml-1">j</span>`;
   document.getElementById('empStatPending').textContent = mine.filter(r => r.status === 'pending').length;
   document.getElementById('empStatVerify').textContent = mine.filter(r => ['pending_verification', 'proof_revision'].includes(r.status)).length;
@@ -1010,18 +906,15 @@ function renderEmpUpcoming() {
   const now = Date.now();
   const up = records.filter(r => r.status === 'approved');
   document.getElementById('upcomingCount').textContent = up.length + ' jadwal';
-
   if (up.length === 0) {
     el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Belum ada jadwal lembur yang disetujui</div>';
     return;
   }
-
   el.innerHTML = up.map(r => {
     const dt = new Date(r.plannedStart);
     const diff = dt.getTime() - now;
     const isReady = diff <= 0 && diff >= -60000;
     const isSoon = diff > 0 && diff < 3600000;
-
     return `
       <div class="relative ${isReady ? 'ready-badge' : ''} flex items-center gap-4 p-4 rounded-xl border ${isReady ? 'border-emerald-300 bg-gradient-to-r from-emerald-50 to-white' : 'border-brand-100 bg-gradient-to-r from-brand-50/50 to-white'}">
         <div class="w-14 h-14 rounded-xl ${isReady ? 'bg-emerald-600' : 'bg-brand-600'} text-white flex flex-col items-center justify-center shrink-0">
@@ -1029,7 +922,7 @@ function renderEmpUpcoming() {
           <p class="text-lg font-extrabold leading-none">${dt.getDate()}</p>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-slate-800 text-sm">${r.reason}</p>
+          <p class="font-bold text-slate-800 text-sm">${r.reason} ${r.isHoliday ? '🏖' : '💼'}</p>
           <p class="text-xs text-slate-500 mt-0.5">${r.startTime} · ${Math.round(r.plannedDuration/3600000)} jam · ${r.source === 'manager' ? '📌 Ditugaskan atasan' : '📝 Pengajuan sendiri'}</p>
           <p class="text-[11px] text-slate-400 mt-1 truncate">${r.desc}</p>
         </div>
@@ -1071,7 +964,7 @@ function renderEmpHistory() {
 function compactCard(r) {
   return `
     <div class="flex items-center gap-3 p-3 rounded-lg border border-slate-100 hover:bg-slate-50 transition">
-      <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-sm">📋</div>
+      <div class="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center text-sm">${r.isHoliday ? '🏖' : '💼'}</div>
       <div class="flex-1 min-w-0">
         <p class="text-sm font-semibold text-slate-800 truncate">${r.reason}</p>
         <p class="text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime} · ${Math.round(r.plannedDuration/3600000)}j</p>
@@ -1090,8 +983,12 @@ function fullCard(r) {
     <div class="bg-white rounded-2xl shadow-sm border ${canEdit ? 'border-orange-200 border-l-4 border-l-orange-400' : canEditProof ? 'border-amber-200 border-l-4 border-l-amber-400' : 'border-slate-100'} p-5">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
         <div>
-          <p class="font-bold text-slate-800">${fmtDate(r.date)} · ${r.startTime}</p>
-          <p class="text-xs text-slate-500">${Math.round(r.plannedDuration/3600000)} jam · ${r.source === 'manager' ? '📌 Ditugaskan atasan' : '📝 Pengajuan sendiri'}${r.autoStarted ? ' · ⚡ Auto-start' : ''}</p>
+          <p class="font-bold text-slate-800">${fmtDate(r.date)} · ${r.startTime} ${r.isHoliday ? '🏖' : '💼'}</p>
+          <p class="text-xs text-slate-500">
+            ${r.isHoliday ? 'Hari Libur' : 'Hari Kerja'} · ${Math.round(r.plannedDuration/3600000)} jam
+            · ${r.source === 'manager' ? '📌 Ditugaskan atasan' : '📝 Pengajuan sendiri'}
+            ${r.autoStarted ? ' · ⚡ Auto-start' : ''}
+          </p>
         </div>
         ${statusBadge(r.status)}
       </div>
@@ -1105,7 +1002,7 @@ function fullCard(r) {
         ${r.verifyNote && ['proof_revision', 'verify_rejected'].includes(r.status) ? `<p class="text-orange-700 bg-orange-50 rounded-lg p-2.5 mt-2">🔍 <strong>Verifikasi:</strong> ${r.verifyNote}</p>` : ''}
         ${showRating && r.status === 'completed' ? `
           <div class="bg-teal-50 rounded-lg p-2.5 mt-2">
-            <p class="text-teal-800 font-bold text-[11px] mb-1">✓ Hasil kerja diverifikasi</p>
+            <p class="text-teal-800 font-bold text-[11px] mb-1">✓ Diverifikasi${r.verifiedBy ? ' oleh level ' + r.verifiedBy : ''}</p>
             <p class="text-teal-700">${'★'.repeat(r.verifyRating)}${'☆'.repeat(5-r.verifyRating)} ${r.verifyNote ? '· ' + r.verifyNote : ''}</p>
           </div>
         ` : ''}
@@ -1116,12 +1013,11 @@ function fullCard(r) {
     </div>`;
 }
 
-// ================= INIT =================
 switchTab('emp-dashboard');
 updateGPSUI();
 setTimeout(() => runGPSVerification('silent'), 800);
 loadRecords();
-startScheduler();
+setInterval(() => { loadRecords(); }, 30000);
 </script>
 </body>
 </html>
