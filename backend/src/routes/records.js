@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import jwt from 'jsonwebtoken';
 import { query } from '../db.js';
 import { requireAuth, requireManager } from '../auth.js';
 import { sendEmail, templates } from '../mailer.js';
@@ -11,12 +12,9 @@ const OFFICE = {
   radius: 100
 };
 
-// Batas jam pengajuan (lewat ini tidak bisa ajukan untuk hari ini)
 const SUBMIT_DEADLINE_HOUR = 18;
-
-// Jam mulai lembur default
-const START_HOUR_WEEKDAY = 17; // hari kerja mulai jam 5 sore
-const START_HOUR_HOLIDAY = 8;  // hari libur mulai jam 8 pagi
+const START_HOUR_WEEKDAY = 17;
+const START_HOUR_HOLIDAY = 8;
 
 function isHoliday(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
@@ -32,41 +30,11 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-async function getManagerEmails() {
-  try {
-    const result = await query(
-      "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
-    );
-    return result.rows.map(r => r.email).filter(Boolean);
-  } catch (err) {
-    console.error('getManagerEmails error:', err.message);
-    return [];
-  }
-}
-
-async function notifyAllManagers(templateName, data) {
-  const emails = await getManagerEmails();
-  console.log(`📨 notifyAllManagers: ${emails.length} manager`);
-  if (emails.length === 0) {
-    console.warn('⚠️ Tidak ada manager aktif');
-    return 0;
-  }
-  let sent = 0;
-  for (const email of emails) {
-    const r = await sendEmail({ to: email, ...templates[templateName](data) });
-    if (r.success) sent++;
-  }
-  return sent;
-}
-
 async function notifyUser(userId, templateName, data) {
   try {
     const result = await query('SELECT email FROM users WHERE id = $1', [userId]);
     const email = result.rows[0]?.email;
-    if (!email) {
-      console.warn(`⚠️ User ${userId} tidak punya email`);
-      return 0;
-    }
+    if (!email) return 0;
     const r = await sendEmail({ to: email, ...templates[templateName](data) });
     return r.success ? 1 : 0;
   } catch (err) {
@@ -75,7 +43,9 @@ async function notifyUser(userId, templateName, data) {
   }
 }
 
+// ============================================
 // GET /employees/list
+// ============================================
 router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
   try {
     const result = await query(
@@ -108,26 +78,21 @@ router.post('/', requireAuth, async (req, res) => {
   const holiday = isHoliday(date);
   const now = new Date();
 
-  // ============================================
-  // VALIDASI: batas pengajuan jam 18:00 (hanya untuk hari ini)
-  // ============================================
+  // Validasi batas pengajuan jam 18:00 untuk hari ini
   const todayStr = now.toISOString().slice(0, 10);
   const isToday = date === todayStr;
 
   if (isToday && now.getHours() >= SUBMIT_DEADLINE_HOUR) {
     return res.status(400).json({
-      error: `Batas pengajuan untuk hari ini sudah lewat (maks jam ${SUBMIT_DEADLINE_HOUR}:00). Silakan ajukan untuk tanggal lain.`
+      error: `Batas pengajuan untuk hari ini sudah lewat (maks jam ${SUBMIT_DEADLINE_HOUR}:00).`
     });
   }
 
-  // Jam mulai default
   const defaultHour = holiday ? START_HOUR_HOLIDAY : START_HOUR_WEEKDAY;
   const finalStartTime = start_time || `${String(defaultHour).padStart(2, '0')}:00`;
 
-  // Planned start = tanggal + jam mulai
   const plannedStart = new Date(`${date}T${finalStartTime}:00`);
 
-  // Kalau tanggalnya hari ini, jam mulai tidak boleh sudah terlewat
   if (isToday && plannedStart < now) {
     return res.status(400).json({ error: 'Jam mulai sudah terlewat' });
   }
@@ -173,17 +138,48 @@ router.post('/', requireAuth, async (req, res) => {
     );
 
     const record = result.rows[0];
-    console.log(`✅ Record created: ID=${record.id}, status=${record.status}, employee=${record.employee_name}, date=${date}, start=${finalStartTime}`);
+    console.log(`✅ Record created: ID=${record.id}, status=${record.status}, employee=${record.employee_name}`);
 
     let emailSent = 0;
 
     if (!isManager) {
-      emailSent = await notifyAllManagers('newRequest', {
-        employeeName: targetName,
-        date, startTime: finalStartTime,
-        duration: duration_hours,
-        reason, desc: description
-      });
+      // Ambil manager dengan ID untuk generate token per-manager
+      const managersResult = await query(
+        "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
+      );
+
+      console.log(`📨 Mengirim email ke ${managersResult.rows.length} manager`);
+
+      const JWT_SECRET = process.env.JWT_SECRET;
+      const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
+
+      for (const mgr of managersResult.rows) {
+        // Token approve
+        const approveToken = jwt.sign(
+          { recordId: record.id, action: 'approve', managerId: mgr.id },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+        // Token reject
+        const rejectToken = jwt.sign(
+          { recordId: record.id, action: 'reject', managerId: mgr.id },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+
+        const emailResult = await sendEmail({
+          to: mgr.email,
+          ...templates.newRequest({
+            employeeName: targetName,
+            date, startTime: finalStartTime,
+            duration: duration_hours,
+            reason, desc: description,
+            approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
+            rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
+          })
+        });
+        if (emailResult.success) emailSent++;
+      }
     } else {
       emailSent = await notifyUser(targetId, 'approved', {
         date, startTime: finalStartTime
@@ -292,10 +288,21 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
     const record = result.rows[0];
     console.log(`✅ Record ${record.id} selesai`);
 
-    const emailSent = await notifyAllManagers('proofSubmitted', {
-      employeeName: record.employee_name,
-      duration: record.actual_duration
-    });
+    // Kirim ke semua manager
+    const managersResult = await query(
+      "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
+    );
+    let emailSent = 0;
+    for (const mgr of managersResult.rows) {
+      const r = await sendEmail({
+        to: mgr.email,
+        ...templates.proofSubmitted({
+          employeeName: record.employee_name,
+          duration: record.actual_duration
+        })
+      });
+      if (r.success) emailSent++;
+    }
 
     res.json({ ...record, email_sent: emailSent });
   } catch (err) {
@@ -350,14 +357,43 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak bisa direvisi' });
 
     const record = result.rows[0];
-    const emailSent = await notifyAllManagers('newRequest', {
-      employeeName: user.name,
-      date: record.date,
-      startTime: record.start_time,
-      duration: record.planned_duration,
-      reason,
-      desc: description
-    });
+
+    // Kirim ulang email ke manager dengan tombol baru
+    const managersResult = await query(
+      "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
+    );
+
+    const JWT_SECRET = process.env.JWT_SECRET;
+    const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
+    let emailSent = 0;
+
+    for (const mgr of managersResult.rows) {
+      const approveToken = jwt.sign(
+        { recordId: record.id, action: 'approve', managerId: mgr.id },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+      const rejectToken = jwt.sign(
+        { recordId: record.id, action: 'reject', managerId: mgr.id },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      const r = await sendEmail({
+        to: mgr.email,
+        ...templates.newRequest({
+          employeeName: user.name,
+          date: record.date,
+          startTime: record.start_time,
+          duration: record.planned_duration,
+          reason,
+          desc: description,
+          approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
+          rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
+        })
+      });
+      if (r.success) emailSent++;
+    }
 
     res.json({ ...record, email_sent: emailSent });
   } catch (err) {
@@ -387,10 +423,20 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
 
     const record = result.rows[0];
-    const emailSent = await notifyAllManagers('proofSubmitted', {
-      employeeName: record.employee_name,
-      duration: record.actual_duration
-    });
+    const managersResult = await query(
+      "SELECT email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
+    );
+    let emailSent = 0;
+    for (const mgr of managersResult.rows) {
+      const r = await sendEmail({
+        to: mgr.email,
+        ...templates.proofSubmitted({
+          employeeName: record.employee_name,
+          duration: record.actual_duration
+        })
+      });
+      if (r.success) emailSent++;
+    }
 
     res.json({ ...record, email_sent: emailSent });
   } catch (err) {
