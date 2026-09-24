@@ -42,10 +42,13 @@ export function requireAuth(req, res, next) {
 }
 
 export function requireManager(req, res, next) {
-  if (req.user?.role !== 'manager' && req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Akses hanya untuk atasan' });
+  const level = levelNum(req.user?.level);
+  const allowedRoles = ['manager', 'admin'];
+  
+  if (allowedRoles.includes(req.user?.role) || level >= 3) {
+    return next();
   }
-  next();
+  return res.status(403).json({ error: 'Akses hanya untuk atasan (level 3+)' });
 }
 
 export function requireAdmin(req, res, next) {
@@ -55,11 +58,16 @@ export function requireAdmin(req, res, next) {
   next();
 }
 
-// Reviewer = admin atau reviewer (akses read-only rekap)
 export function requireReviewer(req, res, next) {
   const allowed = ['admin', 'reviewer'];
   if (!allowed.includes(req.user?.role)) {
     return res.status(403).json({ error: 'Akses hanya untuk reviewer' });
   }
   next();
+}
+
+function levelNum(level) {
+  if (!level) return 0;
+  const m = String(level).match(/^(\d+)/);
+  return m ? parseInt(m[1]) : 0;
 }
