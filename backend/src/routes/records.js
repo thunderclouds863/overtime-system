@@ -23,6 +23,12 @@ function isHoliday(dateStr) {
   return day === 0 || day === 6;
 }
 
+function levelNum(level) {
+  if (!level) return 0;
+  const m = String(level).match(/^(\d+)/);
+  return m ? parseInt(m[1]) : 0;
+}
+
 function haversine(lat1, lon1, lat2, lon2) {
   const R = 6371000, toRad = d => d * Math.PI / 180;
   const dLat = toRad(lat2 - lat1);
@@ -35,10 +41,7 @@ async function notifyUser(userId, templateName, data) {
   try {
     const result = await query('SELECT email FROM users WHERE id = $1', [userId]);
     const email = result.rows[0]?.email;
-    if (!email) {
-      console.warn(`⚠️ notifyUser: user ${userId} tidak punya email`);
-      return 0;
-    }
+    if (!email) return 0;
     const r = await sendEmail({ to: email, ...templates[templateName](data) });
     return r.success ? 1 : 0;
   } catch (err) {
@@ -57,12 +60,67 @@ async function notifyAllManagers(templateName, data) {
       const r = await sendEmail({ to: row.email, ...templates[templateName](data) });
       if (r.success) sent++;
     }
-    console.log(`📨 notifyAllManagers(${templateName}): ${sent} terkirim`);
     return sent;
   } catch (err) {
     console.error('notifyAllManagers error:', err.message);
     return 0;
   }
+}
+
+// ============================================
+// BUILD APPROVAL CHAIN
+// Cari atasan berjenjang: ambil approver_ids[0] dari user yang mengajukan
+// Lalu approver_ids[0] dari approver → terus sampai tidak ada approver
+// Chain = array ID dari bawah ke atas
+// ============================================
+async function buildApprovalChain(employeeId) {
+  const chain = [];
+  let currentId = employeeId;
+  const visited = new Set();
+
+  for (let i = 0; i < 10; i++) {
+    if (visited.has(currentId)) break;
+    visited.add(currentId);
+
+    const result = await query(
+      'SELECT id, approver_ids, level, full_name FROM users WHERE id = $1',
+      [currentId]
+    );
+    const user = result.rows[0];
+    if (!user) break;
+
+    const approverIds = user.approver_ids || [];
+    if (approverIds.length === 0) break;
+
+    // Ambil approver pertama (kalau lebih dari satu, pakai yang pertama)
+    const approverId = parseInt(approverIds[0]);
+    if (!approverId) break;
+
+    // Cek approver aktif
+    const approverResult = await query(
+      'SELECT id, level, full_name, is_active FROM users WHERE id = $1',
+      [approverId]
+    );
+    const approver = approverResult.rows[0];
+    if (!approver || !approver.is_active) break;
+
+    chain.push(approverId);
+    currentId = approverId;
+  }
+
+  return chain;
+}
+
+// Cek apakah chain punya minimal 1 level 4+
+async function validateChainHasFinal(chain) {
+  if (chain.length === 0) return false;
+  for (const approverId of chain) {
+    const result = await query('SELECT level FROM users WHERE id = $1', [approverId]);
+    if (result.rows[0] && levelNum(result.rows[0].level) >= 4) {
+      return true;
+    }
+  }
+  return false;
 }
 
 // ============================================
@@ -81,7 +139,7 @@ router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
 });
 
 // ============================================
-// POST / — Buat pengajuan (employee) ATAU tugaskan (manager)
+// POST / — Buat pengajuan (Staff level 2) ATAU tugaskan (Manager)
 // ============================================
 router.post('/', requireAuth, async (req, res) => {
   const {
@@ -91,6 +149,7 @@ router.post('/', requireAuth, async (req, res) => {
   } = req.body;
 
   const user = req.user;
+  const userLevel = levelNum(user.level);
   const isManager = user.role === 'manager' || user.role === 'admin';
 
   if (!date || !duration_hours || !reason || !description) {
@@ -100,6 +159,13 @@ router.post('/', requireAuth, async (req, res) => {
   const durationNum = parseInt(duration_hours);
   if (!durationNum || durationNum < 1) {
     return res.status(400).json({ error: 'Durasi minimal 1 jam' });
+  }
+
+  // VALIDASI: hanya level 2 (Staff) yang boleh ajukan lembur sendiri
+  if (!isManager && userLevel !== 2) {
+    return res.status(403).json({ 
+      error: `Hanya level 2 (Staff) yang bisa mengajukan lembur sendiri. Level kamu: ${user.level || '-'}` 
+    });
   }
 
   const holiday = isHoliday(date);
@@ -125,18 +191,33 @@ router.post('/', requireAuth, async (req, res) => {
 
   const targetId = isManager && employee_id ? employee_id : user.id;
   const targetName = isManager && employee_name ? employee_name : user.name;
+  
+  // Manager tugaskan = langsung approved (tidak butuh chain)
+  // Staff ajukan = butuh chain
   const initialStatus = isManager ? 'approved' : 'pending';
 
+  // Build chain (hanya untuk staff yang ajukan)
   let approvalChainIds = [];
+  let directApproverId = null;
+
   if (!isManager) {
-    try {
-      const managersResult = await query(
-        "SELECT id FROM users WHERE role = 'manager' AND is_active = true"
-      );
-      approvalChainIds = managersResult.rows.map(r => r.id);
-    } catch (err) {
-      console.error('Get managers error:', err.message);
+    approvalChainIds = await buildApprovalChain(user.id);
+    
+    if (approvalChainIds.length === 0) {
+      return res.status(400).json({ 
+        error: 'Belum ada approver untuk kamu. Hubungi admin untuk set atasan langsung.' 
+      });
     }
+
+    const hasFinal = await validateChainHasFinal(approvalChainIds);
+    if (!hasFinal) {
+      return res.status(400).json({ 
+        error: 'Chain approver tidak punya level 4+ (Manager). Hubungi admin untuk lengkapi struktur atasan.' 
+      });
+    }
+
+    directApproverId = approvalChainIds[0];
+    console.log(`📋 Chain untuk ${targetName}: [${approvalChainIds.join(', ')}], direct=${directApproverId}`);
   }
 
   try {
@@ -162,38 +243,47 @@ router.post('/', requireAuth, async (req, res) => {
     );
 
     const record = result.rows[0];
-    console.log(`✅ Record created: ID=${record.id}, status=${record.status}, source=${record.source}, employee=${record.employee_name}`);
+    console.log(`✅ Record created: ID=${record.id}, status=${record.status}, employee=${record.employee_name}, chain=[${approvalChainIds.join(',')}]`);
 
     let emailSent = 0;
 
-    // ==========================================
-    // KIRIM EMAIL
-    // ==========================================
     if (!isManager) {
-      // === A. EMPLOYEE AJUKAN ===
-      const managersResult = await query(
-        "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
-      );
-
+      // === STAFF AJUKAN ===
       const JWT_SECRET = process.env.JWT_SECRET;
       const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
 
-      for (const mgr of managersResult.rows) {
+      // Ambil direct approver (level 3) dan final approver (level 4+)
+      const allApproversResult = await query(
+        'SELECT id, email, full_name, level FROM users WHERE id = ANY($1)',
+        [approvalChainIds]
+      );
+      
+      // Sort sesuai urutan chain
+      const allApprovers = approvalChainIds.map(id => 
+        allApproversResult.rows.find(r => r.id === id)
+      ).filter(Boolean);
+
+      const directApprover = allApprovers[0]; // Level 3 biasanya
+      const finalApprover = allApprovers.find(a => levelNum(a.level) >= 4);
+
+      // === EMAIL 1: ke ATASAN LANGSUNG ===
+      if (directApprover?.email) {
         const approveToken = jwt.sign(
-          { recordId: record.id, action: 'approve', managerId: mgr.id },
+          { recordId: record.id, action: 'approve-direct', approverId: directApprover.id },
           JWT_SECRET,
           { expiresIn: '24h' }
         );
         const rejectToken = jwt.sign(
-          { recordId: record.id, action: 'reject', managerId: mgr.id },
+          { recordId: record.id, action: 'reject', approverId: directApprover.id },
           JWT_SECRET,
           { expiresIn: '24h' }
         );
 
         const r = await sendEmail({
-          to: mgr.email,
-          ...templates.newRequest({
+          to: directApprover.email,
+          ...templates.newRequestDirect({
             employeeName: targetName,
+            employeeLevel: user.level,
             date, startTime: finalStartTime,
             duration: durationNum,
             reason, desc: description,
@@ -204,15 +294,45 @@ router.post('/', requireAuth, async (req, res) => {
         if (r.success) emailSent++;
       }
 
+      // === EMAIL 2: ke FINAL APPROVER ===
+      if (finalApprover?.email) {
+        const approveToken = jwt.sign(
+          { recordId: record.id, action: 'approve-final', approverId: finalApprover.id },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+        const rejectToken = jwt.sign(
+          { recordId: record.id, action: 'reject', approverId: finalApprover.id },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+
+        const r = await sendEmail({
+          to: finalApprover.email,
+          ...templates.newRequestFinal({
+            employeeName: targetName,
+            employeeLevel: user.level,
+            directApproverName: directApprover?.full_name || '-',
+            directApproved: false,
+            date, startTime: finalStartTime,
+            duration: durationNum,
+            reason,
+            approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
+            rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
+          })
+        });
+        if (r.success) emailSent++;
+      }
+
+      // === EMAIL 3: ke STAFF (FYI) ===
       const fyiSent = await notifyUser(record.employee_id, 'pendingApproval', {
         date, startTime: finalStartTime,
-        duration: durationNum,
-        managerName: 'Atasan'
+        duration: durationNum
       });
       emailSent += fyiSent;
 
     } else {
-      // === D. MANAGER TUGASKAN LEMBUR ===
+      // === MANAGER TUGASKAN ===
       const assignedSent = await notifyUser(targetId, 'assigned', {
         managerName: user.name,
         date, startTime: finalStartTime,
@@ -237,7 +357,7 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// GET / — List records (admin, manager, reviewer lihat semua)
+// GET / — List records
 // ============================================
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user;
@@ -252,7 +372,6 @@ router.get('/', requireAuth, async (req, res) => {
   const params = [];
   let idx = 1;
 
-  // Employee hanya lihat record sendiri. Manager, admin, reviewer lihat semua.
   if (!['manager', 'admin', 'reviewer'].includes(user.role)) {
     sql += ` WHERE employee_id = $1`;
     params.push(user.id);
@@ -270,7 +389,6 @@ router.get('/', requireAuth, async (req, res) => {
 
   try {
     const result = await query(sql, params);
-    console.log(`📋 GET /records: ${user.name} (${user.role}) → ${result.rows.length} records`);
     res.json(result.rows);
   } catch (err) {
     console.error('GET /records error:', err.message);
@@ -279,7 +397,7 @@ router.get('/', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/start — Mulai lembur manual (GPS)
+// POST /:id/start — Mulai lembur manual
 // ============================================
 router.post('/:id/start', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -309,12 +427,10 @@ router.post('/:id/start', requireAuth, async (req, res) => {
     const record = result.rows[0];
     console.log(`▶️ Record ${id} started manual by ${user.name}`);
 
-    // FYI ke employee
     await notifyUser(record.employee_id, 'startedEmployee', {
       date: record.date,
       startTime: record.start_time,
-      duration: Math.round(parseFloat(record.planned_duration?.split(':')[0] || 2)),
-      employeeName: record.employee_name
+      duration: Math.round(parseFloat(record.planned_duration?.split(':')[0] || 2))
     });
 
     res.json(result.rows[0]);
@@ -324,7 +440,7 @@ router.post('/:id/start', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/auto-stop — Auto stop keluar radius
+// POST /:id/auto-stop
 // ============================================
 router.post('/:id/auto-stop', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -334,28 +450,20 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
   if (!lat || !lng) return res.status(400).json({ error: 'Koordinat GPS wajib' });
 
   const distance = Math.round(haversine(lat, lng, OFFICE.lat, OFFICE.lng));
-  console.log(`🚨 AUTO-STOP: record=${id}, distance=${distance}m, user=${user.name}`);
+  console.log(`🚨 AUTO-STOP: record=${id}, distance=${distance}m`);
 
   try {
-    // Cek dulu record masih active
     const checkResult = await query(
       'SELECT id, employee_name, employee_id, status FROM overtime_records WHERE id = $1',
       [id]
     );
     const existing = checkResult.rows[0];
 
-    if (!existing) {
-      return res.status(404).json({ error: 'Record tidak ditemukan' });
-    }
+    if (!existing) return res.status(404).json({ error: 'Record tidak ditemukan' });
     if (existing.status !== 'active') {
-      console.warn(`⚠️ Auto-stop: record ${id} bukan active (status: ${existing.status})`);
-      return res.status(400).json({ 
-        error: `Record sudah tidak aktif (status: ${existing.status})`,
-        already_stopped: true
-      });
+      return res.status(400).json({ error: `Record sudah tidak aktif (status: ${existing.status})`, already_stopped: true });
     }
 
-    // Update: pastikan actual_duration tidak NULL
     const result = await query(
       `UPDATE overtime_records
        SET status = 'cancelled',
@@ -365,15 +473,9 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
            actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
            gps_lat = $2, gps_lng = $3, gps_distance = $4,
            updated_at = NOW()
-       WHERE id = $5
-         AND employee_id = $6
-         AND status = 'active'
+       WHERE id = $5 AND employee_id = $6 AND status = 'active'
        RETURNING *`,
-      [
-        reason || `Keluar radius kantor (${distance}m)`,
-        lat, lng, distance,
-        id, user.id
-      ]
+      [reason || `Keluar radius kantor (${distance}m)`, lat, lng, distance, id, user.id]
     );
 
     if (result.rows.length === 0) {
@@ -381,24 +483,16 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
     }
 
     const record = result.rows[0];
-    console.log(`✅ Record ${id} AUTO-STOPPED: ${record.employee_name}`);
+    console.log(`✅ Record ${id} AUTO-STOPPED`);
 
     const stoppedAt = new Date().toLocaleString('id-ID');
     const reasonText = reason || `Keluar radius kantor (${distance}m)`;
 
-    // Email ke EMPLOYEE (ACTION)
     await notifyUser(record.employee_id, 'autoStopEmployee', {
-      reason: reasonText,
-      distance,
-      stoppedAt
+      reason: reasonText, distance, stoppedAt
     });
-
-    // Email ke semua MANAGER (FYI)
     await notifyAllManagers('autoStopManager', {
-      employeeName: record.employee_name,
-      distance,
-      stoppedAt,
-      reason: reasonText
+      employeeName: record.employee_name, distance, stoppedAt, reason: reasonText
     });
 
     res.json(record);
@@ -409,7 +503,7 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/finish — Selesai lembur + upload bukti
+// POST /:id/finish
 // ============================================
 router.post('/:id/finish', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -424,115 +518,75 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
       [id]
     );
     const rec = recordCheck.rows[0];
-    if (!rec || !rec.actual_start) {
-      return res.status(404).json({ error: 'Record tidak ditemukan / belum dimulai' });
-    }
-    if (rec.status !== 'active') {
-      return res.status(400).json({ error: `Record tidak dalam status aktif (status: ${rec.status})` });
-    }
+    if (!rec || !rec.actual_start) return res.status(404).json({ error: 'Record tidak ditemukan / belum dimulai' });
+    if (rec.status !== 'active') return res.status(400).json({ error: `Record tidak aktif (status: ${rec.status})` });
 
     const durationMs = Date.now() - new Date(rec.actual_start).getTime();
     const durationHours = durationMs / 3600000;
 
-    console.log(`⏱ Durasi aktual: ${durationHours.toFixed(2)} jam (min: ${MIN_OVERTIME_HOURS} jam)`);
+    console.log(`⏱ Durasi aktual: ${durationHours.toFixed(2)} jam`);
 
-    // ==========================================
-    // KASUS A: DURASI < 1 JAM → TIDAK DIHITUNG
-    // ==========================================
+    // KASUS A: < 1 jam
     if (durationHours < MIN_OVERTIME_HOURS) {
       const result = await query(
         `UPDATE overtime_records
          SET status = 'cancelled',
              cancel_reason = $1,
-             cancelled_at = NOW(),
-             actual_end = NOW(),
+             cancelled_at = NOW(), actual_end = NOW(),
              actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
-             proof_text = $2,
-             proof_file_name = $3,
-             proof_uploaded_at = NOW(),
+             proof_text = $2, proof_file_name = $3, proof_uploaded_at = NOW(),
              updated_at = NOW()
-         WHERE id = $4
-           AND (employee_id = $5 OR $6 IN ('manager', 'admin'))
+         WHERE id = $4 AND (employee_id = $5 OR $6 IN ('manager', 'admin'))
            AND status = 'active'
          RETURNING *`,
         [
           `Durasi kurang dari ${MIN_OVERTIME_HOURS} jam (${durationHours.toFixed(2)} jam) — tidak dihitung lembur`,
-          proof_text,
-          proof_file_name || null,
-          id, user.id, user.role
+          proof_text, proof_file_name || null, id, user.id, user.role
         ]
       );
 
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'Record tidak ditemukan / tidak aktif' });
-      }
+      if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan' });
 
       const record = result.rows[0];
       const reasonText = `Durasi ${durationHours.toFixed(2)} jam < 1 jam — tidak dihitung lembur`;
-      console.log(`❌ Record ${id} TIDAK DIHITUNG: ${reasonText}`);
 
-      // Email ke EMPLOYEE (ACTION)
       await notifyUser(record.employee_id, 'notCountedEmployee', {
-        employeeName: record.employee_name,
-        date: record.date,
-        duration: `${durationHours.toFixed(2)} jam`,
-        reason: reasonText
+        employeeName: record.employee_name, date: record.date,
+        duration: `${durationHours.toFixed(2)} jam`, reason: reasonText
       });
-
-      // Email ke semua MANAGER (FYI)
       await notifyAllManagers('notCountedManager', {
-        employeeName: record.employee_name,
-        date: record.date,
-        duration: `${durationHours.toFixed(2)} jam`,
-        reason: reasonText
+        employeeName: record.employee_name, date: record.date,
+        duration: `${durationHours.toFixed(2)} jam`, reason: reasonText
       });
 
-      return res.json({
-        ...record,
-        not_counted: true,
-        message: reasonText
-      });
+      return res.json({ ...record, not_counted: true, message: reasonText });
     }
 
-    // ==========================================
-    // KASUS B: DURASI >= 1 JAM → NORMAL
-    // ==========================================
+    // KASUS B: >= 1 jam
     const result = await query(
       `UPDATE overtime_records
        SET status = 'pending_verification',
            actual_end = NOW(),
            actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
-           proof_text = $1,
-           proof_file_name = $2,
-           proof_uploaded_at = NOW(),
+           proof_text = $1, proof_file_name = $2, proof_uploaded_at = NOW(),
            updated_at = NOW()
-       WHERE id = $3
-         AND (employee_id = $4 OR $5 IN ('manager', 'admin'))
+       WHERE id = $3 AND (employee_id = $4 OR $5 IN ('manager', 'admin'))
          AND status = 'active'
        RETURNING *`,
       [proof_text, proof_file_name || null, id, user.id, user.role]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Record tidak ditemukan / tidak aktif' });
-    }
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan' });
 
     const record = result.rows[0];
     const durationStr = `${durationHours.toFixed(2)} jam`;
     const submittedAt = new Date().toLocaleString('id-ID');
-    console.log(`✅ Record ${id} selesai, durasi ${durationStr}`);
 
-    // Email ke MANAGER (ACTION)
     const mgrSent = await notifyAllManagers('proofSubmitted', {
-      employeeName: record.employee_name,
-      duration: durationStr,
-      proof: proof_text
+      employeeName: record.employee_name, duration: durationStr, proof: proof_text
     });
-
-    // Email ke EMPLOYEE (FYI)
     const empSent = await notifyUser(record.employee_id, 'proofPendingFyi', {
-      duration: durationStr,
-      submittedAt
+      duration: durationStr, submittedAt
     });
 
     res.json({ ...record, email_sent: mgrSent + empSent, not_counted: false });
@@ -543,7 +597,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/cancel — Batalkan lembur manual
+// POST /:id/cancel
 // ============================================
 router.post('/:id/cancel', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -562,7 +616,7 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
        RETURNING *`,
       [reason, id, user.id, user.role]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan / tidak aktif' });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -570,7 +624,7 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/revise — Revisi pengajuan (employee)
+// POST /:id/revise
 // ============================================
 router.post('/:id/revise', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -593,20 +647,16 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
 
     const finalDate = date || record.date;
     const holiday = isHoliday(finalDate);
-
     const now = new Date();
     const todayStr = now.toISOString().slice(0, 10);
     const isToday = finalDate === todayStr;
 
     if (isToday && now.getHours() >= SUBMIT_DEADLINE_HOUR) {
-      return res.status(400).json({
-        error: `Batas pengajuan untuk hari ini sudah lewat (maks jam ${SUBMIT_DEADLINE_HOUR}:00).`
-      });
+      return res.status(400).json({ error: `Batas pengajuan sudah lewat (maks ${SUBMIT_DEADLINE_HOUR}:00)` });
     }
 
     const defaultHour = holiday ? START_HOUR_HOLIDAY : START_HOUR_WEEKDAY;
     const finalStartTime = start_time || `${String(defaultHour).padStart(2, '0')}:00`;
-
     const plannedStart = new Date(`${finalDate}T${finalStartTime}:00`);
 
     if (isToday && plannedStart < now) {
@@ -621,65 +671,54 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     }
     if (finalDuration < 1) finalDuration = 1;
 
+    // Reset chain: hapus approval, mulai dari awal
     const result = await query(
       `UPDATE overtime_records
-       SET date = $1,
-           start_time = $2,
-           planned_duration = $3,
-           planned_start = $4,
-           is_holiday = $5,
-           reason = $6,
-           description = $7,
-           proof_text = $8,
-           status = 'pending',
-           revision_count = revision_count + 1,
-           approval_progress = 0,
-           updated_at = NOW()
+       SET date = $1, start_time = $2, planned_duration = $3, planned_start = $4,
+           is_holiday = $5, reason = $6, description = $7, proof_text = $8,
+           status = 'pending', approval_progress = 0,
+           direct_approver_id = NULL, direct_approval_at = NULL, direct_approval_note = NULL,
+           final_approver_id = NULL, final_approval_at = NULL, jumped_in = FALSE,
+           revision_count = revision_count + 1, updated_at = NOW()
        WHERE id = $9
        RETURNING *`,
       [
-        finalDate,
-        finalStartTime,
-        `${finalDuration} hours`,
-        plannedStart.toISOString(),
-        holiday,
-        reason || record.reason,
-        description,
-        proof || record.proof_text,
-        id
+        finalDate, finalStartTime, `${finalDuration} hours`, plannedStart.toISOString(),
+        holiday, reason || record.reason, description, proof || record.proof_text, id
       ]
     );
 
     const updated = result.rows[0];
-    console.log(`✅ Record ${id} direvisi: date=${finalDate}, start=${finalStartTime}`);
 
-    const managersResult = await query(
-      "SELECT id, email FROM users WHERE role = 'manager' AND is_active = true AND email IS NOT NULL"
+    // Ambil approver dari chain
+    const chain = updated.approval_chain || [];
+    const allApproversResult = await query(
+      'SELECT id, email, full_name, level FROM users WHERE id = ANY($1)',
+      [chain]
     );
+    const allApprovers = chain.map(id => allApproversResult.rows.find(r => r.id === id)).filter(Boolean);
+    const directApprover = allApprovers[0];
+    const finalApprover = allApprovers.find(a => levelNum(a.level) >= 4);
 
     const JWT_SECRET = process.env.JWT_SECRET;
     const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
     let emailSent = 0;
 
-    // Email ke MANAGER (ACTION: review ulang)
-    for (const mgr of managersResult.rows) {
+    // Email ke DIRECT approver
+    if (directApprover?.email) {
       const approveToken = jwt.sign(
-        { recordId: updated.id, action: 'approve', managerId: mgr.id },
-        JWT_SECRET,
-        { expiresIn: '24h' }
+        { recordId: updated.id, action: 'approve-direct', approverId: directApprover.id },
+        JWT_SECRET, { expiresIn: '24h' }
       );
       const rejectToken = jwt.sign(
-        { recordId: updated.id, action: 'reject', managerId: mgr.id },
-        JWT_SECRET,
-        { expiresIn: '24h' }
+        { recordId: updated.id, action: 'reject', approverId: directApprover.id },
+        JWT_SECRET, { expiresIn: '24h' }
       );
-
       const r = await sendEmail({
-        to: mgr.email,
+        to: directApprover.email,
         ...templates.revisionResubmitted({
           employeeName: updated.employee_name,
-          date: finalDate,
-          startTime: finalStartTime,
+          date: finalDate, startTime: finalStartTime,
           duration: finalDuration,
           reason: reason || record.reason,
           desc: description,
@@ -690,12 +729,23 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
       if (r.success) emailSent++;
     }
 
-    // Email ke EMPLOYEE (FYI)
+    // Email ke FINAL approver
+    if (finalApprover?.email) {
+      const r = await sendEmail({
+        to: finalApprover.email,
+        ...templates.revisionResubmittedFinal({
+          employeeName: updated.employee_name,
+          directApproverName: directApprover?.full_name || '-',
+          date: finalDate, startTime: finalStartTime,
+          duration: finalDuration
+        })
+      });
+      if (r.success) emailSent++;
+    }
+
+    // FYI ke employee
     const fyiSent = await notifyUser(updated.employee_id, 'pendingApproval', {
-      date: finalDate,
-      startTime: finalStartTime,
-      duration: finalDuration,
-      managerName: 'Atasan'
+      date: finalDate, startTime: finalStartTime, duration: finalDuration
     });
     emailSent += fyiSent;
 
@@ -707,7 +757,7 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/revise-proof — Revisi bukti (employee)
+// POST /:id/revise-proof
 // ============================================
 router.post('/:id/revise-proof', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -730,17 +780,11 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
     const record = result.rows[0];
     const submittedAt = new Date().toLocaleString('id-ID');
 
-    // Email ke MANAGER (ACTION: verifikasi ulang)
     const mgrSent = await notifyAllManagers('proofRevisionResubmitted', {
-      employeeName: record.employee_name,
-      proof: proof_text,
-      submittedAt
+      employeeName: record.employee_name, proof: proof_text, submittedAt
     });
-
-    // Email ke EMPLOYEE (FYI)
     const empSent = await notifyUser(record.employee_id, 'proofPendingFyi', {
-      duration: record.actual_duration || '-',
-      submittedAt
+      duration: record.actual_duration || '-', submittedAt
     });
 
     res.json({ ...record, email_sent: mgrSent + empSent });
@@ -750,13 +794,11 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// GET /stats/summary — Total jam bulan ini untuk user
+// GET /stats/summary
 // ============================================
 router.get('/stats/summary', requireAuth, async (req, res) => {
   const user = req.user;
-
   try {
-    // Hitung total jam dari completed + pending_verification (yang sudah ada durasi aktual)
     let sql = `
       SELECT 
         COALESCE(SUM(EXTRACT(EPOCH FROM actual_duration))/3600, 0) as total_hours,
@@ -769,15 +811,12 @@ router.get('/stats/summary', requireAuth, async (req, res) => {
         AND actual_duration IS NOT NULL
     `;
     const params = [];
-    
     if (!['manager', 'admin', 'reviewer'].includes(user.role)) {
       sql += ` AND employee_id = $1`;
       params.push(user.id);
     }
-
     const result = await query(sql, params);
     const row = result.rows[0];
-
     res.json({
       total_hours: parseFloat(row.total_hours).toFixed(1),
       completed_count: parseInt(row.completed_count),
