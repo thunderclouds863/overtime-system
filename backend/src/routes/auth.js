@@ -30,7 +30,8 @@ router.post('/login', async (req, res) => {
         email: user.email,
         full_name: user.full_name,
         role: user.role,
-        jabatan: user.jabatan
+        jabatan: user.jabatan,
+        level: user.level
       }
     });
   } catch (err) {
@@ -41,7 +42,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   try {
     const result = await query(
-      'SELECT id, email, full_name, role, jabatan FROM users WHERE id = $1',
+      'SELECT id, email, full_name, role, jabatan, level FROM users WHERE id = $1',
       [req.user.id]
     );
     if (!result.rows[0]) return res.status(404).json({ error: 'User tidak ditemukan' });
