@@ -283,7 +283,7 @@ tailwind.config = {
         <div class="grid md:grid-cols-2 gap-3 md:gap-4">
           <div>
             <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
-            <input type="date" id="inpDate" onchange="updateStartTime()" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition">
+            <input type="date" id="inpDate" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition">
           </div>
           <div>
             <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Kategori <span class="text-red-500">*</span></label>
@@ -431,7 +431,7 @@ tailwind.config = {
     <p class="text-xs text-slate-500 mt-1 mb-4">Perbaiki tanggal, jam, atau detail lalu kirim ulang</p>
     <div id="editNote" class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 mb-4"></div>
     <label class="text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
-    <input type="date" id="editDate" onchange="updateEditStartTime()" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+    <input type="date" id="editDate" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
     <div class="grid grid-cols-2 gap-3 mt-3">
       <div>
         <label class="text-xs font-bold text-slate-600 uppercase">Jam Mulai <span class="text-red-500">*</span></label>
@@ -531,6 +531,7 @@ function fmtDur(ms) { const s = Math.floor(ms/1000); return `${String(Math.floor
 function fmtDurShort(ms) { if (!ms) return '-'; const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000); return `${h}j ${m}m`; }
 function timeToDate(dateStr, timeStr) { const [h,m]=timeStr.split(':').map(Number); const d=new Date(dateStr+'T00:00:00'); d.setHours(h,m,0,0); return d; }
 function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function todayStr() { return new Date().toISOString().slice(0, 10); }
 
 async function api(path, opts = {}) {
   const res = await fetch(`${API_URL}${path}`, {
@@ -551,9 +552,21 @@ document.getElementById('userName').textContent = currentUser.full_name;
 document.getElementById('welcomeName').textContent = currentUser.full_name;
 document.getElementById('userLevelLabel').textContent = currentUser.level || 'Karyawan';
 document.getElementById('userAvatar').textContent = currentUser.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+document.getElementById('todayDate').textContent = new Date().toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+// ============================================
+// INIT DATE + TRIGGER UPDATE
+// ============================================
 const today = new Date();
-document.getElementById('inpDate').valueAsDate = today;
-document.getElementById('todayDate').textContent = today.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+const inpDate = document.getElementById('inpDate');
+inpDate.valueAsDate = today;
+
+// Trigger change saat user ubah
+inpDate.addEventListener('change', updateStartTime);
+inpDate.addEventListener('input', updateStartTime);
+
+// FIX BUG: panggil updateStartTime saat init (setelah value di-set)
+setTimeout(() => updateStartTime(), 100);
 
 function getBrowserGPS() {
   return new Promise((resolve, reject) => {
@@ -575,7 +588,6 @@ async function fetchGPS() {
 
 function startRadiusMonitor() {
   if (radiusMonitor) return;
-  console.log('🎯 Monitor radius dimulai');
   updateRadiusStatusUI('checking');
   setTimeout(async () => {
     if (!activeRecord || activeRecord.status !== 'active') return;
@@ -592,9 +604,7 @@ async function checkRadiusOnce() {
     const gps = await fetchGPS();
     const distance = Math.round(haversine(gps.lat, gps.lng, OFFICE.lat, OFFICE.lng));
     const inRadius = distance <= OFFICE.radius;
-    console.log(`📍 Cek radius: ${distance}m — ${inRadius ? '✓ DALAM' : '✕ LUAR'}`);
     if (!inRadius) {
-      console.log(`⚠️ KELUAR radius — AUTO-STOP`);
       updateRadiusStatusUI('out', distance);
       stopRadiusMonitor();
       await autoStop(activeRecord.id, gps.lat, gps.lng, distance);
@@ -605,7 +615,7 @@ async function checkRadiusOnce() {
 }
 
 function stopRadiusMonitor() {
-  if (radiusMonitor) { clearInterval(radiusMonitor); radiusMonitor = null; console.log('🛑 Monitor stop'); }
+  if (radiusMonitor) { clearInterval(radiusMonitor); radiusMonitor = null; }
 }
 
 async function autoStop(recordId, lat, lng, distance) {
@@ -621,7 +631,6 @@ async function autoStop(recordId, lat, lng, distance) {
     showAutoStopNotif(distance);
     toast(`⚠️ Lembur auto-stop: keluar radius (${distance}m)`, 'bg-red-600');
   } catch (err) {
-    console.error('autoStop error:', err);
     if (err.message.toLowerCase().includes('tidak aktif')) {
       activeRecord = null;
       if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
@@ -819,6 +828,7 @@ function isHoliday(dateStr) {
   const day = d.getDay();
   return day === 0 || day === 6;
 }
+
 function updateStartTime() {
   const dateStr = document.getElementById('inpDate').value;
   if (!dateStr) return;
@@ -831,6 +841,17 @@ function updateStartTime() {
   document.getElementById('jenisHari').className = holiday
     ? 'w-full mt-1.5 border border-emerald-200 rounded-2xl px-3 py-3 text-sm bg-emerald-50'
     : 'w-full mt-1.5 border border-blue-200 rounded-2xl px-3 py-3 text-sm bg-blue-50';
+}
+
+function updateEditStartTime() {
+  const dateStr = document.getElementById('editDate').value;
+  if (!dateStr) return;
+  const holiday = isHoliday(dateStr);
+  const startTime = holiday ? '08:00' : '17:00';
+  document.getElementById('editStart').value = startTime;
+  document.getElementById('editJenisHari').innerHTML = holiday
+    ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (default 08:00)</span>'
+    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (default 17:00)</span>';
 }
 
 async function loadStatsSummary() {
@@ -928,13 +949,14 @@ async function submitRequest() {
       body: JSON.stringify({ date, start_time: start, duration_hours: durasi, reason, description: desc })
     });
 
-    document.getElementById('inpDate').value = '';
     document.getElementById('inpReason').value = '';
     document.getElementById('inpDesc').value = '';
     document.getElementById('inpDurasi').value = 2;
     document.getElementById('inpStart').value = '';
+    document.getElementById('inpDate').valueAsDate = new Date();
     document.getElementById('jenisHari').textContent = 'Pilih tanggal dulu';
     document.getElementById('jenisHari').className = 'w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600';
+    setTimeout(() => updateStartTime(), 100);
 
     const emailSent = result.email_sent || 0;
     toast(emailSent > 0 ? `✅ Pengajuan terkirim! Email ke ${emailSent} atasan.` : '✅ Pengajuan terkirim.', 'bg-emerald-600');
@@ -1045,17 +1067,6 @@ function openEdit(id) {
   updateEditStartTime();
   document.getElementById('modalEdit').classList.remove('hidden');
   document.getElementById('modalEdit').classList.add('flex');
-}
-
-function updateEditStartTime() {
-  const dateStr = document.getElementById('editDate').value;
-  if (!dateStr) return;
-  const holiday = isHoliday(dateStr);
-  const startTime = holiday ? '08:00' : '17:00';
-  document.getElementById('editStart').value = startTime;
-  document.getElementById('editJenisHari').innerHTML = holiday
-    ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (default 08:00)</span>'
-    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (default 17:00)</span>';
 }
 
 async function submitRevision() {
@@ -1304,6 +1315,7 @@ function fullCard(r) {
 switchTab('emp-dashboard');
 updateGPSUI();
 setTimeout(() => runGPSVerification('silent'), 800);
+setTimeout(() => updateStartTime(), 200);
 loadRecords();
 setInterval(loadRecords, 30000);
 </script>
