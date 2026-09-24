@@ -47,9 +47,7 @@ tailwind.config = {
   .stat-grad-4 { background: linear-gradient(135deg, #10b981, #059669); }
   .stat-grad-5 { background: linear-gradient(135deg, #ec4899, #f43f5e); }
   .stat-grad-6 { background: linear-gradient(135deg, #8b5cf6, #d946ef); }
-  @media (max-width: 767px) {
-    main { padding-bottom: 90px; }
-  }
+  @media (max-width: 767px) { main { padding-bottom: 90px; } }
 </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
@@ -118,32 +116,32 @@ tailwind.config = {
     <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
       <div class="stat-grad-1 rounded-2xl p-4 text-white shadow-lg shadow-violet-500/25 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Total User</p>
+        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Total User</p>
         <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statUsers">0</p>
       </div>
       <div class="stat-grad-2 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/25 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Total Record</p>
+        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Total Record</p>
         <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statRecords">0</p>
       </div>
       <div class="stat-grad-4 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/25 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Aktif</p>
+        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Aktif</p>
         <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statActive">0</p>
       </div>
       <div class="stat-grad-5 rounded-2xl p-4 text-white shadow-lg shadow-pink-500/25 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Pending</p>
+        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Pending</p>
         <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statPending">0</p>
       </div>
       <div class="stat-grad-3 rounded-2xl p-4 text-white shadow-lg shadow-cyan-500/25 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Verifikasi</p>
+        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Verifikasi</p>
         <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statVerify">0</p>
       </div>
       <div class="stat-grad-6 rounded-2xl p-4 text-white shadow-lg shadow-fuchsia-500/25 relative overflow-hidden">
         <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Jam Bulan Ini</p>
+        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Jam Bulan Ini</p>
         <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statHours">0</p>
       </div>
     </div>
@@ -245,12 +243,12 @@ tailwind.config = {
   <section id="tab-rekap" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Download Rekap</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Export data lembur ke Excel (dengan link cetak bukti)</p>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Export data lembur ke Excel dengan hyperlink cetak bukti</p>
     </div>
 
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-6 max-w-2xl">
       <div class="bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 md:p-4 mb-5">
-        <p class="text-xs text-brand-900"><strong>💡 Info:</strong> Excel akan berisi data lengkap + <strong>hyperlink</strong> di kolom "Cetak Bukti". Klik link di Excel → langsung buka sistem & tampilkan modal cetak PDF.</p>
+        <p class="text-xs text-brand-900"><strong>💡 Info:</strong> Excel akan berisi data lengkap + <strong>hyperlink</strong> di kolom "Cetak Bukti". Klik link di Excel → buka sistem & tampilkan modal cetak PDF.</p>
       </div>
 
       <div class="grid md:grid-cols-2 gap-3 md:gap-4">
@@ -294,7 +292,6 @@ tailwind.config = {
 
 </main>
 
-<!-- MODAL USER -->
 <div id="userModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden z-50 overflow-y-auto">
   <div class="min-h-full flex items-end md:items-center justify-center p-0 md:p-4 py-0 md:py-8">
     <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-6 modal-in">
@@ -321,17 +318,17 @@ tailwind.config = {
           <div>
             <label class="text-xs font-bold text-slate-600 uppercase">Role *</label>
             <select id="userRole" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-              <option value="employee">Karyawan</option>
-              <option value="manager">Atasan</option>
-              <option value="reviewer">Reviewer (OPS)</option>
+              <option value="employee">Employee</option>
+              <option value="manager">Manager</option>
               <option value="admin">Admin</option>
+              <option value="reviewer">Reviewer</option>
             </select>
           </div>
           <div>
             <label class="text-xs font-bold text-slate-600 uppercase">Level *</label>
             <select id="userLevel" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
               <option value="">— Pilih level —</option>
-              <optgroup label="Level 1 — Worker (tidak bisa ajukan/approve)">
+              <optgroup label="Level 1 — Worker">
                 <option value="1a">1a</option>
                 <option value="1b">1b</option>
                 <option value="1c">1c</option>
@@ -368,7 +365,7 @@ tailwind.config = {
           <div id="approverList" class="mt-1.5 border border-slate-200 rounded-2xl p-2 max-h-40 overflow-y-auto space-y-1 bg-slate-50">
             <p class="text-xs text-slate-400 text-center py-2">Memuat atasan...</p>
           </div>
-          <p class="text-[10px] text-slate-400 mt-1">Centang atasan yang membawahi user ini</p>
+          <p class="text-[10px] text-slate-400 mt-1">Centang atasan langsung (untuk approval bertingkat)</p>
         </div>
       </div>
       <div class="flex gap-2 mt-5 pt-4 border-t border-slate-100">
@@ -379,7 +376,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- MODAL CETAK BUKTI -->
 <div id="modalBukti" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center z-50 p-0 md:p-4 overflow-y-auto">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-2xl w-full modal-in my-0 md:my-8">
     <div class="flex items-center justify-between p-4 md:p-5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-3xl">
@@ -430,6 +426,12 @@ function toast(msg, color='bg-ink-900') {
 }
 
 function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+function levelNum(level) {
+  if (!level) return 0;
+  const m = String(level).match(/^(\d+)/);
+  return m ? parseInt(m[1]) : 0;
+}
 
 async function api(path, opts = {}) {
   const res = await fetch(`${API_URL}${path}`, {
@@ -513,7 +515,7 @@ async function loadApprovers() {
   try {
     allApprovers = await api('/api/admin/approvers');
     if (allApprovers.length === 0) {
-      el.innerHTML = '<p class="text-xs text-amber-600 text-center py-2">Belum ada user Atasan/Admin</p>';
+      el.innerHTML = '<p class="text-xs text-amber-600 text-center py-2">Belum ada user level 3+</p>';
       return;
     }
     el.innerHTML = allApprovers.map(a => `
@@ -521,7 +523,7 @@ async function loadApprovers() {
         <input type="checkbox" class="approver-checkbox w-4 h-4 accent-brand-600" value="${a.id}">
         <span class="text-xs">
           <span class="font-semibold text-slate-700">${a.full_name}</span>
-          <span class="text-slate-500">(${a.level || '-'} · ${a.role})</span>
+          <span class="text-slate-500">(${a.level || '-'} · ${a.jabatan || a.role})</span>
         </span>
       </label>
     `).join('');
@@ -549,6 +551,7 @@ async function loadUsers() {
           <span class="text-[10px] font-bold px-2 py-1 rounded-full ${
             u.role === 'admin' ? 'bg-amber-100 text-amber-700' :
             u.role === 'manager' ? 'bg-brand-100 text-brand-700' :
+            u.role === 'reviewer' ? 'bg-cyan-100 text-cyan-700' :
             'bg-slate-100 text-slate-600'
           }">${u.role.toUpperCase()}</span>
         </td>
@@ -608,10 +611,13 @@ async function saveUser() {
 
   if (!full_name) return toast('Nama wajib', 'bg-red-600');
   if (!level) return toast('Level wajib', 'bg-red-600');
-  if (role === 'employee' && levelNum(level) < 2) {
-  if (!confirm('Level 1 (Worker) tidak bisa ajukan lembur. Lanjutkan?')) return;
+
+  const levelNumVal = levelNum(level);
+  
+  if (role === 'employee' && levelNumVal < 2) {
+    if (!confirm('Level 1 (Worker) tidak bisa ajukan lembur. Lanjutkan?')) return;
   }
-  if ((role === 'manager' || role === 'admin') && levelNum(level) < 3) {
+  if ((role === 'manager' || role === 'admin') && levelNumVal < 3) {
     return toast('Manager/Admin harus level 3+ untuk bisa approve', 'bg-red-600');
   }
 
@@ -653,9 +659,6 @@ async function deleteUser(id) {
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ============================================
-// RECORDS + TOMBOL CETAK
-// ============================================
 async function loadRecords() {
   const params = new URLSearchParams();
   const status = document.getElementById('filterStatus').value;
@@ -708,9 +711,6 @@ function resetFilter() {
   loadRecords();
 }
 
-// ============================================
-// CETAK BUKTI — Modal + PDF
-// ============================================
 async function openBukti(recordId) {
   try {
     const records = await api('/api/admin/records?limit=1000');
@@ -726,7 +726,6 @@ async function openBukti(recordId) {
     const actualStart = r.actual_start ? new Date(r.actual_start).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
     const actualEnd = r.actual_end ? new Date(r.actual_end).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
 
-    // Hash verifikasi
     const hashInput = `${r.id}-${r.employee_name}-${r.date}-${r.status}`;
     let hash = 0;
     for (let i = 0; i < hashInput.length; i++) {
@@ -737,7 +736,7 @@ async function openBukti(recordId) {
 
     document.getElementById('buktiContent').innerHTML = `
       <div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #6366f1;padding-bottom:16px;margin-bottom:24px">
-        <img src="logo-cimory.png" alt="Cimory" style="width:60px;height:60px;object-fit:contain" crossorigin="anonymous">
+        <img src="logo-cimory.png" alt="Cimory" style="width:60px;height:60px;object-fit:contain;flex-shrink:0" crossorigin="anonymous">
         <div style="flex:1">
           <h1 style="margin:0;font-size:20px;color:#0f172a;font-weight:800">BUKTI PELAKSANAAN LEMBUR</h1>
           <p style="margin:2px 0 0;font-size:12px;color:#64748b">Sistem Monitoring Lembur Cimory</p>
@@ -864,9 +863,6 @@ async function downloadBuktiPDF() {
   }
 }
 
-// ============================================
-// REKAP EXCEL — dengan hyperlink cetak
-// ============================================
 async function loadRekapEmployees() {
   try {
     const users = await api('/api/admin/users');
@@ -958,7 +954,6 @@ async function downloadRekap() {
 
     const ws = XLSX.utils.json_to_sheet(rows);
 
-    // Tambah kolom "Cetak Bukti" dengan hyperlink
     const range = XLSX.utils.decode_range(ws['!ref']);
     const extraCol = range.e.c + 1;
     const headerCell = XLSX.utils.encode_cell({ r: 0, c: extraCol });
@@ -976,7 +971,6 @@ async function downloadRekap() {
       };
     });
 
-    // Set lebar kolom
     ws['!cols'] = [
       { wch: 12 }, { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 15 }, { wch: 12 },
       { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 20 },
@@ -994,36 +988,24 @@ async function downloadRekap() {
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ============================================
-// AUTO-OPEN dari URL ?print=ID
-// ============================================
 async function checkPrintParam() {
   const params = new URLSearchParams(window.location.search);
   const printId = params.get('print');
   if (printId) {
     console.log(`🖨 Auto-open bukti untuk record ID: ${printId}`);
-    // Bersihkan URL
     window.history.replaceState({}, '', window.location.pathname);
-    // Buka tab records dulu
     switchTab('records');
-    // Tunggu sebentar biar data ke-load
     await new Promise(r => setTimeout(r, 500));
-    // Buka modal bukti
     await openBukti(parseInt(printId));
   }
 }
 
-// ============================================
-// INIT
-// ============================================
 const today = new Date();
 const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
 document.getElementById('rekapStart').valueAsDate = firstDay;
 document.getElementById('rekapEnd').valueAsDate = today;
 
 switchTab('dashboard');
-
-// Cek URL param setelah data siap
 setTimeout(checkPrintParam, 800);
 </script>
 </body>
