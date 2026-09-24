@@ -240,7 +240,7 @@ tailwind.config = {
     <div class="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4 flex gap-3">
       <span class="text-xl">🔍</span>
       <div class="text-xs text-orange-800 leading-relaxed">
-        <strong>Verifikasi hasil kerja:</strong> karyawan selesai lembur & upload bukti. Level ≥ 4a bisa verifikasi.
+        <strong>Verifikasi hasil kerja:</strong> karyawan selesai lembur & upload bukti. Klik tombol "Lihat File" untuk membuka lampiran bukti.
       </div>
     </div>
     <div id="verifyList" class="space-y-3">
@@ -332,6 +332,9 @@ tailwind.config = {
 
 <script>
 const API_URL = 'https://overtime-backend-wd4c.onrender.com';
+const SUPABASE_URL = 'https://yokwtposthhzldhbohob.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlva3d0cG9zdGhoemxkaGJvaG9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMDczMDQsImV4cCI6MjEwNTc4MzMwNH0.VCYwzITDKWEsmim_rTXLD_phe0hKren1X1w27tT_V6o';
+
 const token = localStorage.getItem('token');
 let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
@@ -387,6 +390,12 @@ function closeModal(id) { document.getElementById(id).classList.add('hidden'); d
 function fmtTime(d) { return new Date(d).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}); }
 function fmtDate(d) { return new Date(d).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}); }
 function fmtDurShort(ms) { if (!ms) return '-'; const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000); return `${h}j ${m}m`; }
+function fmtFileSize(bytes) {
+  if (!bytes) return '';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+  return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+}
 
 document.getElementById('userName').textContent = currentUser.full_name;
 document.getElementById('mgrEmail').textContent = currentUser.email;
@@ -467,6 +476,10 @@ async function loadRecords() {
       autoStarted: r.auto_started,
       proof: r.proof_text,
       proofFile: r.proof_file_name,
+      proofUrl: r.proof_file_url,
+      proofExternalUrl: r.proof_external_url,
+      proofNotes: r.proof_notes,
+      proofSize: r.proof_file_size,
       proofAt: r.proof_uploaded_at,
       note: r.approval_note,
       verifyNote: r.verify_note,
@@ -810,12 +823,38 @@ function renderVerifyList() {
       </div>
       <div class="bg-slate-50 rounded-2xl p-3 text-[11px] md:text-xs text-slate-600 space-y-1.5 mb-3">
         <p><strong>Rencana:</strong> ${r.desc}</p>
-        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-2.5 mt-1 border border-emerald-100">
-          <p class="text-[10px] text-emerald-700 font-bold uppercase mb-1">Bukti Hasil Kerja</p>
-          <p>📎 ${r.proof || '-'}</p>
-          ${r.proofFile ? `<p class="text-[10px] text-slate-500 mt-0.5">File: ${r.proofFile}</p>` : ''}
+        <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-3 mt-2 border border-emerald-100">
+          <p class="text-[10px] text-emerald-700 font-bold uppercase mb-2">Bukti Hasil Kerja</p>
+          <p class="text-slate-700 mb-2">${r.proof || '-'}</p>
+          
+          ${r.proofUrl ? `
+            <a href="${r.proofUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-2 rounded-lg mb-2 transition">
+              📥 Lihat File ${r.proofFile ? '(' + r.proofFile + ')' : ''} ${r.proofSize ? '· ' + fmtFileSize(r.proofSize) : ''}
+            </a>
+          ` : ''}
+          
+          ${r.proofExternalUrl ? `
+            <a href="${r.proofExternalUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-3 py-2 rounded-lg mb-2 transition">
+              🔗 Buka Link External
+            </a>
+          ` : ''}
+          
+          ${!r.proofUrl && !r.proofExternalUrl && r.proofFile ? `
+            <p class="text-[10px] text-amber-600 mt-1">⚠️ File "${r.proofFile}" tidak tersedia di storage</p>
+          ` : ''}
+          
+          ${!r.proofFile && !r.proofUrl && !r.proofExternalUrl ? `
+            <p class="text-[10px] text-slate-400 italic">Tidak ada lampiran file</p>
+          ` : ''}
+          
+          ${r.proofNotes ? `
+            <div class="bg-white rounded-lg p-2 mt-2 border border-emerald-100">
+              <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Catatan Karyawan</p>
+              <p class="text-xs text-slate-700">${r.proofNotes}</p>
+            </div>
+          ` : ''}
         </div>
-        ${r.verifyRevisionCount > 0 ? `<p class="text-amber-600">🔄 Revisi bukti ke-${r.verifyRevisionCount}</p>` : ''}
+        ${r.verifyRevisionCount > 0 ? `<p class="text-amber-600 mt-1">🔄 Revisi bukti ke-${r.verifyRevisionCount}</p>` : ''}
       </div>
       <button onclick="openVerify(${r.id})" class="w-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs md:text-sm font-bold py-3 rounded-2xl shadow-lg active:scale-[0.98] transition">🔍 Verifikasi Hasil</button>
     </div>
@@ -827,6 +866,7 @@ function openVerify(id) {
   if (!r) return;
   verifyTargetId = id;
   currentRating = r.verifyRating || 0;
+  
   document.getElementById('verifyContent').innerHTML = `
     <div class="bg-gradient-to-br from-slate-50 to-brand-50 rounded-2xl p-4 space-y-2 border border-slate-100">
       <div class="flex justify-between text-xs"><span class="text-slate-500">Karyawan</span><span class="font-bold">${r.employee} (${r.employeeLevel})</span></div>
@@ -834,13 +874,37 @@ function openVerify(id) {
       <div class="flex justify-between text-xs"><span class="text-slate-500">Aktual</span><span class="font-bold">${r.start ? fmtTime(r.start) : '-'} — ${r.end ? fmtTime(r.end) : '-'} · ${r.actualHours.toFixed(2)} jam</span></div>
     </div>
     <div><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Rencana Pekerjaan</p><p>${r.desc}</p></div>
-    <div><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Bukti Hasil Kerja</p>
-      <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-3">
-        <p class="text-sm">📎 ${r.proof || '-'}</p>
-        ${r.proofFile ? `<p class="text-xs text-slate-500 mt-1">File: ${r.proofFile}</p>` : ''}
+    <div>
+      <p class="text-[10px] text-slate-500 uppercase font-bold mb-2">Bukti Hasil Kerja</p>
+      <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-4">
+        <p class="text-sm text-slate-700 mb-3">${r.proof || '-'}</p>
+        
+        ${r.proofUrl ? `
+          <a href="${r.proofUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl mb-2 transition shadow-lg shadow-emerald-600/20">
+            📥 Lihat File ${r.proofFile ? '(' + r.proofFile + ')' : ''} ${r.proofSize ? '· ' + fmtFileSize(r.proofSize) : ''}
+          </a>
+        ` : ''}
+        
+        ${r.proofExternalUrl ? `
+          <a href="${r.proofExternalUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl mb-2 transition shadow-lg shadow-blue-600/20">
+            🔗 Buka Link External
+          </a>
+        ` : ''}
+        
+        ${!r.proofUrl && !r.proofExternalUrl ? `
+          <p class="text-xs text-slate-400 italic">Tidak ada lampiran file atau link</p>
+        ` : ''}
+        
+        ${r.proofNotes ? `
+          <div class="bg-white rounded-lg p-3 mt-3 border border-emerald-100">
+            <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Catatan Karyawan</p>
+            <p class="text-xs text-slate-700">${r.proofNotes}</p>
+          </div>
+        ` : ''}
       </div>
     </div>
   `;
+  
   document.getElementById('verifyNote').value = '';
   updateStars();
   document.getElementById('modalVerify').classList.remove('hidden');
