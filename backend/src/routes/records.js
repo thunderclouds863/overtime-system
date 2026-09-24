@@ -144,7 +144,6 @@ router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
       [user.id]
     );
 
-    console.log(`👥 ${user.name} (${user.role}, level ${user.level}) → ${result.rows.length} bawahan`);
     res.json(result.rows);
   } catch (err) {
     console.error('GET /employees/list error:', err.message);
@@ -268,8 +267,6 @@ router.post('/', requireAuth, async (req, res) => {
     );
 
     const record = result.rows[0];
-    console.log(`✅ Record ID=${record.id}, status=${record.status}, source=${record.source}, chain=[${approvalChainIds.join(',')}]`);
-
     let emailSent = 0;
     const JWT_SECRET = process.env.JWT_SECRET;
     const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
@@ -285,9 +282,7 @@ router.post('/', requireAuth, async (req, res) => {
 
       const directApprover = allApprovers[0];
       const finalApprover = allApprovers.find(a => levelNum(a.level) >= 4);
-
-      const samePerson = directApprover && finalApprover && 
-                          directApprover.id === finalApprover.id;
+      const samePerson = directApprover && finalApprover && directApprover.id === finalApprover.id;
 
       if (samePerson) {
         const approveToken = jwt.sign(
@@ -315,7 +310,6 @@ router.post('/', requireAuth, async (req, res) => {
           })
         });
         if (r.success) emailSent++;
-
       } else {
         if (directApprover?.email) {
           const approveToken = jwt.sign(
@@ -511,7 +505,6 @@ router.get('/', requireAuth, async (req, res) => {
 
   try {
     const result = await query(sql, params);
-    console.log(`📋 GET /records: ${user.name} (${user.role}) → ${result.rows.length} records`);
     res.json(result.rows);
   } catch (err) {
     console.error('GET /records error:', err.message);
@@ -576,37 +569,28 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
 
     if (!existing) return res.status(404).json({ error: 'Record tidak ditemukan' });
     if (existing.status !== 'active') {
-      return res.status(400).json({ error: `Record sudah tidak aktif (status: ${existing.status})`, already_stopped: true });
+      return res.status(400).json({ error: `Record sudah tidak aktif`, already_stopped: true });
     }
 
     const result = await query(
       `UPDATE overtime_records
        SET status = 'cancelled',
-           cancel_reason = $1,
-           cancelled_at = NOW(),
-           actual_end = NOW(),
+           cancel_reason = $1, cancelled_at = NOW(), actual_end = NOW(),
            actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
-           gps_lat = $2, gps_lng = $3, gps_distance = $4,
-           updated_at = NOW()
+           gps_lat = $2, gps_lng = $3, gps_distance = $4, updated_at = NOW()
        WHERE id = $5 AND employee_id = $6 AND status = 'active'
        RETURNING *`,
       [reason || `Keluar radius kantor (${distance}m)`, lat, lng, distance, id, user.id]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Record tidak bisa di-auto-stop' });
-    }
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak bisa di-auto-stop' });
 
     const record = result.rows[0];
     const stoppedAt = new Date().toLocaleString('id-ID');
     const reasonText = reason || `Keluar radius kantor (${distance}m)`;
 
-    await notifyUser(record.employee_id, 'autoStopEmployee', {
-      reason: reasonText, distance, stoppedAt
-    });
-    await notifyAllManagers('autoStopManager', {
-      employeeName: record.employee_name, distance, stoppedAt, reason: reasonText
-    });
+    await notifyUser(record.employee_id, 'autoStopEmployee', { reason: reasonText, distance, stoppedAt });
+    await notifyAllManagers('autoStopManager', { employeeName: record.employee_name, distance, stoppedAt, reason: reasonText });
 
     res.json(record);
   } catch (err) {
@@ -615,9 +599,19 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// POST /:id/finish — Selesai lembur + upload bukti
+// ============================================
 router.post('/:id/finish', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const { proof_text, proof_file_name } = req.body;
+  const { 
+    proof_text, 
+    proof_file_name, 
+    proof_file_url, 
+    proof_file_size, 
+    proof_notes, 
+    proof_external_url 
+  } = req.body;
   const user = req.user;
 
   if (!proof_text) return res.status(400).json({ error: 'Deskripsi bukti wajib' });
@@ -629,7 +623,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
     );
     const rec = recordCheck.rows[0];
     if (!rec || !rec.actual_start) return res.status(404).json({ error: 'Record tidak ditemukan / belum dimulai' });
-    if (rec.status !== 'active') return res.status(400).json({ error: `Record tidak aktif (status: ${rec.status})` });
+    if (rec.status !== 'active') return res.status(400).json({ error: `Record tidak aktif` });
 
     const durationMs = Date.now() - new Date(rec.actual_start).getTime();
     const durationHours = durationMs / 3600000;
@@ -638,17 +632,19 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
       const result = await query(
         `UPDATE overtime_records
          SET status = 'cancelled',
-             cancel_reason = $1,
-             cancelled_at = NOW(), actual_end = NOW(),
+             cancel_reason = $1, cancelled_at = NOW(), actual_end = NOW(),
              actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
-             proof_text = $2, proof_file_name = $3, proof_uploaded_at = NOW(),
-             updated_at = NOW()
-         WHERE id = $4 AND (employee_id = $5 OR $6 IN ('manager', 'admin'))
+             proof_text = $2, proof_file_name = $3, proof_file_url = $4,
+             proof_file_size = $5, proof_notes = $6, proof_external_url = $7,
+             proof_uploaded_at = NOW(), updated_at = NOW()
+         WHERE id = $8 AND (employee_id = $9 OR $10 IN ('manager', 'admin'))
            AND status = 'active'
          RETURNING *`,
         [
           `Durasi kurang dari ${MIN_OVERTIME_HOURS} jam (${durationHours.toFixed(2)} jam) — tidak dihitung lembur`,
-          proof_text, proof_file_name || null, id, user.id, user.role
+          proof_text, proof_file_name || null, proof_file_url || null,
+          proof_file_size || null, proof_notes || null, proof_external_url || null,
+          id, user.id, user.role
         ]
       );
 
@@ -674,12 +670,17 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
        SET status = 'pending_verification',
            actual_end = NOW(),
            actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
-           proof_text = $1, proof_file_name = $2, proof_uploaded_at = NOW(),
-           updated_at = NOW()
-       WHERE id = $3 AND (employee_id = $4 OR $5 IN ('manager', 'admin'))
+           proof_text = $1, proof_file_name = $2, proof_file_url = $3,
+           proof_file_size = $4, proof_notes = $5, proof_external_url = $6,
+           proof_uploaded_at = NOW(), updated_at = NOW()
+       WHERE id = $7 AND (employee_id = $8 OR $9 IN ('manager', 'admin'))
          AND status = 'active'
        RETURNING *`,
-      [proof_text, proof_file_name || null, id, user.id, user.role]
+      [
+        proof_text, proof_file_name || null, proof_file_url || null,
+        proof_file_size || null, proof_notes || null, proof_external_url || null,
+        id, user.id, user.role
+      ]
     );
 
     if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan' });
@@ -711,8 +712,7 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
     const result = await query(
       `UPDATE overtime_records
        SET status = 'cancelled', cancel_reason = $1, cancelled_at = NOW(),
-           actual_end = NOW(),
-           actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
+           actual_end = NOW(), actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
            updated_at = NOW()
        WHERE id = $2 AND (employee_id = $3 OR $4 IN ('manager', 'admin'))
          AND status = 'active'
@@ -726,6 +726,9 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// POST /:id/revise — Revisi pengajuan
+// ============================================
 router.post('/:id/revise', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { date, start_time, duration_hours, reason, description, proof } = req.body;
@@ -752,7 +755,7 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     const isToday = finalDate === todayStr;
 
     if (isToday && now.getHours() >= SUBMIT_DEADLINE_HOUR) {
-      return res.status(400).json({ error: `Batas pengajuan sudah lewat (maks ${SUBMIT_DEADLINE_HOUR}:00)` });
+      return res.status(400).json({ error: `Batas pengajuan sudah lewat` });
     }
 
     const defaultHour = holiday ? START_HOUR_HOLIDAY : START_HOUR_WEEKDAY;
@@ -788,7 +791,6 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     );
 
     const updated = result.rows[0];
-
     const chain = updated.approval_chain || [];
     const allApproversResult = await query(
       'SELECT id, email, full_name, level FROM users WHERE id = ANY($1)',
@@ -877,21 +879,39 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// POST /:id/revise-proof — Revisi bukti
+// ============================================
 router.post('/:id/revise-proof', requireAuth, async (req, res) => {
   const { id } = req.params;
-  const { proof_text, proof_file_name } = req.body;
+  const { 
+    proof_text, 
+    proof_file_name, 
+    proof_file_url, 
+    proof_file_size, 
+    proof_notes, 
+    proof_external_url 
+  } = req.body;
   const user = req.user;
+
   if (!proof_text) return res.status(400).json({ error: 'Deskripsi wajib' });
+  
   try {
     const result = await query(
       `UPDATE overtime_records
-       SET proof_text = $1, proof_file_name = $2, proof_uploaded_at = NOW(),
+       SET proof_text = $1, proof_file_name = $2, proof_file_url = $3,
+           proof_file_size = $4, proof_notes = $5, proof_external_url = $6,
+           proof_uploaded_at = NOW(),
            status = 'pending_verification',
            proof_revision_count = proof_revision_count + 1, updated_at = NOW()
-       WHERE id = $3 AND (employee_id = $4 OR $5 IN ('manager', 'admin'))
+       WHERE id = $7 AND (employee_id = $8 OR $9 IN ('manager', 'admin'))
          AND status = 'proof_revision'
        RETURNING *`,
-      [proof_text, proof_file_name || null, id, user.id, user.role]
+      [
+        proof_text, proof_file_name || null, proof_file_url || null,
+        proof_file_size || null, proof_notes || null, proof_external_url || null,
+        id, user.id, user.role
+      ]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
 
