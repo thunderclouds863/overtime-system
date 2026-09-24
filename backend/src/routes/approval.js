@@ -71,9 +71,6 @@ function renderEmailActionPage(type, message) {
 </html>`;
 }
 
-// ============================================
-// GET /email-action?token=xxx
-// ============================================
 router.get('/email-action', async (req, res) => {
   const { token } = req.query;
   if (!token) return res.status(400).send(renderEmailActionPage('error', 'Token tidak ada'));
@@ -104,7 +101,6 @@ router.get('/email-action', async (req, res) => {
     const approver = approverResult.rows[0];
     const approverName = approver?.full_name || 'Atasan';
     const approverLevel = levelNum(approver?.level);
-    const now = new Date().toISOString();
 
     if (action === 'reject') {
       await query(
@@ -116,7 +112,6 @@ router.get('/email-action', async (req, res) => {
         date: record.date, startTime: record.start_time,
         note: `Ditolak oleh ${approverName}`, rejectedBy: approverName
       });
-      console.log(`❌ Record ${recordId} DITOLAK oleh ${approverName}`);
       return res.send(renderEmailActionPage('rejected', `Pengajuan <strong>${record.employee_name}</strong> ditolak. Karyawan sudah dapat notifikasi.`));
     }
 
@@ -129,20 +124,14 @@ router.get('/email-action', async (req, res) => {
       await notifyUser(record.employee_id, 'revision', {
         note: `Revisi diminta oleh ${approverName}`, requestedBy: approverName
       });
-      console.log(`✏️ Record ${recordId} REVISI oleh ${approverName}`);
       return res.send(renderEmailActionPage('forwarded', `Permintaan revisi terkirim ke <strong>${record.employee_name}</strong>.`));
     }
 
-    // ============================================
-    // APPROVE — cek role: direct atau final
-    // ============================================
     if (action === 'approve-direct') {
-      // Yang approve harus level 3 (bukan final approver)
       if (approverLevel < 3) {
         return res.send(renderEmailActionPage('error', 'Level kamu tidak cukup untuk approve'));
       }
 
-      // Update direct approval
       await query(
         `UPDATE overtime_records 
          SET direct_approver_id = $1, direct_approval_at = NOW(), direct_approval_note = $2,
@@ -151,15 +140,11 @@ router.get('/email-action', async (req, res) => {
         [approverId, `Disetujui oleh ${approverName} via email`, recordId]
       );
 
-      console.log(`✅ Direct approval Record ${recordId} oleh ${approverName} (level ${approver?.level})`);
-
-      // FYI ke employee
       await notifyUser(record.employee_id, 'partialApproval', {
         directApproverName: approverName,
         date: record.date, startTime: record.start_time
       });
 
-      // Notif ke final approver (level 4+)
       const chain = record.approval_chain || [];
       const allApproversResult = await query(
         'SELECT id, email, full_name, level FROM users WHERE id = ANY($1)',
@@ -194,16 +179,14 @@ router.get('/email-action', async (req, res) => {
         });
       }
 
-      return res.send(renderEmailActionPage('success', `Atasan langsung <strong>${approverName}</strong> approve. Sekarang menunggu final approval dari Manager. Karyawan sudah dapat notifikasi.`));
+      return res.send(renderEmailActionPage('success', `Atasan langsung <strong>${approverName}</strong> approve. Sekarang menunggu final approval dari Manager.`));
     }
 
     if (action === 'approve-final') {
-      // FINAL approve — harus level 4+
       if (approverLevel < 4) {
         return res.send(renderEmailActionPage('error', `Hanya level 4+ (Manager) yang bisa final approve. Level kamu: ${approver?.level || '-'}`));
       }
 
-      // Cek apakah direct approver sudah approve
       const jumpedIn = !record.direct_approver_id;
       
       await query(
@@ -222,9 +205,6 @@ router.get('/email-action', async (req, res) => {
         ]
       );
 
-      console.log(`✅ FINAL approval Record ${recordId} oleh ${approverName} (jumped_in: ${jumpedIn})`);
-
-      // Notif ke employee
       if (jumpedIn) {
         await notifyUser(record.employee_id, 'approvedJumpIn', {
           finalApproverName: approverName,
@@ -238,7 +218,6 @@ router.get('/email-action', async (req, res) => {
         });
       }
 
-      // Kalau jumped in, notif ke direct approver juga
       if (jumpedIn) {
         const chain = record.approval_chain || [];
         if (chain.length > 0) {
@@ -252,7 +231,7 @@ router.get('/email-action', async (req, res) => {
         }
       }
 
-      return res.send(renderEmailActionPage('success', `Pengajuan <strong>${record.employee_name}</strong> disetujui final. Lembur siap jalan.${jumpedIn ? ' <br><small>(Jump in — atasan langsung belum review)</small>' : ''}`));
+      return res.send(renderEmailActionPage('success', `Pengajuan <strong>${record.employee_name}</strong> disetujui final.${jumpedIn ? ' <br><small>(Jump in — atasan langsung belum review)</small>' : ''}`));
     }
 
     return res.send(renderEmailActionPage('error', 'Aksi tidak dikenali'));
@@ -263,9 +242,6 @@ router.get('/email-action', async (req, res) => {
   }
 });
 
-// ============================================
-// POST /:id/approve-direct — Approve dari sistem (bukan email)
-// ============================================
 router.post('/:id/approve-direct', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
   const { note } = req.body;
@@ -293,7 +269,6 @@ router.post('/:id/approve-direct', requireAuth, requireManager, async (req, res)
       date: record.date, startTime: record.start_time
     });
 
-    // Notif ke final approver
     const chain = record.approval_chain || [];
     const allApproversResult = await query(
       'SELECT id, email, full_name, level FROM users WHERE id = ANY($1)',
@@ -333,9 +308,6 @@ router.post('/:id/approve-direct', requireAuth, requireManager, async (req, res)
   }
 });
 
-// ============================================
-// POST /:id/approve-final — Final approve dari sistem
-// ============================================
 router.post('/:id/approve-final', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
   const { note } = req.body;
@@ -390,9 +362,6 @@ router.post('/:id/approve-final', requireAuth, requireManager, async (req, res) 
   }
 });
 
-// ============================================
-// POST /:id/reject
-// ============================================
 router.post('/:id/reject', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
   const { note } = req.body;
@@ -422,9 +391,6 @@ router.post('/:id/reject', requireAuth, requireManager, async (req, res) => {
   }
 });
 
-// ============================================
-// POST /:id/request-revision
-// ============================================
 router.post('/:id/request-revision', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
   const { note } = req.body;
@@ -454,9 +420,6 @@ router.post('/:id/request-revision', requireAuth, requireManager, async (req, re
   }
 });
 
-// ============================================
-// POST /:id/reopen
-// ============================================
 router.post('/:id/reopen', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
   try {
@@ -476,9 +439,6 @@ router.post('/:id/reopen', requireAuth, requireManager, async (req, res) => {
   }
 });
 
-// ============================================
-// POST /:id/verify-result — Verifikasi hasil kerja
-// ============================================
 router.post('/:id/verify-result', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
   const { action, rating, note } = req.body;
