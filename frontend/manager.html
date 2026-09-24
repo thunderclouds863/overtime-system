@@ -11,19 +11,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
 tailwind.config = {
-  theme: {
-    extend: {
-      fontFamily: {
-        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'system-ui', 'sans-serif']
-      },
-      colors: {
-        brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'},
-        ink: {900:'#0f0f1e',800:'#1a1a2e',700:'#25253d',600:'#33334f'},
-        neon: {pink:'#ec4899',violet:'#8b5cf6',cyan:'#06b6d4',lime:'#84cc16'}
-      }
-    }
-  }
+  theme: { extend: { fontFamily: { sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'], display: ['Space Grotesk', 'system-ui', 'sans-serif'] }, colors: { brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'}, ink: {900:'#0f0f1e',800:'#1a1a2e',700:'#25253d',600:'#33334f'}, neon: {pink:'#ec4899',violet:'#8b5cf6',cyan:'#06b6d4',lime:'#84cc16'} } } }
 }
 </script>
 <style>
@@ -97,162 +85,64 @@ tailwind.config = {
 
 <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 z-40 safe-bottom">
   <div class="flex items-center justify-around px-1 py-2">
-    <button onclick="switchTab('mgr-dashboard')" data-mobile-tab="mgr-dashboard" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px]">
-      <span class="text-xl">🏠</span><span class="text-[10px] font-semibold text-slate-600">Home</span>
-    </button>
-    <button onclick="switchTab('mgr-approval')" data-mobile-tab="mgr-approval" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px] relative">
-      <span class="text-xl">⏳</span><span class="text-[10px] font-semibold text-slate-600">Review</span>
-      <span id="mobileBadgeApproval" class="absolute top-0 right-1 text-[9px] bg-amber-500 text-white font-bold px-1.5 rounded-full hidden">0</span>
-    </button>
-    <button onclick="switchTab('mgr-verifikasi')" data-mobile-tab="mgr-verifikasi" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px] relative">
-      <span class="text-xl">🔍</span><span class="text-[10px] font-semibold text-slate-600">Verif</span>
-      <span id="mobileBadgeVerify" class="absolute top-0 right-1 text-[9px] bg-orange-500 text-white font-bold px-1.5 rounded-full hidden">0</span>
-    </button>
-    <button onclick="switchTab('mgr-monitor')" data-mobile-tab="mgr-monitor" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px]">
-      <span class="text-xl">📊</span><span class="text-[10px] font-semibold text-slate-600">Mon</span>
-    </button>
+    <button onclick="switchTab('mgr-dashboard')" data-mobile-tab="mgr-dashboard" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px]"><span class="text-xl">🏠</span><span class="text-[10px] font-semibold text-slate-600">Home</span></button>
+    <button onclick="switchTab('mgr-approval')" data-mobile-tab="mgr-approval" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px] relative"><span class="text-xl">⏳</span><span class="text-[10px] font-semibold text-slate-600">Review</span><span id="mobileBadgeApproval" class="absolute top-0 right-1 text-[9px] bg-amber-500 text-white font-bold px-1.5 rounded-full hidden">0</span></button>
+    <button onclick="switchTab('mgr-verifikasi')" data-mobile-tab="mgr-verifikasi" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px] relative"><span class="text-xl">🔍</span><span class="text-[10px] font-semibold text-slate-600">Verif</span><span id="mobileBadgeVerify" class="absolute top-0 right-1 text-[9px] bg-orange-500 text-white font-bold px-1.5 rounded-full hidden">0</span></button>
+    <button onclick="switchTab('mgr-monitor')" data-mobile-tab="mgr-monitor" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[56px]"><span class="text-xl">📊</span><span class="text-[10px] font-semibold text-slate-600">Mon</span></button>
   </div>
 </nav>
 
 <main class="md:ml-60 pt-16 md:pt-20 pb-24 md:pb-8 px-3 md:px-8 max-w-[1400px]">
-
   <section id="tab-mgr-dashboard" class="tab-content space-y-4">
-    <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Dashboard Atasan</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Ringkasan aktivitas tim</p>
-    </div>
-
+    <div><h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Dashboard Atasan</h1><p class="text-xs md:text-sm text-slate-500 mt-0.5">Ringkasan aktivitas tim</p></div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="stat-grad-4 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Sedang Lembur</p>
-        <p id="mgrStatActive" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
-      </div>
-      <div class="stat-grad-2 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Menunggu Review</p>
-        <p id="mgrStatPending" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
-      </div>
-      <div class="stat-grad-5 rounded-2xl p-4 text-white shadow-lg shadow-pink-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Perlu Verifikasi</p>
-        <p id="mgrStatVerify" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
-      </div>
-      <div class="stat-grad-1 rounded-2xl p-4 text-white shadow-lg shadow-violet-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Jam Bulan Ini</p>
-        <p id="mgrStatHours" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
-      </div>
+      <div class="stat-grad-4 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/25 relative overflow-hidden"><div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div><p class="text-[10px] opacity-90 font-semibold uppercase relative">Sedang Lembur</p><p id="mgrStatActive" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p></div>
+      <div class="stat-grad-2 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/25 relative overflow-hidden"><div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div><p class="text-[10px] opacity-90 font-semibold uppercase relative">Menunggu Review</p><p id="mgrStatPending" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p></div>
+      <div class="stat-grad-5 rounded-2xl p-4 text-white shadow-lg shadow-pink-500/25 relative overflow-hidden"><div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div><p class="text-[10px] opacity-90 font-semibold uppercase relative">Perlu Verifikasi</p><p id="mgrStatVerify" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p></div>
+      <div class="stat-grad-1 rounded-2xl p-4 text-white shadow-lg shadow-violet-500/25 relative overflow-hidden"><div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div><p class="text-[10px] opacity-90 font-semibold uppercase relative">Jam Bulan Ini</p><p id="mgrStatHours" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p></div>
     </div>
-
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-5">
       <h2 class="font-bold text-slate-800 mb-3 text-sm md:text-base">🔥 Aktivitas Tim</h2>
-      <div id="mgrRecent" class="space-y-2">
-        <div class="text-center py-8 text-slate-400 text-sm">Memuat...</div>
-      </div>
+      <div id="mgrRecent" class="space-y-2"><div class="text-center py-8 text-slate-400 text-sm">Memuat...</div></div>
     </div>
   </section>
 
   <section id="tab-mgr-tugas" class="tab-content hidden space-y-4">
-    <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">✍️ Tugaskan Lembur</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Buat penugasan lembur langsung ke bawahan kamu</p>
-    </div>
+    <div><h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">✍️ Tugaskan Lembur</h1><p class="text-xs md:text-sm text-slate-500 mt-0.5">Buat penugasan lembur langsung ke bawahan kamu</p></div>
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 md:p-6 max-w-3xl">
-      <div class="bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 mb-5 flex gap-3">
-        <span class="text-xl">✨</span>
-        <p class="text-xs text-brand-900 leading-relaxed"><strong>Penugasan langsung:</strong> karyawan otomatis dapat notifikasi. Hanya bawahan kamu yang muncul di sini.</p>
-      </div>
+      <div class="bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 mb-5 flex gap-3"><span class="text-xl">✨</span><p class="text-xs text-brand-900 leading-relaxed"><strong>Penugasan langsung:</strong> karyawan otomatis dapat notifikasi. Hanya bawahan kamu yang muncul di sini.</p></div>
       <div class="grid md:grid-cols-2 gap-3 md:gap-4">
-        <div class="md:col-span-2">
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Pilih Karyawan *</label>
-          <select id="mgrEmp" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-            <option value="">— Pilih anggota tim —</option>
-          </select>
-        </div>
-        <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Tanggal *</label>
-          <input type="date" id="mgrDate" onchange="updateMgrStartTime()" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-        </div>
-        <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Jenis Hari</label>
-          <div id="mgrJenisHari" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600">Pilih tanggal</div>
-        </div>
-        <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Jam Mulai (auto)</label>
-          <input type="time" id="mgrStart" readonly class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600 cursor-not-allowed">
-        </div>
-        <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Durasi (jam) *</label>
-          <input type="number" id="mgrDurasi" min="1" max="24" value="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-        </div>
-        <div class="md:col-span-2">
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Kategori *</label>
-          <select id="mgrReason" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-            <option>Target proyek</option>
-            <option>Pekerjaan mendesak</option>
-            <option>Closing bulanan</option>
-            <option>Maintenance sistem</option>
-          </select>
-        </div>
-        <div class="md:col-span-2">
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Instruksi Kerja *</label>
-          <textarea id="mgrDesc" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white" placeholder="Jelaskan tugas yang harus diselesaikan..."></textarea>
-        </div>
+        <div class="md:col-span-2"><label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Pilih Karyawan *</label><select id="mgrEmp" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"><option value="">— Pilih anggota tim —</option></select></div>
+        <div><label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Tanggal *</label><input type="date" id="mgrDate" onchange="updateMgrStartTime()" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"></div>
+        <div><label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Jenis Hari</label><div id="mgrJenisHari" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600">Pilih tanggal</div></div>
+        <div><label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Jam Mulai (auto)</label><input type="time" id="mgrStart" readonly class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600 cursor-not-allowed"></div>
+        <div><label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Durasi (jam) *</label><input type="number" id="mgrDurasi" min="1" max="24" value="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"></div>
+        <div class="md:col-span-2"><label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Kategori *</label><select id="mgrReason" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"><option>Target proyek</option><option>Pekerjaan mendesak</option><option>Closing bulanan</option><option>Maintenance sistem</option></select></div>
+        <div class="md:col-span-2"><label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Instruksi Kerja *</label><textarea id="mgrDesc" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white" placeholder="Jelaskan tugas yang harus diselesaikan..."></textarea></div>
       </div>
       <button onclick="submitAssignment()" class="mt-5 w-full bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/25 text-sm transition active:scale-[0.98]">Tugaskan 🚀</button>
     </div>
   </section>
 
   <section id="tab-mgr-approval" class="tab-content hidden space-y-4">
-    <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">⏳ Perlu Review</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Approval pengajuan lembur dari bawahan kamu</p>
-    </div>
+    <div><h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">⏳ Perlu Review</h1><p class="text-xs md:text-sm text-slate-500 mt-0.5">Approval pengajuan lembur dari bawahan kamu</p></div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-        <p class="text-[10px] text-emerald-600 font-bold uppercase">Aktif</p>
-        <p id="mgrStatActive2" class="text-2xl font-extrabold text-slate-800 mt-1.5 font-display">0</p>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-        <p class="text-[10px] text-amber-600 font-bold uppercase">Menunggu</p>
-        <p id="mgrStatPending2" class="text-2xl font-extrabold text-slate-800 mt-1.5 font-display">0</p>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-        <p class="text-[10px] text-orange-600 font-bold uppercase">Verifikasi</p>
-        <p id="mgrStatVerify2" class="text-2xl font-extrabold text-slate-800 mt-1.5 font-display">0</p>
-      </div>
-      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
-        <p class="text-[10px] text-red-600 font-bold uppercase">Revisi</p>
-        <p id="mgrStatRevision" class="text-2xl font-extrabold text-slate-800 mt-1.5 font-display">0</p>
-      </div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"><p class="text-[10px] text-emerald-600 font-bold uppercase">Aktif</p><p id="mgrStatActive2" class="text-2xl font-extrabold text-slate-800 mt-1.5 font-display">0</p></div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"><p class="text-[10px] text-amber-600 font-bold uppercase">Menunggu</p><p id="mgrStatPending2" class="text-2xl font-extrabold text-slate-800 mt-1.5 font-display">0</p></div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"><p class="text-[10px] text-orange-600 font-bold uppercase">Verifikasi</p><p id="mgrStatVerify2" class="text-2xl font-extrabold text-slate-800 mt-1.5 font-display">0</p></div>
+      <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100"><p class="text-[10px] text-red-600 font-bold uppercase">Revisi</p><p id="mgrStatRevision" class="text-2xl font-extrabold text-slate-800 mt-1.5 font-display">0</p></div>
     </div>
-    <div id="approvalList" class="space-y-3">
-      <div class="text-center py-8 text-slate-400 text-sm">Tidak ada pengajuan menunggu</div>
-    </div>
+    <div id="approvalList" class="space-y-3"><div class="text-center py-8 text-slate-400 text-sm">Tidak ada pengajuan menunggu</div></div>
   </section>
 
   <section id="tab-mgr-verifikasi" class="tab-content hidden space-y-4">
-    <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">🔍 Verifikasi Hasil</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Cek hasil lembur bawahan kamu</p>
-    </div>
-    <div class="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4 flex gap-3">
-      <span class="text-xl">🔍</span>
-      <div class="text-xs text-orange-800 leading-relaxed">
-        <strong>Verifikasi hasil kerja:</strong> karyawan selesai lembur & upload bukti. Klik tombol "Lihat File" untuk membuka lampiran bukti.
-      </div>
-    </div>
-    <div id="verifyList" class="space-y-3">
-      <div class="text-center py-8 text-slate-400 text-sm">Tidak ada lembur yang perlu diverifikasi</div>
-    </div>
+    <div><h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">🔍 Verifikasi Hasil</h1><p class="text-xs md:text-sm text-slate-500 mt-0.5">Cek hasil lembur bawahan kamu</p></div>
+    <div class="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4 flex gap-3"><span class="text-xl">🔍</span><div class="text-xs text-orange-800 leading-relaxed"><strong>Verifikasi hasil kerja:</strong> karyawan selesai lembur & upload bukti. Klik tombol "Lihat File" untuk membuka lampiran bukti.</div></div>
+    <div id="verifyList" class="space-y-3"><div class="text-center py-8 text-slate-400 text-sm">Tidak ada lembur yang perlu diverifikasi</div></div>
   </section>
 
   <section id="tab-mgr-monitor" class="tab-content hidden space-y-4">
-    <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">📊 Monitoring Tim</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Rekam jejak lengkap bawahan kamu</p>
-    </div>
+    <div><h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">📊 Monitoring Tim</h1><p class="text-xs md:text-sm text-slate-500 mt-0.5">Rekam jejak lengkap bawahan kamu</p></div>
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
@@ -272,19 +162,13 @@ tailwind.config = {
       </div>
     </div>
   </section>
-
 </main>
 
 <div id="modalReview" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <div class="flex items-start justify-between mb-4">
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="text-[10px] bg-brand-100 text-brand-700 font-bold px-2 py-0.5 rounded-full">REVIEW</span>
-        </div>
-        <h3 class="font-extrabold text-slate-800 text-lg">Review Pengajuan</h3>
-      </div>
+      <div><div class="flex items-center gap-2 mb-1"><span class="text-[10px] bg-brand-100 text-brand-700 font-bold px-2 py-0.5 rounded-full">REVIEW</span></div><h3 class="font-extrabold text-slate-800 text-lg">Review Pengajuan</h3></div>
       <button onclick="closeModal('modalReview')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
     </div>
     <div id="reviewContent" class="space-y-3 text-sm"></div>
@@ -298,12 +182,7 @@ tailwind.config = {
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <div class="flex items-start justify-between mb-4">
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="text-[10px] bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">VERIFIKASI</span>
-        </div>
-        <h3 class="font-extrabold text-slate-800 text-lg">Verifikasi Hasil Lembur</h3>
-      </div>
+      <div><div class="flex items-center gap-2 mb-1"><span class="text-[10px] bg-orange-100 text-orange-700 font-bold px-2 py-0.5 rounded-full">VERIFIKASI</span></div><h3 class="font-extrabold text-slate-800 text-lg">Verifikasi Hasil Lembur</h3></div>
       <button onclick="closeModal('modalVerify')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
     </div>
     <div id="verifyContent" class="space-y-3 text-sm"></div>
@@ -332,9 +211,6 @@ tailwind.config = {
 
 <script>
 const API_URL = 'https://overtime-backend-wd4c.onrender.com';
-const SUPABASE_URL = 'https://yokwtposthhzldhbohob.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlva3d0cG9zdGhoemxkaGJvaG9iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAyMDczMDQsImV4cCI6MjEwNTc4MzMwNH0.VCYwzITDKWEsmim_rTXLD_phe0hKren1X1w27tT_V6o';
-
 const token = localStorage.getItem('token');
 let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
@@ -348,26 +224,13 @@ let reviewTargetId = null;
 let verifyTargetId = null;
 let currentRating = 0;
 
-function levelNum(level) {
-  if (!level) return 0;
-  const m = String(level).match(/^(\d+)/);
-  return m ? parseInt(m[1]) : 0;
-}
-
-function isHoliday(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00');
-  const day = d.getDay();
-  return day === 0 || day === 6;
-}
+function levelNum(level) { if (!level) return 0; const m = String(level).match(/^(\d+)/); return m ? parseInt(m[1]) : 0; }
+function isHoliday(dateStr) { const d = new Date(dateStr + 'T00:00:00'); const day = d.getDay(); return day === 0 || day === 6; }
 
 async function api(path, opts = {}) {
   const res = await fetch(`${API_URL}${path}`, {
     ...opts,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`,
-      ...(opts.headers || {})
-    }
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}`, ...(opts.headers || {}) }
   });
   if (res.status === 401) { logout(); return; }
   const data = await res.json();
@@ -386,16 +249,10 @@ function toast(msg, color = 'bg-ink-900') {
 
 function logout() { localStorage.clear(); window.location.href = 'index.html'; }
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); document.getElementById(id).classList.remove('flex'); }
-
 function fmtTime(d) { return new Date(d).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}); }
 function fmtDate(d) { return new Date(d).toLocaleDateString('id-ID', {day:'2-digit',month:'short',year:'numeric'}); }
 function fmtDurShort(ms) { if (!ms) return '-'; const h = Math.floor(ms/3600000), m = Math.floor((ms%3600000)/60000); return `${h}j ${m}m`; }
-function fmtFileSize(bytes) {
-  if (!bytes) return '';
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
-  return (bytes / 1024 / 1024).toFixed(1) + ' MB';
-}
+function fmtFileSize(bytes) { if (!bytes) return ''; if (bytes < 1024) return bytes + ' B'; if (bytes < 1024*1024) return (bytes/1024).toFixed(0) + ' KB'; return (bytes/1024/1024).toFixed(1) + ' MB'; }
 
 document.getElementById('userName').textContent = currentUser.full_name;
 document.getElementById('mgrEmail').textContent = currentUser.email;
@@ -404,11 +261,7 @@ document.getElementById('userLevelLabel').textContent = currentUser.level || 'AT
 document.getElementById('userAvatar').textContent = currentUser.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
 
 async function ensureUserLevel() {
-  if (currentUser.level) {
-    console.log('✅ Level sudah ada:', currentUser.level);
-    return;
-  }
-  console.log('⚠️ Level undefined, ambil dari backend...');
+  if (currentUser.level) return;
   try {
     const me = await api('/api/auth/me');
     currentUser.level = me.level;
@@ -416,11 +269,7 @@ async function ensureUserLevel() {
     localStorage.setItem('user', JSON.stringify(currentUser));
     document.getElementById('userLevelLabel').textContent = me.level || 'ATASAN';
     document.getElementById('mgrLevel').textContent = `Level: ${me.level || '-'}`;
-    console.log('✅ Level updated:', me.level);
-  } catch (err) {
-    console.warn('Gagal ambil level:', err);
-    toast('Gagal load level, silakan logout & login ulang', 'bg-amber-600');
-  }
+  } catch (err) { console.warn('Gagal ambil level:', err); }
 }
 
 const today = new Date();
@@ -449,44 +298,20 @@ async function loadRecords() {
   try {
     const raw = await api('/api/records');
     records = raw.map(r => ({
-      id: r.id,
-      employee: r.employee_name,
-      employeeLevel: r.employee_level || '-',
-      date: r.date,
-      startTime: r.start_time,
-      plannedStart: r.planned_start,
-      plannedHours: parseFloat(r.planned_hours || 0),
-      plannedDuration: (parseFloat(r.planned_hours || 0)) * 3600000,
-      actualHours: parseFloat(r.actual_hours || 0),
-      reason: r.reason,
-      desc: r.description,
-      source: r.source,
-      status: r.status,
-      isHoliday: r.is_holiday,
-      approvalChain: r.approval_chain || [],
-      approvalProgress: r.approval_progress || 0,
-      directApproverId: r.direct_approver_id,
-      directApprovalAt: r.direct_approval_at,
-      finalApproverId: r.final_approver_id,
-      finalApprovalAt: r.final_approval_at,
-      jumpedIn: r.jumped_in,
-      start: r.actual_start,
-      end: r.actual_end,
-      duration: (parseFloat(r.actual_hours || 0)) * 3600000,
-      autoStarted: r.auto_started,
-      proof: r.proof_text,
-      proofFile: r.proof_file_name,
-      proofUrl: r.proof_file_url,
-      proofExternalUrl: r.proof_external_url,
-      proofNotes: r.proof_notes,
-      proofSize: r.proof_file_size,
-      proofAt: r.proof_uploaded_at,
-      note: r.approval_note,
-      verifyNote: r.verify_note,
-      verifyRating: r.verify_rating,
-      verifiedBy: r.verified_by_level,
-      verifyRevisionCount: r.proof_revision_count,
-      revisionCount: r.revision_count
+      id: r.id, employee: r.employee_name, employeeLevel: r.employee_level || '-',
+      date: r.date, startTime: r.start_time, plannedStart: r.planned_start,
+      plannedHours: parseFloat(r.planned_hours || 0), plannedDuration: (parseFloat(r.planned_hours || 0)) * 3600000,
+      actualHours: parseFloat(r.actual_hours || 0), reason: r.reason, desc: r.description,
+      source: r.source, status: r.status, isHoliday: r.is_holiday,
+      approvalChain: r.approval_chain || [], approvalProgress: r.approval_progress || 0,
+      directApproverId: r.direct_approver_id, directApprovalAt: r.direct_approval_at,
+      finalApproverId: r.final_approver_id, finalApprovalAt: r.final_approval_at, jumpedIn: r.jumped_in,
+      start: r.actual_start, end: r.actual_end, duration: (parseFloat(r.actual_hours || 0)) * 3600000,
+      autoStarted: r.auto_started, proof: r.proof_text, proofFile: r.proof_file_name,
+      proofUrl: r.proof_file_url, proofExternalUrl: r.proof_external_url,
+      proofNotes: r.proof_notes, proofSize: r.proof_file_size, proofAt: r.proof_uploaded_at,
+      note: r.approval_note, verifyNote: r.verify_note, verifyRating: r.verify_rating,
+      verifiedBy: r.verified_by_level, verifyRevisionCount: r.proof_revision_count, revisionCount: r.revision_count
     }));
     renderAll();
   } catch (err) { toast(err.message, 'bg-red-600'); }
@@ -496,17 +321,10 @@ async function loadEmployees() {
   try {
     employees = await api('/api/records/employees/list');
     const sel = document.getElementById('mgrEmp');
-    if (employees.length === 0) {
-      sel.innerHTML = '<option value="">— Tidak ada bawahan —</option>';
-      return;
-    }
+    if (employees.length === 0) { sel.innerHTML = '<option value="">— Tidak ada bawahan —</option>'; return; }
     sel.innerHTML = '<option value="">— Pilih anggota tim —</option>' +
       employees.map(e => `<option value="${e.id}|${e.full_name}">${e.full_name} (${e.level || '-'}) — ${e.jabatan || '-'}</option>`).join('');
-    console.log(`👥 Loaded ${employees.length} bawahan`);
-  } catch (err) { 
-    console.error(err);
-    document.getElementById('mgrEmp').innerHTML = '<option value="">Gagal load bawahan</option>';
-  }
+  } catch (err) { console.error(err); document.getElementById('mgrEmp').innerHTML = '<option value="">Gagal load bawahan</option>'; }
 }
 
 function updateMgrStartTime() {
@@ -515,12 +333,8 @@ function updateMgrStartTime() {
   const holiday = isHoliday(dateStr);
   const startTime = holiday ? '08:00' : '17:00';
   document.getElementById('mgrStart').value = startTime;
-  document.getElementById('mgrJenisHari').innerHTML = holiday
-    ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (08:00)</span>'
-    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (17:00)</span>';
-  document.getElementById('mgrJenisHari').className = holiday
-    ? 'w-full mt-1.5 border border-emerald-200 rounded-2xl px-3 py-3 text-sm bg-emerald-50'
-    : 'w-full mt-1.5 border border-blue-200 rounded-2xl px-3 py-3 text-sm bg-blue-50';
+  document.getElementById('mgrJenisHari').innerHTML = holiday ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (08:00)</span>' : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (17:00)</span>';
+  document.getElementById('mgrJenisHari').className = holiday ? 'w-full mt-1.5 border border-emerald-200 rounded-2xl px-3 py-3 text-sm bg-emerald-50' : 'w-full mt-1.5 border border-blue-200 rounded-2xl px-3 py-3 text-sm bg-blue-50';
 }
 
 async function submitAssignment() {
@@ -530,21 +344,11 @@ async function submitAssignment() {
   const start = document.getElementById('mgrStart').value;
   const reason = document.getElementById('mgrReason').value;
   const desc = document.getElementById('mgrDesc').value.trim();
-
   if (!empValue || !date || !desc) return toast('Lengkapi semua field *', 'bg-red-600');
   if (durasi < 1) return toast('Durasi minimal 1 jam', 'bg-red-600');
   const [empId, empName] = empValue.split('|');
-
   try {
-    await api('/api/records', {
-      method: 'POST',
-      body: JSON.stringify({
-        date, start_time: start, duration_hours: durasi,
-        reason, description: desc,
-        employee_id: parseInt(empId),
-        employee_name: empName
-      })
-    });
+    await api('/api/records', { method: 'POST', body: JSON.stringify({ date, start_time: start, duration_hours: durasi, reason, description: desc, employee_id: parseInt(empId), employee_name: empName }) });
     document.getElementById('mgrEmp').value = '';
     document.getElementById('mgrDate').value = '';
     document.getElementById('mgrDesc').value = '';
@@ -557,14 +361,7 @@ async function submitAssignment() {
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-function renderAll() {
-  renderStats();
-  renderRecent();
-  renderApprovalList();
-  renderVerifyList();
-  renderMonitorTable();
-  renderNavBadges();
-}
+function renderAll() { renderStats(); renderRecent(); renderApprovalList(); renderVerifyList(); renderMonitorTable(); renderNavBadges(); }
 
 function renderNavBadges() {
   const pending = records.filter(r => r.status === 'pending').length;
@@ -573,14 +370,8 @@ function renderNavBadges() {
   const bV = document.getElementById('navBadgeVerify');
   const bMA = document.getElementById('mobileBadgeApproval');
   const bMV = document.getElementById('mobileBadgeVerify');
-  if (pending > 0) {
-    bA.textContent = pending; bA.classList.remove('hidden');
-    bMA.textContent = pending; bMA.classList.remove('hidden');
-  } else { bA.classList.add('hidden'); bMA.classList.add('hidden'); }
-  if (verify > 0) {
-    bV.textContent = verify; bV.classList.remove('hidden');
-    bMV.textContent = verify; bMV.classList.remove('hidden');
-  } else { bV.classList.add('hidden'); bMV.classList.add('hidden'); }
+  if (pending > 0) { bA.textContent = pending; bA.classList.remove('hidden'); bMA.textContent = pending; bMA.classList.remove('hidden'); } else { bA.classList.add('hidden'); bMA.classList.add('hidden'); }
+  if (verify > 0) { bV.textContent = verify; bV.classList.remove('hidden'); bMV.textContent = verify; bMV.classList.remove('hidden'); } else { bV.classList.add('hidden'); bMV.classList.add('hidden'); }
 }
 
 function renderStats() {
@@ -589,12 +380,10 @@ function renderStats() {
   const verify = records.filter(r => r.status === 'pending_verification').length;
   const revision = records.filter(r => ['revision','rejected','proof_revision','verify_rejected'].includes(r.status)).length;
   const hours = records.filter(r => r.status === 'completed').reduce((s, r) => s + (r.duration || 0), 0) / 3600000;
-
   document.getElementById('mgrStatActive').textContent = active;
   document.getElementById('mgrStatPending').textContent = pending;
   document.getElementById('mgrStatVerify').textContent = verify;
   document.getElementById('mgrStatHours').innerHTML = `${hours.toFixed(1)}<span class="text-sm opacity-80 ml-0.5">j</span>`;
-
   document.getElementById('mgrStatActive2').textContent = active;
   document.getElementById('mgrStatPending2').textContent = pending;
   document.getElementById('mgrStatVerify2').textContent = verify;
@@ -604,17 +393,11 @@ function renderStats() {
 function renderRecent() {
   const el = document.getElementById('mgrRecent');
   const recent = records.slice(0, 8);
-  if (recent.length === 0) {
-    el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Belum ada aktivitas</div>';
-    return;
-  }
+  if (recent.length === 0) { el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Belum ada aktivitas</div>'; return; }
   el.innerHTML = recent.map(r => `
     <div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition card-hover">
       <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-sm">${r.isHoliday ? '🏖' : '💼'}</div>
-      <div class="flex-1 min-w-0">
-        <p class="text-xs md:text-sm font-semibold text-slate-800 truncate">${r.employee} — ${r.reason}</p>
-        <p class="text-[10px] md:text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime}</p>
-      </div>
+      <div class="flex-1 min-w-0"><p class="text-xs md:text-sm font-semibold text-slate-800 truncate">${r.employee} — ${r.reason}</p><p class="text-[10px] md:text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime}</p></div>
       ${statusBadge(r.status)}
     </div>
   `).join('');
@@ -622,16 +405,11 @@ function renderRecent() {
 
 function statusBadge(s) {
   const map = {
-    pending: ['bg-amber-100 text-amber-700', '⏳ PENDING'],
-    approved: ['bg-brand-100 text-brand-700', '✅ DISETUJUI'],
-    rejected: ['bg-red-100 text-red-700', '❌ DITOLAK'],
-    revision: ['bg-orange-100 text-orange-700', '✏️ REVISI'],
-    active: ['bg-emerald-100 text-emerald-700', '🔴 AKTIF'],
-    pending_verification: ['bg-orange-100 text-orange-700', '🔍 VERIFIKASI'],
-    proof_revision: ['bg-amber-100 text-amber-700', '📎 REVISI BUKTI'],
-    verify_rejected: ['bg-red-100 text-red-700', '❌ HASIL DITOLAK'],
-    completed: ['bg-teal-100 text-teal-700', '✓ SELESAI'],
-    cancelled: ['bg-slate-200 text-slate-700', '🚫 DIBATALKAN']
+    pending: ['bg-amber-100 text-amber-700', '⏳ PENDING'], approved: ['bg-brand-100 text-brand-700', '✅ DISETUJUI'],
+    rejected: ['bg-red-100 text-red-700', '❌ DITOLAK'], revision: ['bg-orange-100 text-orange-700', '✏️ REVISI'],
+    active: ['bg-emerald-100 text-emerald-700', '🔴 AKTIF'], pending_verification: ['bg-orange-100 text-orange-700', '🔍 VERIFIKASI'],
+    proof_revision: ['bg-amber-100 text-amber-700', '📎 REVISI BUKTI'], verify_rejected: ['bg-red-100 text-red-700', '❌ HASIL DITOLAK'],
+    completed: ['bg-teal-100 text-teal-700', '✓ SELESAI'], cancelled: ['bg-slate-200 text-slate-700', '🚫 DIBATALKAN']
   };
   const [c, l] = map[s] || ['bg-slate-100 text-slate-600', s?.toUpperCase()];
   return `<span class="text-[10px] font-bold px-2 py-1 rounded-full ${c} whitespace-nowrap">${l}</span>`;
@@ -640,37 +418,24 @@ function statusBadge(s) {
 function renderApprovalList() {
   const el = document.getElementById('approvalList');
   const need = records.filter(r => ['pending','rejected','revision'].includes(r.status));
-  if (need.length === 0) {
-    el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Tidak ada pengajuan menunggu</div>';
-    return;
-  }
+  if (need.length === 0) { el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Tidak ada pengajuan menunggu</div>'; return; }
   el.innerHTML = need.map(r => {
     const chainLen = r.approvalChain.length;
     const hasDirect = !!r.directApproverId;
     const hasFinal = !!r.finalApproverId;
-    
     let approvalStatus = '';
     if (r.status === 'pending') {
-      if (hasDirect && !hasFinal) {
-        approvalStatus = `<p class="text-emerald-600 text-[10px] font-bold">✓ Atasan langsung sudah approve · menunggu final</p>`;
-      } else if (!hasDirect && chainLen > 0) {
-        approvalStatus = `<p class="text-blue-600 text-[10px] font-bold">📋 Approval bertingkat (${chainLen} tingkat)</p>`;
-      }
+      if (hasDirect && !hasFinal) approvalStatus = `<p class="text-emerald-600 text-[10px] font-bold">✓ Atasan langsung sudah approve · menunggu final</p>`;
+      else if (!hasDirect && chainLen > 0) approvalStatus = `<p class="text-blue-600 text-[10px] font-bold">📋 Approval bertingkat (${chainLen} tingkat)</p>`;
     }
-    
     return `
     <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border ${r.status === 'pending' ? 'border-amber-200' : 'border-slate-100'} p-4 md:p-5 card-hover">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
-        <div class="min-w-0">
-          <p class="font-bold text-slate-800 text-sm md:text-base">${r.employee} ${r.isHoliday ? '🏖' : '💼'}</p>
-          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · ${r.startTime} · ${r.plannedHours} jam · Level ${r.employeeLevel}</p>
-        </div>
+        <div class="min-w-0"><p class="font-bold text-slate-800 text-sm md:text-base">${r.employee} ${r.isHoliday ? '🏖' : '💼'}</p><p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · ${r.startTime} · ${r.plannedHours} jam · Level ${r.employeeLevel}</p></div>
         ${statusBadge(r.status)}
       </div>
       <div class="bg-slate-50 rounded-2xl p-3 text-[11px] md:text-xs text-slate-600 space-y-1 mb-3">
-        <p>📋 ${r.reason}</p>
-        <p>📝 ${r.desc}</p>
-        ${approvalStatus}
+        <p>📋 ${r.reason}</p><p>📝 ${r.desc}</p>${approvalStatus}
         ${r.revisionCount > 0 ? `<p class="text-amber-600">🔄 Revisi ke-${r.revisionCount}</p>` : ''}
       </div>
       ${r.status === 'pending'
@@ -686,7 +451,9 @@ function openReview(id) {
   reviewTargetId = id;
   
   const userLevel = levelNum(currentUser.level);
-  const isFinalApprover = userLevel >= 4;
+  const chain = r.approvalChain || [];
+  const firstInChain = chain[0];
+  const isDirectApprover = (firstInChain === currentUser.id);
   const directDone = !!r.directApproverId;
   const finalDone = !!r.finalApproverId;
   
@@ -696,32 +463,60 @@ function openReview(id) {
   if (finalDone) {
     approvalInfo = `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800"><strong>✓ Sudah final approve</strong></div>`;
     buttonConfig = `<button disabled class="col-span-3 border border-slate-200 text-slate-400 py-3 rounded-2xl text-xs md:text-sm font-bold cursor-not-allowed">Sudah di-approve</button>`;
-  } else if (isFinalApprover) {
-    if (directDone) {
-      approvalInfo = `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800"><strong>✓ Atasan langsung sudah approve.</strong> Kamu bisa final approve sekarang.</div>`;
+  } 
+  else if (isDirectApprover) {
+    if (userLevel >= 4) {
+      if (directDone) {
+        approvalInfo = `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800"><strong>✓ Kamu sudah approve.</strong></div>`;
+        buttonConfig = `<button disabled class="col-span-3 border border-slate-200 text-slate-400 py-3 rounded-2xl text-xs md:text-sm font-bold cursor-not-allowed">Sudah di-approve</button>`;
+      } else {
+        approvalInfo = `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800">Kamu <strong>atasan langsung</strong> dari ${r.employee}. Karena levelmu <strong>4+</strong>, approvalmu langsung <strong>final</strong> — lembur bisa jalan.</div>`;
+        buttonConfig = `
+          <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
+          <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">✏️ Revisi</button>
+          <button onclick="doApproveFinal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">✅ Approve</button>
+        `;
+      }
     } else {
-      approvalInfo = `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800"><strong>⚠️ Atasan langsung belum review.</strong> Kamu bisa <strong>jump in</strong> approve sekarang, atau tunggu.</div>`;
+      if (directDone) {
+        approvalInfo = `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800"><strong>✓ Kamu sudah approve.</strong> Menunggu final approver.</div>`;
+        buttonConfig = `<button disabled class="col-span-3 border border-slate-200 text-slate-400 py-3 rounded-2xl text-xs md:text-sm font-bold cursor-not-allowed">Sudah di-approve</button>`;
+      } else {
+        approvalInfo = `<div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">Kamu <strong>atasan langsung</strong> dari ${r.employee}. Setelah kamu approve, akan diteruskan ke Manager (level 4+) untuk final approval.</div>`;
+        buttonConfig = `
+          <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
+          <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">✏️ Revisi</button>
+          <button onclick="doApproveDirect()" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">✅ Approve</button>
+        `;
+      }
     }
-    buttonConfig = `
-      <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
-      <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">✏️ Revisi</button>
-      <button onclick="doApproveFinal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">${directDone ? '✅ Final Approve' : '⚡ Jump In Approve'}</button>
-    `;
-  } else if (userLevel >= 3) {
-    if (directDone) {
-      approvalInfo = `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800"><strong>✓ Kamu sudah approve.</strong> Menunggu final approver.</div>`;
-      buttonConfig = `<button disabled class="col-span-3 border border-slate-200 text-slate-400 py-3 rounded-2xl text-xs md:text-sm font-bold cursor-not-allowed">Sudah di-approve</button>`;
-    } else {
-      approvalInfo = `<div class="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-800">Setelah kamu approve, akan diteruskan ke Manager (level 4+) untuk final approval.</div>`;
-      buttonConfig = `
-        <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
-        <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">✏️ Revisi</button>
-        <button onclick="doApproveDirect()" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">✅ Approve</button>
-      `;
+  }
+  else {
+    if (userLevel >= 4) {
+      if (directDone) {
+        approvalInfo = `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800"><strong>✓ Atasan langsung sudah approve.</strong> Sekarang giliranmu final approve.</div>`;
+        buttonConfig = `
+          <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
+          <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">✏️ Revisi</button>
+          <button onclick="doApproveFinal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">✅ Final Approve</button>
+        `;
+      } else {
+        approvalInfo = `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800"><strong>⚠️ Atasan langsung belum review.</strong> Kamu bisa <strong>jump in</strong> approve (lembur langsung jalan), atau tunggu.</div>`;
+        buttonConfig = `
+          <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
+          <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">✏️ Revisi</button>
+          <button onclick="doApproveFinal()" class="bg-gradient-to-r from-orange-500 to-amber-500 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">⚡ Jump In Approve</button>
+        `;
+      }
     }
-  } else {
-    approvalInfo = `<div class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-800">Level kamu (${currentUser.level}) belum cukup untuk approve. Minimal level 3.</div>`;
-    buttonConfig = `<button disabled class="col-span-3 border border-slate-200 text-slate-400 py-3 rounded-2xl text-xs md:text-sm font-bold cursor-not-allowed">Tidak bisa approve</button>`;
+    else if (userLevel >= 3) {
+      approvalInfo = `<div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700">Kamu bukan atasan langsung dari ${r.employee}. Menunggu atasan langsung untuk review.</div>`;
+      buttonConfig = `<button disabled class="col-span-3 border border-slate-200 text-slate-400 py-3 rounded-2xl text-xs md:text-sm font-bold cursor-not-allowed">Bukan giliranmu</button>`;
+    }
+    else {
+      approvalInfo = `<div class="bg-red-50 border border-red-200 rounded-xl p-3 text-xs text-red-800">Levelmu (${currentUser.level}) belum cukup. Minimal level 3.</div>`;
+      buttonConfig = `<button disabled class="col-span-3 border border-slate-200 text-slate-400 py-3 rounded-2xl text-xs md:text-sm font-bold cursor-not-allowed">Tidak bisa approve</button>`;
+    }
   }
   
   document.getElementById('reviewContent').innerHTML = `
@@ -739,86 +534,56 @@ function openReview(id) {
   
   document.getElementById('reviewNote').value = '';
   document.getElementById('reviewActions').innerHTML = buttonConfig;
-  
   document.getElementById('modalReview').classList.remove('hidden');
   document.getElementById('modalReview').classList.add('flex');
 }
 
 async function doApproveDirect() {
   try {
-    await api(`/api/approval/${reviewTargetId}/approve-direct`, {
-      method: 'POST',
-      body: JSON.stringify({ note: document.getElementById('reviewNote').value.trim() || null })
-    });
-    closeModal('modalReview');
-    await loadRecords();
+    await api(`/api/approval/${reviewTargetId}/approve-direct`, { method: 'POST', body: JSON.stringify({ note: document.getElementById('reviewNote').value.trim() || null }) });
+    closeModal('modalReview'); await loadRecords();
     toast('✅ Approve. Diteruskan ke Manager untuk final approval.', 'bg-emerald-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
-
 async function doApproveFinal() {
   try {
-    const result = await api(`/api/approval/${reviewTargetId}/approve-final`, {
-      method: 'POST',
-      body: JSON.stringify({ note: document.getElementById('reviewNote').value.trim() || null })
-    });
-    closeModal('modalReview');
-    await loadRecords();
+    const result = await api(`/api/approval/${reviewTargetId}/approve-final`, { method: 'POST', body: JSON.stringify({ note: document.getElementById('reviewNote').value.trim() || null }) });
+    closeModal('modalReview'); await loadRecords();
     toast(result.jumped_in ? '⚡ Jump in approve berhasil!' : '✅ Final approve berhasil!', 'bg-emerald-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
-
 async function doReject() {
   const note = document.getElementById('reviewNote').value.trim();
   if (!note) return toast('Catatan wajib diisi', 'bg-red-600');
   try {
-    await api(`/api/approval/${reviewTargetId}/reject`, {
-      method: 'POST',
-      body: JSON.stringify({ note })
-    });
-    closeModal('modalReview');
-    await loadRecords();
+    await api(`/api/approval/${reviewTargetId}/reject`, { method: 'POST', body: JSON.stringify({ note }) });
+    closeModal('modalReview'); await loadRecords();
     toast('Pengajuan ditolak', 'bg-red-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
-
 async function doRevision() {
   const note = document.getElementById('reviewNote').value.trim();
   if (!note) return toast('Catatan revisi wajib', 'bg-red-600');
   try {
-    await api(`/api/approval/${reviewTargetId}/request-revision`, {
-      method: 'POST',
-      body: JSON.stringify({ note })
-    });
-    closeModal('modalReview');
-    await loadRecords();
+    await api(`/api/approval/${reviewTargetId}/request-revision`, { method: 'POST', body: JSON.stringify({ note }) });
+    closeModal('modalReview'); await loadRecords();
     toast('Revisi diminta', 'bg-amber-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
-
 async function reopenRecord(id) {
   if (!confirm('Buka kembali pengajuan ini?')) return;
-  try {
-    await api(`/api/approval/${id}/reopen`, { method: 'POST' });
-    await loadRecords();
-    toast('Dibuka kembali', 'bg-brand-600');
-  } catch (err) { toast(err.message, 'bg-red-600'); }
+  try { await api(`/api/approval/${id}/reopen`, { method: 'POST' }); await loadRecords(); toast('Dibuka kembali', 'bg-brand-600'); }
+  catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 function renderVerifyList() {
   const el = document.getElementById('verifyList');
   const need = records.filter(r => ['pending_verification','proof_revision'].includes(r.status));
-  if (need.length === 0) {
-    el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Tidak ada lembur yang perlu diverifikasi</div>';
-    return;
-  }
+  if (need.length === 0) { el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Tidak ada lembur yang perlu diverifikasi</div>'; return; }
   el.innerHTML = need.map(r => `
     <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border border-orange-200 border-l-4 border-l-orange-400 p-4 md:p-5 card-hover">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
-        <div class="min-w-0">
-          <p class="font-bold text-slate-800 text-sm md:text-base">${r.employee} (${r.employeeLevel}) ${r.isHoliday ? '🏖' : '💼'}</p>
-          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · ${r.start ? fmtTime(r.start) : '-'} — ${r.end ? fmtTime(r.end) : '-'} · <strong>${r.actualHours.toFixed(2)} jam</strong></p>
-        </div>
+        <div class="min-w-0"><p class="font-bold text-slate-800 text-sm md:text-base">${r.employee} (${r.employeeLevel}) ${r.isHoliday ? '🏖' : '💼'}</p><p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · ${r.start ? fmtTime(r.start) : '-'} — ${r.end ? fmtTime(r.end) : '-'} · <strong>${r.actualHours.toFixed(2)} jam</strong></p></div>
         ${statusBadge(r.status)}
       </div>
       <div class="bg-slate-50 rounded-2xl p-3 text-[11px] md:text-xs text-slate-600 space-y-1.5 mb-3">
@@ -826,33 +591,11 @@ function renderVerifyList() {
         <div class="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl p-3 mt-2 border border-emerald-100">
           <p class="text-[10px] text-emerald-700 font-bold uppercase mb-2">Bukti Hasil Kerja</p>
           <p class="text-slate-700 mb-2">${r.proof || '-'}</p>
-          
-          ${r.proofUrl ? `
-            <a href="${r.proofUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-2 rounded-lg mb-2 transition">
-              📥 Lihat File ${r.proofFile ? '(' + r.proofFile + ')' : ''} ${r.proofSize ? '· ' + fmtFileSize(r.proofSize) : ''}
-            </a>
-          ` : ''}
-          
-          ${r.proofExternalUrl ? `
-            <a href="${r.proofExternalUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-3 py-2 rounded-lg mb-2 transition">
-              🔗 Buka Link External
-            </a>
-          ` : ''}
-          
-          ${!r.proofUrl && !r.proofExternalUrl && r.proofFile ? `
-            <p class="text-[10px] text-amber-600 mt-1">⚠️ File "${r.proofFile}" tidak tersedia di storage</p>
-          ` : ''}
-          
-          ${!r.proofFile && !r.proofUrl && !r.proofExternalUrl ? `
-            <p class="text-[10px] text-slate-400 italic">Tidak ada lampiran file</p>
-          ` : ''}
-          
-          ${r.proofNotes ? `
-            <div class="bg-white rounded-lg p-2 mt-2 border border-emerald-100">
-              <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Catatan Karyawan</p>
-              <p class="text-xs text-slate-700">${r.proofNotes}</p>
-            </div>
-          ` : ''}
+          ${r.proofUrl ? `<a href="${r.proofUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-2 rounded-lg mb-2 transition">📥 Lihat File ${r.proofFile ? '(' + r.proofFile + ')' : ''} ${r.proofSize ? '· ' + fmtFileSize(r.proofSize) : ''}</a>` : ''}
+          ${r.proofExternalUrl ? `<a href="${r.proofExternalUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-3 py-2 rounded-lg mb-2 transition">🔗 Buka Link External</a>` : ''}
+          ${!r.proofUrl && !r.proofExternalUrl && r.proofFile ? `<p class="text-[10px] text-amber-600 mt-1">⚠️ File "${r.proofFile}" tidak tersedia di storage</p>` : ''}
+          ${!r.proofFile && !r.proofUrl && !r.proofExternalUrl ? `<p class="text-[10px] text-slate-400 italic">Tidak ada lampiran file</p>` : ''}
+          ${r.proofNotes ? `<div class="bg-white rounded-lg p-2 mt-2 border border-emerald-100"><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Catatan Karyawan</p><p class="text-xs text-slate-700">${r.proofNotes}</p></div>` : ''}
         </div>
         ${r.verifyRevisionCount > 0 ? `<p class="text-amber-600 mt-1">🔄 Revisi bukti ke-${r.verifyRevisionCount}</p>` : ''}
       </div>
@@ -866,7 +609,6 @@ function openVerify(id) {
   if (!r) return;
   verifyTargetId = id;
   currentRating = r.verifyRating || 0;
-  
   document.getElementById('verifyContent').innerHTML = `
     <div class="bg-gradient-to-br from-slate-50 to-brand-50 rounded-2xl p-4 space-y-2 border border-slate-100">
       <div class="flex justify-between text-xs"><span class="text-slate-500">Karyawan</span><span class="font-bold">${r.employee} (${r.employeeLevel})</span></div>
@@ -878,33 +620,13 @@ function openVerify(id) {
       <p class="text-[10px] text-slate-500 uppercase font-bold mb-2">Bukti Hasil Kerja</p>
       <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-2xl p-4">
         <p class="text-sm text-slate-700 mb-3">${r.proof || '-'}</p>
-        
-        ${r.proofUrl ? `
-          <a href="${r.proofUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl mb-2 transition shadow-lg shadow-emerald-600/20">
-            📥 Lihat File ${r.proofFile ? '(' + r.proofFile + ')' : ''} ${r.proofSize ? '· ' + fmtFileSize(r.proofSize) : ''}
-          </a>
-        ` : ''}
-        
-        ${r.proofExternalUrl ? `
-          <a href="${r.proofExternalUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl mb-2 transition shadow-lg shadow-blue-600/20">
-            🔗 Buka Link External
-          </a>
-        ` : ''}
-        
-        ${!r.proofUrl && !r.proofExternalUrl ? `
-          <p class="text-xs text-slate-400 italic">Tidak ada lampiran file atau link</p>
-        ` : ''}
-        
-        ${r.proofNotes ? `
-          <div class="bg-white rounded-lg p-3 mt-3 border border-emerald-100">
-            <p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Catatan Karyawan</p>
-            <p class="text-xs text-slate-700">${r.proofNotes}</p>
-          </div>
-        ` : ''}
+        ${r.proofUrl ? `<a href="${r.proofUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl mb-2 transition shadow-lg shadow-emerald-600/20">📥 Lihat File ${r.proofFile ? '(' + r.proofFile + ')' : ''} ${r.proofSize ? '· ' + fmtFileSize(r.proofSize) : ''}</a>` : ''}
+        ${r.proofExternalUrl ? `<a href="${r.proofExternalUrl}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl mb-2 transition shadow-lg shadow-blue-600/20">🔗 Buka Link External</a>` : ''}
+        ${!r.proofUrl && !r.proofExternalUrl ? `<p class="text-xs text-slate-400 italic">Tidak ada lampiran file atau link</p>` : ''}
+        ${r.proofNotes ? `<div class="bg-white rounded-lg p-3 mt-3 border border-emerald-100"><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Catatan Karyawan</p><p class="text-xs text-slate-700">${r.proofNotes}</p></div>` : ''}
       </div>
     </div>
   `;
-  
   document.getElementById('verifyNote').value = '';
   updateStars();
   document.getElementById('modalVerify').classList.remove('hidden');
@@ -923,53 +645,37 @@ function updateStars() {
 async function verifyApprove() {
   if (currentRating === 0) return toast('Beri rating bintang dulu', 'bg-red-600');
   try {
-    await api(`/api/approval/${verifyTargetId}/verify-result`, {
-      method: 'POST',
-      body: JSON.stringify({ action: 'approve', rating: currentRating, note: document.getElementById('verifyNote').value.trim() || null })
-    });
-    closeModal('modalVerify');
-    await loadRecords();
+    await api(`/api/approval/${verifyTargetId}/verify-result`, { method: 'POST', body: JSON.stringify({ action: 'approve', rating: currentRating, note: document.getElementById('verifyNote').value.trim() || null }) });
+    closeModal('modalVerify'); await loadRecords();
     toast('✓ Hasil kerja diverifikasi', 'bg-emerald-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
-
 async function verifyRevision() {
   const note = document.getElementById('verifyNote').value.trim();
   if (!note) return toast('Catatan revisi wajib', 'bg-red-600');
   try {
     await api(`/api/approval/${verifyTargetId}/verify-result`, { method: 'POST', body: JSON.stringify({ action: 'revision', note }) });
-    closeModal('modalVerify');
-    await loadRecords();
+    closeModal('modalVerify'); await loadRecords();
     toast('Bukti dikembalikan untuk revisi', 'bg-amber-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
-
 async function verifyReject() {
   const note = document.getElementById('verifyNote').value.trim();
   if (!note) return toast('Alasan wajib', 'bg-red-600');
   try {
     await api(`/api/approval/${verifyTargetId}/verify-result`, { method: 'POST', body: JSON.stringify({ action: 'reject', note }) });
-    closeModal('modalVerify');
-    await loadRecords();
+    closeModal('modalVerify'); await loadRecords();
     toast('Hasil kerja ditolak', 'bg-red-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 function renderMonitorTable() {
   const tb = document.getElementById('monitorTable');
-  if (records.length === 0) {
-    tb.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-slate-400 text-sm">Belum ada data</td></tr>';
-    return;
-  }
+  if (records.length === 0) { tb.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-slate-400 text-sm">Belum ada data</td></tr>'; return; }
   tb.innerHTML = records.map(r => `
     <tr class="hover:bg-slate-50 transition">
-      <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">
-        ${r.employee}
-        <p class="text-[10px] text-slate-400 md:hidden font-normal">Level ${r.employeeLevel}</p>
-      </td>
-      <td class="px-3 md:px-4 py-3 text-xs hidden md:table-cell">
-        <span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">${r.employeeLevel}</span>
-      </td>
+      <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">${r.employee}<p class="text-[10px] text-slate-400 md:hidden font-normal">Level ${r.employeeLevel}</p></td>
+      <td class="px-3 md:px-4 py-3 text-xs hidden md:table-cell"><span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">${r.employeeLevel}</span></td>
       <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm">${fmtDate(r.date)} ${r.isHoliday ? '🏖' : '💼'}</td>
       <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">${r.startTime}${r.end ? ' — ' + fmtTime(r.end) : ''}</td>
       <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm hidden md:table-cell">${r.duration ? fmtDurShort(r.duration) : (r.plannedHours + 'j')}</td>
