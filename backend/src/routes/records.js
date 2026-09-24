@@ -131,12 +131,12 @@ router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
       `WITH RECURSIVE subordinates AS (
         SELECT id, full_name, email, jabatan, level, approver_ids, 1 as depth
         FROM users
-        WHERE $1 = ANY(approver_ids) AND is_active = true AND role = 'employee'
+        WHERE $1 = ANY(approver_ids) AND is_active = true
         UNION ALL
         SELECT u.id, u.full_name, u.email, u.jabatan, u.level, u.approver_ids, s.depth + 1
         FROM users u
         INNER JOIN subordinates s ON s.id = ANY(u.approver_ids)
-        WHERE u.is_active = true AND u.role = 'employee' AND s.depth < 10
+        WHERE u.is_active = true AND s.depth < 10
       )
       SELECT DISTINCT id, full_name, email, jabatan, level
       FROM subordinates
@@ -180,7 +180,6 @@ router.post('/', requireAuth, async (req, res) => {
 
   const holiday = isHoliday(date);
   const now = new Date();
-
   const todayStr = now.toISOString().slice(0, 10);
   const isToday = date === todayStr;
 
@@ -192,7 +191,6 @@ router.post('/', requireAuth, async (req, res) => {
 
   const defaultHour = holiday ? START_HOUR_HOLIDAY : START_HOUR_WEEKDAY;
   const finalStartTime = start_time || `${String(defaultHour).padStart(2, '0')}:00`;
-
   const plannedStart = new Date(`${date}T${finalStartTime}:00`);
 
   if (isToday && plannedStart < now) {
@@ -201,10 +199,9 @@ router.post('/', requireAuth, async (req, res) => {
 
   const targetId = isManager && employee_id ? employee_id : user.id;
   const targetName = isManager && employee_name ? employee_name : user.name;
-  const initialStatus = isManager ? 'approved' : 'pending';
 
+  let initialStatus = 'pending';
   let approvalChainIds = [];
-  let directApproverId = null;
 
   if (!isManager) {
     approvalChainIds = await buildApprovalChain(user.id);
@@ -222,7 +219,30 @@ router.post('/', requireAuth, async (req, res) => {
       });
     }
 
-    directApproverId = approvalChainIds[0];
+    initialStatus = 'pending';
+
+  } else {
+    if (userLevel >= 4) {
+      initialStatus = 'approved';
+      approvalChainIds = [];
+    } else {
+      approvalChainIds = await buildApprovalChain(user.id);
+      
+      if (approvalChainIds.length === 0) {
+        return res.status(400).json({ 
+          error: 'Kamu belum punya atasan level 4+. Hubungi admin.' 
+        });
+      }
+
+      const hasFinal = await validateChainHasFinal(approvalChainIds);
+      if (!hasFinal) {
+        return res.status(400).json({ 
+          error: 'Chain atasan kamu tidak punya level 4+. Hubungi admin.' 
+        });
+      }
+
+      initialStatus = 'pending';
+    }
   }
 
   try {
@@ -248,18 +268,17 @@ router.post('/', requireAuth, async (req, res) => {
     );
 
     const record = result.rows[0];
+    console.log(`✅ Record ID=${record.id}, status=${record.status}, source=${record.source}, chain=[${approvalChainIds.join(',')}]`);
 
     let emailSent = 0;
+    const JWT_SECRET = process.env.JWT_SECRET;
+    const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
 
     if (!isManager) {
-      const JWT_SECRET = process.env.JWT_SECRET;
-      const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
-
       const allApproversResult = await query(
         'SELECT id, email, full_name, level FROM users WHERE id = ANY($1)',
         [approvalChainIds]
       );
-      
       const allApprovers = approvalChainIds.map(id => 
         allApproversResult.rows.find(r => r.id === id)
       ).filter(Boolean);
@@ -267,43 +286,17 @@ router.post('/', requireAuth, async (req, res) => {
       const directApprover = allApprovers[0];
       const finalApprover = allApprovers.find(a => levelNum(a.level) >= 4);
 
-      if (directApprover?.email) {
-        const approveToken = jwt.sign(
-          { recordId: record.id, action: 'approve-direct', approverId: directApprover.id },
-          JWT_SECRET,
-          { expiresIn: '24h' }
-        );
-        const rejectToken = jwt.sign(
-          { recordId: record.id, action: 'reject', approverId: directApprover.id },
-          JWT_SECRET,
-          { expiresIn: '24h' }
-        );
+      const samePerson = directApprover && finalApprover && 
+                          directApprover.id === finalApprover.id;
 
-        const r = await sendEmail({
-          to: directApprover.email,
-          ...templates.newRequestDirect({
-            employeeName: targetName,
-            employeeLevel: user.level,
-            date, startTime: finalStartTime,
-            duration: durationNum,
-            reason, desc: description,
-            approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
-            rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
-          })
-        });
-        if (r.success) emailSent++;
-      }
-
-      if (finalApprover?.email) {
+      if (samePerson) {
         const approveToken = jwt.sign(
           { recordId: record.id, action: 'approve-final', approverId: finalApprover.id },
-          JWT_SECRET,
-          { expiresIn: '24h' }
+          JWT_SECRET, { expiresIn: '24h' }
         );
         const rejectToken = jwt.sign(
           { recordId: record.id, action: 'reject', approverId: finalApprover.id },
-          JWT_SECRET,
-          { expiresIn: '24h' }
+          JWT_SECRET, { expiresIn: '24h' }
         );
 
         const r = await sendEmail({
@@ -311,8 +304,9 @@ router.post('/', requireAuth, async (req, res) => {
           ...templates.newRequestFinal({
             employeeName: targetName,
             employeeLevel: user.level,
-            directApproverName: directApprover?.full_name || '-',
+            directApproverName: directApprover.full_name,
             directApproved: false,
+            isDirectAndFinal: true,
             date, startTime: finalStartTime,
             duration: durationNum,
             reason,
@@ -321,6 +315,60 @@ router.post('/', requireAuth, async (req, res) => {
           })
         });
         if (r.success) emailSent++;
+
+      } else {
+        if (directApprover?.email) {
+          const approveToken = jwt.sign(
+            { recordId: record.id, action: 'approve-direct', approverId: directApprover.id },
+            JWT_SECRET, { expiresIn: '24h' }
+          );
+          const rejectToken = jwt.sign(
+            { recordId: record.id, action: 'reject', approverId: directApprover.id },
+            JWT_SECRET, { expiresIn: '24h' }
+          );
+
+          const r = await sendEmail({
+            to: directApprover.email,
+            ...templates.newRequestDirect({
+              employeeName: targetName,
+              employeeLevel: user.level,
+              date, startTime: finalStartTime,
+              duration: durationNum,
+              reason, desc: description,
+              approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
+              rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
+            })
+          });
+          if (r.success) emailSent++;
+        }
+
+        if (finalApprover?.email) {
+          const approveToken = jwt.sign(
+            { recordId: record.id, action: 'approve-final', approverId: finalApprover.id },
+            JWT_SECRET, { expiresIn: '24h' }
+          );
+          const rejectToken = jwt.sign(
+            { recordId: record.id, action: 'reject', approverId: finalApprover.id },
+            JWT_SECRET, { expiresIn: '24h' }
+          );
+
+          const r = await sendEmail({
+            to: finalApprover.email,
+            ...templates.newRequestFinal({
+              employeeName: targetName,
+              employeeLevel: user.level,
+              directApproverName: directApprover?.full_name || '-',
+              directApproved: false,
+              isDirectAndFinal: false,
+              date, startTime: finalStartTime,
+              duration: durationNum,
+              reason,
+              approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
+              rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
+            })
+          });
+          if (r.success) emailSent++;
+        }
       }
 
       const fyiSent = await notifyUser(record.employee_id, 'pendingApproval', {
@@ -330,20 +378,75 @@ router.post('/', requireAuth, async (req, res) => {
       emailSent += fyiSent;
 
     } else {
-      const assignedSent = await notifyUser(targetId, 'assigned', {
-        managerName: user.name,
-        date, startTime: finalStartTime,
-        duration: durationNum,
-        reason, desc: description
-      });
-      emailSent += assignedSent;
+      if (userLevel >= 4) {
+        const assignedSent = await notifyUser(targetId, 'assigned', {
+          managerName: user.name,
+          date, startTime: finalStartTime,
+          duration: durationNum,
+          reason, desc: description
+        });
+        emailSent += assignedSent;
 
-      const fyiSent = await notifyUser(user.id, 'assignedFyiManager', {
-        employeeName: targetName,
-        date, startTime: finalStartTime,
-        duration: durationNum
-      });
-      emailSent += fyiSent;
+        const fyiSent = await notifyUser(user.id, 'assignedFyiManager', {
+          employeeName: targetName,
+          date, startTime: finalStartTime,
+          duration: durationNum
+        });
+        emailSent += fyiSent;
+
+      } else {
+        const allApproversResult = await query(
+          'SELECT id, email, full_name, level FROM users WHERE id = ANY($1)',
+          [approvalChainIds]
+        );
+        const allApprovers = approvalChainIds.map(id => 
+          allApproversResult.rows.find(r => r.id === id)
+        ).filter(Boolean);
+
+        const finalApprover = allApprovers.find(a => levelNum(a.level) >= 4);
+
+        if (finalApprover?.email) {
+          const approveToken = jwt.sign(
+            { recordId: record.id, action: 'approve-final', approverId: finalApprover.id },
+            JWT_SECRET, { expiresIn: '24h' }
+          );
+          const rejectToken = jwt.sign(
+            { recordId: record.id, action: 'reject', approverId: finalApprover.id },
+            JWT_SECRET, { expiresIn: '24h' }
+          );
+
+          const r = await sendEmail({
+            to: finalApprover.email,
+            ...templates.newRequestFinal({
+              employeeName: targetName,
+              employeeLevel: user.level,
+              directApproverName: user.name,
+              directApproved: false,
+              isAssignFromSupervisor: true,
+              supervisorName: user.name,
+              date, startTime: finalStartTime,
+              duration: durationNum,
+              reason,
+              approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
+              rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
+            })
+          });
+          if (r.success) emailSent++;
+        }
+
+        const fyiSent = await notifyUser(targetId, 'pendingApproval', {
+          date, startTime: finalStartTime,
+          duration: durationNum
+        });
+        emailSent += fyiSent;
+
+        const supSent = await notifyUser(user.id, 'assignedFyiManager', {
+          employeeName: targetName,
+          date, startTime: finalStartTime,
+          duration: durationNum
+        });
+        emailSent += supSent;
+      }
     }
 
     res.json({ ...record, email_sent: emailSent });
@@ -699,17 +802,19 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
     let emailSent = 0;
 
-    if (directApprover?.email) {
+    const samePerson = directApprover && finalApprover && directApprover.id === finalApprover.id;
+
+    if (samePerson) {
       const approveToken = jwt.sign(
-        { recordId: updated.id, action: 'approve-direct', approverId: directApprover.id },
+        { recordId: updated.id, action: 'approve-final', approverId: finalApprover.id },
         JWT_SECRET, { expiresIn: '24h' }
       );
       const rejectToken = jwt.sign(
-        { recordId: updated.id, action: 'reject', approverId: directApprover.id },
+        { recordId: updated.id, action: 'reject', approverId: finalApprover.id },
         JWT_SECRET, { expiresIn: '24h' }
       );
       const r = await sendEmail({
-        to: directApprover.email,
+        to: finalApprover.email,
         ...templates.revisionResubmitted({
           employeeName: updated.employee_name,
           date: finalDate, startTime: finalStartTime,
@@ -721,19 +826,43 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
         })
       });
       if (r.success) emailSent++;
-    }
+    } else {
+      if (directApprover?.email) {
+        const approveToken = jwt.sign(
+          { recordId: updated.id, action: 'approve-direct', approverId: directApprover.id },
+          JWT_SECRET, { expiresIn: '24h' }
+        );
+        const rejectToken = jwt.sign(
+          { recordId: updated.id, action: 'reject', approverId: directApprover.id },
+          JWT_SECRET, { expiresIn: '24h' }
+        );
+        const r = await sendEmail({
+          to: directApprover.email,
+          ...templates.revisionResubmitted({
+            employeeName: updated.employee_name,
+            date: finalDate, startTime: finalStartTime,
+            duration: finalDuration,
+            reason: reason || record.reason,
+            desc: description,
+            approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
+            rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
+          })
+        });
+        if (r.success) emailSent++;
+      }
 
-    if (finalApprover?.email) {
-      const r = await sendEmail({
-        to: finalApprover.email,
-        ...templates.revisionResubmittedFinal({
-          employeeName: updated.employee_name,
-          directApproverName: directApprover?.full_name || '-',
-          date: finalDate, startTime: finalStartTime,
-          duration: finalDuration
-        })
-      });
-      if (r.success) emailSent++;
+      if (finalApprover?.email) {
+        const r = await sendEmail({
+          to: finalApprover.email,
+          ...templates.revisionResubmittedFinal({
+            employeeName: updated.employee_name,
+            directApproverName: directApprover?.full_name || '-',
+            date: finalDate, startTime: finalStartTime,
+            duration: finalDuration
+          })
+        });
+        if (r.success) emailSent++;
+      }
     }
 
     const fyiSent = await notifyUser(updated.employee_id, 'pendingApproval', {
