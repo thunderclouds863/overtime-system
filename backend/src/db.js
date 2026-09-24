@@ -1,19 +1,14 @@
 import pg from 'pg';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Baca CA certificate
-const caPath = path.join(__dirname, '..', 'ca.pem');
-const ca = fs.existsSync(caPath) ? fs.readFileSync(caPath).toString() : undefined;
+// Paksa kolom INTERVAL (OID 1186) dikembalikan sebagai string "HH:MM:SS"
+// Biar konsisten dan tidak berubah-ubah tergantung versi driver
+pg.types.setTypeParser(1186, (val) => val);
 
 export const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: false },
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 5000
