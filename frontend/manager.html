@@ -769,29 +769,42 @@ function renderApprovalList() {
     el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Tidak ada pengajuan menunggu</div>';
     return;
   }
+  
   el.innerHTML = need.map(r => {
-    const chainLen = r.approvalChain.length;
-    const progress = r.approvalProgress;
-    const chainInfo = chainLen > 0
-      ? `<p class="text-purple-600 text-[10px] font-bold">📋 Approval ${progress + 1}/${chainLen} level</p>` : '';
+    const chainLen = (r.approvalChain || []).length;
+    const hasDirect = !!r.directApproverId;
+    const hasFinal = !!r.finalApproverId;
+    const jumpedIn = r.jumpedIn;
+    
+    let approvalStatus = '';
+    if (r.status === 'pending') {
+      if (hasDirect && !hasFinal) {
+        approvalStatus = `<p class="text-emerald-600 text-[10px] font-bold">✓ Atasan langsung sudah approve, menunggu final approval</p>`;
+      } else if (!hasDirect && hasFinal) {
+        approvalStatus = `<p class="text-amber-600 text-[10px] font-bold">⚠️ Manager jump in approve (atasan langsung belum review)</p>`;
+      } else if (chainLen > 0) {
+        approvalStatus = `<p class="text-blue-600 text-[10px] font-bold">📋 Menunggu approval bertingkat (${chainLen} tingkat)</p>`;
+      }
+    }
+    
     return `
-    <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border ${r.status === 'pending' ? 'border-amber-200' : 'border-slate-100'} p-4 md:p-5 card-hover">
+    <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border ${r.status === 'pending' ? 'border-amber-200' : 'border-slate-100'} p-4 md:p-5">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
         <div class="min-w-0">
-          <p class="font-bold text-slate-800 text-sm md:text-base">${r.employee} ${r.isHoliday ? '🏖' : '💼'}</p>
-          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · ${r.startTime} · ${Math.round(r.plannedDuration/3600000)} jam · Level ${r.employeeLevel}</p>
+          <p class="font-bold text-slate-800 text-sm">${r.employee} ${r.isHoliday ? '🏖' : '💼'}</p>
+          <p class="text-[10px] text-slate-500 mt-0.5">${fmtDate(r.date)} · ${r.startTime} · ${Math.round(r.plannedDuration/3600000)} jam · Level ${r.employeeLevel}</p>
         </div>
         ${statusBadge(r.status)}
       </div>
-      <div class="bg-slate-50 rounded-2xl p-3 text-[11px] md:text-xs text-slate-600 space-y-1 mb-3">
+      <div class="bg-slate-50 rounded-xl p-3 text-[11px] text-slate-600 space-y-1 mb-3">
         <p>📋 ${r.reason}</p>
         <p>📝 ${r.desc}</p>
-        ${chainInfo}
+        ${approvalStatus}
         ${r.revisionCount > 0 ? `<p class="text-amber-600">🔄 Revisi ke-${r.revisionCount}</p>` : ''}
       </div>
       ${r.status === 'pending'
-        ? `<button onclick="openReview(${r.id})" class="w-full bg-gradient-to-r from-brand-600 to-neon-violet text-white text-xs md:text-sm font-bold py-3 rounded-2xl shadow-lg active:scale-[0.98] transition">🔍 Review & Keputusan</button>`
-        : `<button onclick="reopenRecord(${r.id})" class="w-full border border-amber-200 text-amber-700 hover:bg-amber-50 text-xs md:text-sm font-bold py-3 rounded-2xl transition">↺ Buka Kembali</button>`}
+        ? `<button onclick="openReview(${r.id})" class="w-full bg-gradient-to-r from-brand-600 to-neon-violet text-white text-xs md:text-sm font-bold py-3 rounded-2xl shadow-lg">🔍 Review & Keputusan</button>`
+        : `<button onclick="reopenRecord(${r.id})" class="w-full border border-amber-200 text-amber-700 hover:bg-amber-50 text-xs md:text-sm font-bold py-3 rounded-2xl">↺ Buka Kembali</button>`}
     </div>
   `}).join('');
 }
