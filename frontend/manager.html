@@ -156,12 +156,12 @@ tailwind.config = {
   <section id="tab-mgr-tugas" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">✍️ Tugaskan Lembur</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Buat penugasan lembur langsung</p>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Buat penugasan lembur langsung ke bawahan kamu</p>
     </div>
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-5 md:p-6 max-w-3xl">
       <div class="bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 mb-5 flex gap-3">
         <span class="text-xl">✨</span>
-        <p class="text-xs text-brand-900 leading-relaxed"><strong>Penugasan langsung:</strong> karyawan otomatis dapat notifikasi. Jam mulai otomatis sesuai jenis hari.</p>
+        <p class="text-xs text-brand-900 leading-relaxed"><strong>Penugasan langsung:</strong> karyawan otomatis dapat notifikasi. Hanya bawahan kamu yang muncul di sini.</p>
       </div>
       <div class="grid md:grid-cols-2 gap-3 md:gap-4">
         <div class="md:col-span-2">
@@ -200,7 +200,6 @@ tailwind.config = {
           <textarea id="mgrDesc" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white" placeholder="Jelaskan tugas yang harus diselesaikan..."></textarea>
         </div>
       </div>
-      <div id="mgrApprovalInfo" class="mt-4 bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 hidden"></div>
       <button onclick="submitAssignment()" class="mt-5 w-full bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/25 text-sm transition active:scale-[0.98]">Tugaskan 🚀</button>
     </div>
   </section>
@@ -208,7 +207,7 @@ tailwind.config = {
   <section id="tab-mgr-approval" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">⏳ Perlu Review</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Approval pengajuan lembur</p>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Approval pengajuan lembur dari bawahan kamu</p>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
@@ -236,7 +235,7 @@ tailwind.config = {
   <section id="tab-mgr-verifikasi" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">🔍 Verifikasi Hasil</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Cek hasil lembur</p>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Cek hasil lembur bawahan kamu</p>
     </div>
     <div class="bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-200 rounded-2xl p-4 flex gap-3">
       <span class="text-xl">🔍</span>
@@ -252,7 +251,7 @@ tailwind.config = {
   <section id="tab-mgr-monitor" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">📊 Monitoring Tim</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Rekam jejak lengkap</p>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Rekam jejak lengkap bawahan kamu</p>
     </div>
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
       <div class="overflow-x-auto">
@@ -291,11 +290,7 @@ tailwind.config = {
     <div id="reviewContent" class="space-y-3 text-sm"></div>
     <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Catatan</label>
     <textarea id="reviewNote" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50" placeholder="Wajib jika revisi / tolak"></textarea>
-    <div id="reviewActions" class="grid grid-cols-3 gap-2 mt-5">
-      <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
-      <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">✏️ Revisi</button>
-      <button onclick="doApprove()" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">✅ Setuju</button>
-    </div>
+    <div id="reviewActions" class="grid grid-cols-3 gap-2 mt-5"></div>
   </div>
 </div>
 
@@ -399,6 +394,26 @@ document.getElementById('mgrLevel').textContent = `Level: ${currentUser.level ||
 document.getElementById('userLevelLabel').textContent = currentUser.level || 'ATASAN';
 document.getElementById('userAvatar').textContent = currentUser.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
 
+async function ensureUserLevel() {
+  if (currentUser.level) {
+    console.log('✅ Level sudah ada:', currentUser.level);
+    return;
+  }
+  console.log('⚠️ Level undefined, ambil dari backend...');
+  try {
+    const me = await api('/api/auth/me');
+    currentUser.level = me.level;
+    currentUser.jabatan = me.jabatan;
+    localStorage.setItem('user', JSON.stringify(currentUser));
+    document.getElementById('userLevelLabel').textContent = me.level || 'ATASAN';
+    document.getElementById('mgrLevel').textContent = `Level: ${me.level || '-'}`;
+    console.log('✅ Level updated:', me.level);
+  } catch (err) {
+    console.warn('Gagal ambil level:', err);
+    toast('Gagal load level, silakan logout & login ulang', 'bg-amber-600');
+  }
+}
+
 const today = new Date();
 document.getElementById('mgrDate').valueAsDate = today;
 
@@ -468,9 +483,17 @@ async function loadEmployees() {
   try {
     employees = await api('/api/records/employees/list');
     const sel = document.getElementById('mgrEmp');
+    if (employees.length === 0) {
+      sel.innerHTML = '<option value="">— Tidak ada bawahan —</option>';
+      return;
+    }
     sel.innerHTML = '<option value="">— Pilih anggota tim —</option>' +
       employees.map(e => `<option value="${e.id}|${e.full_name}">${e.full_name} (${e.level || '-'}) — ${e.jabatan || '-'}</option>`).join('');
-  } catch (err) { console.error(err); }
+    console.log(`👥 Loaded ${employees.length} bawahan`);
+  } catch (err) { 
+    console.error(err);
+    document.getElementById('mgrEmp').innerHTML = '<option value="">Gagal load bawahan</option>';
+  }
 }
 
 function updateMgrStartTime() {
@@ -654,30 +677,24 @@ function openReview(id) {
   const directDone = !!r.directApproverId;
   const finalDone = !!r.finalApproverId;
   
-  // Tentukan aksi yang bisa dilakukan
   let approvalInfo = '';
   let buttonConfig = '';
   
   if (finalDone) {
     approvalInfo = `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800"><strong>✓ Sudah final approve</strong></div>`;
+    buttonConfig = `<button disabled class="col-span-3 border border-slate-200 text-slate-400 py-3 rounded-2xl text-xs md:text-sm font-bold cursor-not-allowed">Sudah di-approve</button>`;
   } else if (isFinalApprover) {
     if (directDone) {
       approvalInfo = `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800"><strong>✓ Atasan langsung sudah approve.</strong> Kamu bisa final approve sekarang.</div>`;
-      buttonConfig = `
-        <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
-        <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">✏️ Revisi</button>
-        <button onclick="doApproveFinal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">✅ Final Approve</button>
-      `;
     } else {
       approvalInfo = `<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800"><strong>⚠️ Atasan langsung belum review.</strong> Kamu bisa <strong>jump in</strong> approve sekarang, atau tunggu.</div>`;
-      buttonConfig = `
-        <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
-        <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">✏️ Revisi</button>
-        <button onclick="doApproveFinal()" class="bg-gradient-to-r from-orange-500 to-amber-500 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">⚡ Jump In Approve</button>
-      `;
     }
+    buttonConfig = `
+      <button onclick="doReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-xs md:text-sm font-bold">❌ Tolak</button>
+      <button onclick="doRevision()" class="border border-amber-200 text-amber-600 hover:bg-amber-50 py-3 rounded-2xl text-xs md:text-sm font-bold">✏️ Revisi</button>
+      <button onclick="doApproveFinal()" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-2xl text-xs md:text-sm font-bold shadow-lg">${directDone ? '✅ Final Approve' : '⚡ Jump In Approve'}</button>
+    `;
   } else if (userLevel >= 3) {
-    // Level 3: approve direct
     if (directDone) {
       approvalInfo = `<div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 text-xs text-emerald-800"><strong>✓ Kamu sudah approve.</strong> Menunggu final approver.</div>`;
       buttonConfig = `<button disabled class="col-span-3 border border-slate-200 text-slate-400 py-3 rounded-2xl text-xs md:text-sm font-bold cursor-not-allowed">Sudah di-approve</button>`;
@@ -904,8 +921,10 @@ function renderMonitorTable() {
 }
 
 switchTab('mgr-dashboard');
-loadRecords();
-loadEmployees();
+ensureUserLevel().then(() => {
+  loadRecords();
+  loadEmployees();
+});
 setInterval(loadRecords, 30000);
 </script>
 </body>
