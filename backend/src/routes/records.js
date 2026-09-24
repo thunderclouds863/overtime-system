@@ -39,7 +39,6 @@ function parseDurationToHours(duration) {
   }
   
   if (typeof duration === 'string') {
-    // Format "HH:MM:SS"
     if (duration.includes(':')) {
       const parts = duration.split(':');
       const h = parseInt(parts[0] || 0);
@@ -47,7 +46,6 @@ function parseDurationToHours(duration) {
       const s = parseInt(parts[2] || 0);
       return h + (m / 60) + (s / 3600);
     }
-    // Format ISO 8601 "PT2H30M"
     if (duration.includes('PT')) {
       const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?/);
       if (match) {
@@ -57,16 +55,13 @@ function parseDurationToHours(duration) {
         return h + (m / 60) + (s / 3600);
       }
     }
-    // Format "2 hours"
     const hourMatch = duration.match(/(\d+(?:\.\d+)?)\s*hour/i);
     if (hourMatch) return parseFloat(hourMatch[1]);
     
-    // Angka murni
     const num = parseFloat(duration);
     if (!isNaN(num)) return num;
   }
   
-  // Object Postgres Interval (pg driver terkadang return object)
   if (typeof duration === 'object') {
     const hours = duration.hours || 0;
     const minutes = duration.minutes || 0;
@@ -164,6 +159,9 @@ async function validateChainHasFinal(chain) {
   return false;
 }
 
+// ============================================
+// GET /employees/list — bawahan user (rekursif)
+// ============================================
 router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
   const user = req.user;
   
@@ -202,6 +200,9 @@ router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
   }
 });
 
+// ============================================
+// POST / — Buat pengajuan ATAU tugaskan
+// ============================================
 router.post('/', requireAuth, async (req, res) => {
   const {
     date, start_time, duration_hours,
@@ -222,6 +223,7 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Durasi minimal 1 jam' });
   }
 
+  // Validasi: hanya level 2 (Staff) yang boleh ajukan lembur sendiri
   if (!isManager && userLevel !== 2) {
     return res.status(403).json({ 
       error: `Hanya level 2 (Staff) yang bisa mengajukan lembur sendiri. Level kamu: ${user.level || '-'}` 
@@ -254,6 +256,7 @@ router.post('/', requireAuth, async (req, res) => {
   let approvalChainIds = [];
 
   if (!isManager) {
+    // STAFF AJUKAN SENDIRI
     approvalChainIds = await buildApprovalChain(user.id);
     
     if (approvalChainIds.length === 0) {
@@ -272,10 +275,13 @@ router.post('/', requireAuth, async (req, res) => {
     initialStatus = 'pending';
 
   } else {
+    // MANAGER TUGASKAN LEMBUR
     if (userLevel >= 4) {
+      // Manager level 4+ → langsung approve
       initialStatus = 'approved';
       approvalChainIds = [];
     } else {
+      // Manager level 3 → perlu approval dari atasannya
       approvalChainIds = await buildApprovalChain(user.id);
       
       if (approvalChainIds.length === 0) {
@@ -325,6 +331,7 @@ router.post('/', requireAuth, async (req, res) => {
     const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
 
     if (!isManager) {
+      // === STAFF AJUKAN SENDIRI ===
       const allApproversResult = await query(
         'SELECT id, email, full_name, level FROM users WHERE id = ANY($1)',
         [approvalChainIds]
@@ -340,6 +347,7 @@ router.post('/', requireAuth, async (req, res) => {
                           directApprover.id === finalApprover.id;
 
       if (samePerson) {
+        // Atasan langsung = final approver (level 4+)
         const approveToken = jwt.sign(
           { recordId: record.id, action: 'approve-final', approverId: finalApprover.id },
           JWT_SECRET, { expiresIn: '24h' }
@@ -367,6 +375,7 @@ router.post('/', requireAuth, async (req, res) => {
         if (r.success) emailSent++;
 
       } else {
+        // Atasan langsung ≠ final approver
         if (directApprover?.email) {
           const approveToken = jwt.sign(
             { recordId: record.id, action: 'approve-direct', approverId: directApprover.id },
@@ -428,7 +437,9 @@ router.post('/', requireAuth, async (req, res) => {
       emailSent += fyiSent;
 
     } else {
+      // === MANAGER TUGASKAN LEMBUR ===
       if (userLevel >= 4) {
+        // Level 4+ langsung approved
         const assignedSent = await notifyUser(targetId, 'assigned', {
           managerName: user.name,
           date, startTime: finalStartTime,
@@ -445,6 +456,7 @@ router.post('/', requireAuth, async (req, res) => {
         emailSent += fyiSent;
 
       } else {
+        // Level 3 perlu approval dari atasannya
         const allApproversResult = await query(
           'SELECT id, email, full_name, level FROM users WHERE id = ANY($1)',
           [approvalChainIds]
@@ -506,6 +518,9 @@ router.post('/', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// GET / — List records
+// ============================================
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user;
   const { status, limit = 100 } = req.query;
@@ -569,6 +584,9 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// POST /:id/start — Mulai lembur manual (GPS)
+// ============================================
 router.post('/:id/start', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { lat, lng, accuracy } = req.body;
@@ -595,7 +613,6 @@ router.post('/:id/start', requireAuth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan / tidak bisa dimulai' });
 
     const record = result.rows[0];
-
     const durationHours = parseDurationToHours(record.planned_duration);
 
     await notifyUser(record.employee_id, 'startedEmployee', {
@@ -611,6 +628,9 @@ router.post('/:id/start', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// POST /:id/auto-stop — Auto stop keluar radius
+// ============================================
 router.post('/:id/auto-stop', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { lat, lng, reason } = req.body;
@@ -668,6 +688,9 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// POST /:id/finish — Selesai lembur + upload bukti
+// ============================================
 router.post('/:id/finish', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { 
@@ -776,6 +799,9 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// POST /:id/cancel — Batalkan lembur manual
+// ============================================
 router.post('/:id/cancel', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { reason } = req.body;
@@ -800,6 +826,9 @@ router.post('/:id/cancel', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// POST /:id/revise — Revisi pengajuan
+// ============================================
 router.post('/:id/revise', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { date, start_time, duration_hours, reason, description, proof } = req.body;
@@ -950,6 +979,9 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// POST /:id/revise-proof — Revisi bukti
+// ============================================
 router.post('/:id/revise-proof', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { 
@@ -1008,6 +1040,9 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// GET /stats/summary — Total jam bulan ini
+// ============================================
 router.get('/stats/summary', requireAuth, async (req, res) => {
   const user = req.user;
   try {
