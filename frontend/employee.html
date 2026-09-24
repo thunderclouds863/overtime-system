@@ -70,9 +70,7 @@ tailwind.config = {
   .modal-in { animation: modalIn 0.3s cubic-bezier(.2,.9,.3,1); }
   @keyframes modalIn { from {opacity:0; transform: scale(0.94) translateY(20px);} to {opacity:1; transform:scale(1) translateY(0);} }
   .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-  @media (max-width: 767px) {
-    main { padding-bottom: 90px; }
-  }
+  @media (max-width: 767px) { main { padding-bottom: 90px; } }
 </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
@@ -216,7 +214,6 @@ tailwind.config = {
           </div>
         </div>
 
-        <!-- RADIUS STATUS — dinamis -->
         <div id="radiusStatus" class="mt-4 bg-white/10 rounded-2xl p-3 text-[11px] text-emerald-100 border border-white/20 flex items-center gap-2">
           <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
           <span>Memantau radius kantor...</span>
@@ -335,7 +332,7 @@ tailwind.config = {
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Batas pengajuan hari ini: <strong class="text-white">18:00</strong></span></li>
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Minimal lembur <strong class="text-white">1 jam</strong></span></li>
           <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>GPS radius <strong class="text-white">100m</strong></span></li>
-          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Auto-stop kalau keluar radius</span></li>
+          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Approval bertingkat (Supervisor → Manager)</span></li>
         </ul>
       </div>
     </div>
@@ -353,7 +350,6 @@ tailwind.config = {
 
 </main>
 
-<!-- GPS MODAL -->
 <div id="modalGPS" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -383,7 +379,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- BUKTI MODAL -->
 <div id="modalBukti" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -412,7 +407,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- CANCEL MODAL -->
 <div id="modalCancel" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-sm w-full p-6 modal-in">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -430,7 +424,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- EDIT MODAL -->
 <div id="modalEdit" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -469,7 +462,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- EDIT PROOF MODAL -->
 <div id="modalEditProof" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
@@ -581,26 +573,16 @@ async function fetchGPS() {
   }
 }
 
-// ============================================
-// RADIUS MONITOR — Cek pertama 3 detik, auto-stop 1x deteksi
-// ============================================
 function startRadiusMonitor() {
   if (radiusMonitor) return;
   console.log('🎯 Monitor radius dimulai');
   updateRadiusStatusUI('checking');
-
-  // Cek pertama 3 detik setelah active
   setTimeout(async () => {
     if (!activeRecord || activeRecord.status !== 'active') return;
     await checkRadiusOnce();
   }, 3000);
-
-  // Cek berkala tiap 15 detik
   radiusMonitor = setInterval(async () => {
-    if (!activeRecord || activeRecord.status !== 'active') {
-      stopRadiusMonitor();
-      return;
-    }
+    if (!activeRecord || activeRecord.status !== 'active') { stopRadiusMonitor(); return; }
     await checkRadiusOnce();
   }, 15000);
 }
@@ -610,55 +592,37 @@ async function checkRadiusOnce() {
     const gps = await fetchGPS();
     const distance = Math.round(haversine(gps.lat, gps.lng, OFFICE.lat, OFFICE.lng));
     const inRadius = distance <= OFFICE.radius;
-
-    console.log(`📍 Cek radius: ${distance}m (max ${OFFICE.radius}m) — ${inRadius ? '✓ DALAM' : '✕ LUAR'}${gps.simulated ? ' (simulasi)' : ''}`);
-
+    console.log(`📍 Cek radius: ${distance}m — ${inRadius ? '✓ DALAM' : '✕ LUAR'}`);
     if (!inRadius) {
-      console.log(`⚠️ KELUAR radius — AUTO-STOP langsung`);
+      console.log(`⚠️ KELUAR radius — AUTO-STOP`);
       updateRadiusStatusUI('out', distance);
       stopRadiusMonitor();
       await autoStop(activeRecord.id, gps.lat, gps.lng, distance);
     } else {
       updateRadiusStatusUI('in', distance);
     }
-  } catch (err) {
-    console.warn('Monitor error:', err.message);
-  }
+  } catch (err) { console.warn('Monitor error:', err.message); }
 }
 
 function stopRadiusMonitor() {
-  if (radiusMonitor) {
-    clearInterval(radiusMonitor);
-    radiusMonitor = null;
-    console.log('🛑 Monitor radius dihentikan');
-  }
+  if (radiusMonitor) { clearInterval(radiusMonitor); radiusMonitor = null; console.log('🛑 Monitor stop'); }
 }
 
 async function autoStop(recordId, lat, lng, distance) {
   try {
     await api(`/api/records/${recordId}/auto-stop`, {
       method: 'POST',
-      body: JSON.stringify({
-        lat, lng,
-        reason: `Keluar radius kantor (${distance}m)`
-      })
+      body: JSON.stringify({ lat, lng, reason: `Keluar radius kantor (${distance}m)` })
     });
-
-    // ⚡ HENTIKAN SEMUA
     activeRecord = null;
-    if (activeTimer) {
-      clearInterval(activeTimer);
-      activeTimer = null;
-    }
+    if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
     stopRadiusMonitor();
-
     await loadRecords();
     showAutoStopNotif(distance);
-    toast(`⚠️ Lembur auto-stop: kamu keluar radius (${distance}m)`, 'bg-red-600');
+    toast(`⚠️ Lembur auto-stop: keluar radius (${distance}m)`, 'bg-red-600');
   } catch (err) {
     console.error('autoStop error:', err);
-    if (err.message.toLowerCase().includes('tidak aktif') || err.message.toLowerCase().includes('sudah')) {
-      // Server sudah stop duluan, sync state
+    if (err.message.toLowerCase().includes('tidak aktif')) {
       activeRecord = null;
       if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
       stopRadiusMonitor();
@@ -673,10 +637,9 @@ function showAutoStopNotif(distance) {
   document.getElementById('notifIcon').textContent = '⚠️';
   document.getElementById('notifIcon').className = 'w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600 font-bold shrink-0';
   document.getElementById('notifTitle').textContent = '⚠️ Lembur Dihentikan';
-  document.getElementById('notifDesc').textContent = `Kamu keluar radius kantor (${distance}m). Hubungi atasan.`;
+  document.getElementById('notifDesc').textContent = `Keluar radius kantor (${distance}m). Hubungi atasan.`;
   const n = document.getElementById('autoStartNotif');
-  n.classList.remove('hidden');
-  n.classList.remove('notif-slide');
+  n.classList.remove('hidden', 'notif-slide');
   void n.offsetWidth;
   n.classList.add('notif-slide');
   setTimeout(() => n.classList.add('hidden'), 10000);
@@ -685,7 +648,6 @@ function showAutoStopNotif(distance) {
 function updateRadiusStatusUI(state, distance) {
   const el = document.getElementById('radiusStatus');
   if (!el) return;
-
   if (state === 'in') {
     el.className = 'mt-4 bg-emerald-500/20 rounded-2xl p-3 text-[11px] text-emerald-100 border border-emerald-400/30 flex items-center gap-2';
     el.innerHTML = `<span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span><span>✓ Dalam radius kantor (${distance}m) · Timer berjalan</span>`;
@@ -878,10 +840,7 @@ async function loadStatsSummary() {
     document.getElementById('empStatPending').textContent = s.pending_count;
     document.getElementById('empStatVerify').textContent = s.pending_verify_count;
     document.getElementById('empStatApproved').textContent = s.completed_count;
-    console.log(`📊 Stats: ${s.total_hours}j total, ${s.completed_count} completed`);
-  } catch (err) {
-    console.error('stats error:', err);
-  }
+  } catch (err) { console.error('stats error:', err); }
 }
 
 async function loadRecords() {
@@ -901,6 +860,12 @@ async function loadRecords() {
       source: r.source,
       status: r.status,
       isHoliday: r.is_holiday,
+      approvalChain: r.approval_chain || [],
+      directApproverId: r.direct_approver_id,
+      directApprovalAt: r.direct_approval_at,
+      finalApproverId: r.final_approver_id,
+      finalApprovalAt: r.final_approval_at,
+      jumpedIn: r.jumped_in,
       start: r.actual_start,
       end: r.actual_end,
       duration: (parseFloat(r.actual_hours || 0)) * 3600000,
@@ -920,18 +885,15 @@ async function loadRecords() {
 
     const active = records.find(r => r.status === 'active');
     if (active) {
-      // Cek kalau activeRecord beda dengan yang sebelumnya
       if (!activeRecord || activeRecord.id !== active.id) {
-        console.log(`▶️ Detected active record: ${active.id}`);
         activeRecord = active;
         startLiveTimer();
         startRadiusMonitor();
       } else {
-        activeRecord = active; // Refresh data
+        activeRecord = active;
       }
     } else {
       if (activeRecord) {
-        console.log('⏹ Tidak ada active record, stop monitor');
         activeRecord = null;
         if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
         stopRadiusMonitor();
@@ -975,11 +937,7 @@ async function submitRequest() {
     document.getElementById('jenisHari').className = 'w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600';
 
     const emailSent = result.email_sent || 0;
-    if (emailSent > 0) {
-      toast(`✅ Pengajuan terkirim! Email ke ${emailSent} atasan.`, 'bg-emerald-600');
-    } else {
-      toast('✅ Pengajuan terkirim (email tidak terkirim)', 'bg-amber-600');
-    }
+    toast(emailSent > 0 ? `✅ Pengajuan terkirim! Email ke ${emailSent} atasan.` : '✅ Pengajuan terkirim.', 'bg-emerald-600');
 
     await loadRecords();
     switchTab('emp-riwayat');
@@ -1032,11 +990,8 @@ function endOvertime() {
   const elapsed = Date.now() - new Date(activeRecord.start).getTime();
   const hours = elapsed / 3600000;
   const warn = document.getElementById('proofWarning');
-  if (hours < MIN_OVERTIME_HOURS) {
-    warn.classList.remove('hidden');
-  } else {
-    warn.classList.add('hidden');
-  }
+  if (hours < MIN_OVERTIME_HOURS) warn.classList.remove('hidden');
+  else warn.classList.add('hidden');
   document.getElementById('modalBukti').classList.remove('hidden');
   document.getElementById('modalBukti').classList.add('flex');
 }
@@ -1066,11 +1021,7 @@ async function submitProof() {
     document.getElementById('proofWarning').classList.add('hidden');
     await loadRecords();
 
-    if (result.not_counted) {
-      toast(`⚠️ ${result.message}`, 'bg-red-600');
-    } else {
-      toast('✅ Bukti terkirim. Menunggu verifikasi atasan.', 'bg-emerald-600');
-    }
+    toast(result.not_counted ? `⚠️ ${result.message}` : '✅ Bukti terkirim. Menunggu verifikasi atasan.', result.not_counted ? 'bg-red-600' : 'bg-emerald-600');
     switchTab('emp-riwayat');
   } catch (err) {
     toast('❌ ' + err.message, 'bg-red-600');
@@ -1172,11 +1123,7 @@ async function submitProofRevision() {
 function startLiveTimer() {
   if (activeTimer) clearInterval(activeTimer);
   activeTimer = setInterval(() => {
-    if (!activeRecord) {
-      clearInterval(activeTimer);
-      activeTimer = null;
-      return;
-    }
+    if (!activeRecord) { clearInterval(activeTimer); activeTimer = null; return; }
     const el = document.getElementById('activeDuration');
     if (el) el.textContent = fmtDur(Date.now() - new Date(activeRecord.start).getTime());
   }, 1000);
@@ -1302,15 +1249,26 @@ function fullCard(r) {
   const canStart = r.status === 'approved' && (new Date(r.plannedStart) - Date.now()) < 3600000;
   const showRating = r.verifyRating != null;
   const isNotCounted = r.status === 'cancelled' && r.cancelReason && r.cancelReason.includes('kurang dari');
+  
+  let approvalInfo = '';
+  if (r.status === 'pending' && r.approvalChain?.length > 0) {
+    if (r.directApproverId && !r.finalApproverId) {
+      approvalInfo = `<p class="text-emerald-700 bg-emerald-50 rounded-xl p-2.5 mt-2 text-[11px]">✓ Atasan langsung sudah approve, tunggu final approval Manager</p>`;
+    } else if (!r.directApproverId && r.approvalChain.length > 0) {
+      approvalInfo = `<p class="text-blue-700 bg-blue-50 rounded-xl p-2.5 mt-2 text-[11px]">⏳ Menunggu approval bertingkat (${r.approvalChain.length} tingkat)</p>`;
+    }
+  }
+  if (r.status === 'approved' && r.jumpedIn) {
+    approvalInfo = `<p class="text-amber-700 bg-amber-50 rounded-xl p-2.5 mt-2 text-[11px]">⚡ Disetujui langsung Manager (atasan langsung belum review)</p>`;
+  }
+  
   return `
     <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border ${canEdit ? 'border-orange-200 border-l-4 border-l-orange-400' : canEditProof ? 'border-amber-200 border-l-4 border-l-amber-400' : isNotCounted ? 'border-slate-300 border-l-4 border-l-slate-400' : 'border-slate-100'} p-4 md:p-5 card-hover">
       <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
         <div class="min-w-0">
           <p class="font-bold text-slate-800 text-sm md:text-base">${fmtDate(r.date)} · ${r.startTime} ${r.isHoliday ? '🏖' : '💼'}</p>
           <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">
-            ${r.plannedHours} jam
-            · ${r.source === 'manager' ? '📌 Ditugaskan' : '📝 Sendiri'}
-            ${r.autoStarted ? ' · ⚡ Auto' : ''}
+            ${r.plannedHours} jam · ${r.source === 'manager' ? '📌 Ditugaskan' : '📝 Sendiri'}${r.autoStarted ? ' · ⚡ Auto' : ''}
           </p>
         </div>
         ${statusBadge(r.status)}
@@ -1327,6 +1285,7 @@ function fullCard(r) {
           </div>
         ` : ''}
         ${r.cancelReason && !isNotCounted ? `<p class="text-red-600">✕ Dibatalkan: ${r.cancelReason}</p>` : ''}
+        ${approvalInfo}
         ${r.note ? `<p class="text-amber-700 bg-amber-50 rounded-xl p-2.5 mt-2">💬 <strong>Catatan:</strong> ${r.note}</p>` : ''}
         ${r.verifyNote && ['proof_revision', 'verify_rejected'].includes(r.status) ? `<p class="text-orange-700 bg-orange-50 rounded-xl p-2.5 mt-2">🔍 <strong>Verifikasi:</strong> ${r.verifyNote}</p>` : ''}
         ${showRating && r.status === 'completed' ? `
