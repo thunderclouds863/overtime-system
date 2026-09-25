@@ -388,6 +388,7 @@ router.post('/', requireAuth, async (req, res) => {
       const samePerson = directApprover && finalApprover && 
                           directApprover.id === finalApprover.id;
 
+      console.log(`👥 Same person check: direct=${directApprover?.id}, final=${finalApprover?.id}, samePerson=${samePerson}`);
       if (samePerson) {
         // Atasan langsung = final approver (level 4+)
         const approveToken = jwt.sign(
@@ -409,7 +410,7 @@ router.post('/', requireAuth, async (req, res) => {
             isDirectAndFinal: true,
             date, startTime: finalStartTime,
             duration: durationNum,
-            reason,
+            reason, desc: description,
             approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
             rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
           })
@@ -474,7 +475,8 @@ router.post('/', requireAuth, async (req, res) => {
 
       const fyiSent = await notifyUser(record.employee_id, 'pendingApproval', {
         date, startTime: finalStartTime,
-        duration: durationNum
+        duration: durationNum,
+        reason, desc: description 
       });
       emailSent += fyiSent;
 
@@ -540,7 +542,8 @@ router.post('/', requireAuth, async (req, res) => {
 
         const fyiSent = await notifyUser(targetId, 'pendingApproval', {
           date, startTime: finalStartTime,
-          duration: durationNum
+          duration: durationNum,
+          reason, desc: description
         });
         emailSent += fyiSent;
 
@@ -1010,7 +1013,8 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     }
 
     const fyiSent = await notifyUser(updated.employee_id, 'pendingApproval', {
-      date: finalDate, startTime: finalStartTime, duration: finalDuration
+      date: finalDate, startTime: finalStartTime, duration: finalDuration,
+      reason: reason || record.reason, desc: description
     });
     emailSent += fyiSent;
 
