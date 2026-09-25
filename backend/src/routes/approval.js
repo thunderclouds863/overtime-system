@@ -204,7 +204,9 @@ router.get('/email-action', async (req, res) => {
          WHERE id = $4`,
         [
           approverId, jumpedIn,
-          jumpedIn ? `Disetujui langsung oleh ${approverName} (atasan langsung belum review)` : `Disetujui final oleh ${approverName}`,
+          jumpedIn 
+            ? `Disetujui (jump in) oleh ${approverName} — atasan langsung belum review` 
+            : `Disetujui oleh ${approverName}`,
           recordId
         ]
       );
