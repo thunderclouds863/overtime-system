@@ -202,6 +202,7 @@ export const templates = {
     html: wrap('✅ Atasan Langsung Approve', '#059669', `
       <p style="margin:0 0 16px;color:#0f172a"><strong>${d.directApproverName}</strong> (atasan langsung) sudah <strong>approve</strong> pengajuan ini. Sekarang butuh final approval kamu:</p>
       ${dataTable(`
+        ${reasonBox(d.reason, d.desc)}
         ${row('Karyawan', d.employeeName)}
         ${row('Atasan Langsung', d.directApproverName)}
         ${row('Approved pada', d.directApprovedAt || '-')}
