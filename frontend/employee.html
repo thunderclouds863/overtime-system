@@ -987,7 +987,7 @@ async function submitRequest() {
     setTimeout(() => updateStartTime(), 100);
 
     const emailSent = result.email_sent || 0;
-    toast(emailSent > 0 ? `✅ Pengajuan terkirim! Email ke ${emailSent} atasan.` : '✅ Pengajuan terkirim.', 'bg-emerald-600');
+    toast(emailSent > 0 ? `✅ Pengajuan terkirim!` : '✅ Pengajuan terkirim.', 'bg-emerald-600');
 
     await loadRecords();
     switchTab('emp-riwayat');
