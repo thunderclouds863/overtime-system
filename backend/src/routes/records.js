@@ -115,12 +115,10 @@ async function notifyAllManagers(templateName, data) {
 async function buildApprovalChain(employeeId) {
   const chain = [];
   let currentId = employeeId;
-  const visited = new Set([employeeId]);
+  const visited = new Set();   // ← kosong, employeeId jangan dimasukin dulu
 
   for (let i = 0; i < 10; i++) {
-    if (visited.has(currentId)) break;
-    visited.add(currentId);
-
+    // Ambil user saat ini
     const result = await query(
       'SELECT id, approver_ids, level, full_name FROM users WHERE id = $1',
       [currentId]
@@ -128,28 +126,40 @@ async function buildApprovalChain(employeeId) {
     const user = result.rows[0];
     if (!user) break;
 
+    // Tandai user ini udah dikunjungi
+    if (visited.has(user.id)) {
+      console.warn(`⚠️ Loop terdeteksi: user ${user.id} sudah dikunjungi`);
+      break;
+    }
+    visited.add(user.id);
+
     const approverIds = user.approver_ids || [];
     if (approverIds.length === 0) break;
 
     const approverId = parseInt(approverIds[0]);
-    if (!approverId) break;
+    if (!approverId || isNaN(approverId)) break;
 
-    if (visited.has(approverId)) {
-      console.warn(`⚠️ Loop terdeteksi di chain: ${approverId} sudah ada di visited`);
-      break;
-    }
-
+    // Ambil approver
     const approverResult = await query(
       'SELECT id, level, full_name, is_active FROM users WHERE id = $1',
       [approverId]
     );
     const approver = approverResult.rows[0];
-    if (!approver || !approver.is_active) break;
+    if (!approver) {
+      console.warn(`⚠️ Approver ${approverId} tidak ditemukan`);
+      break;
+    }
+    if (!approver.is_active) {
+      console.warn(`⚠️ Approver ${approver.full_name} tidak aktif`);
+      break;
+    }
 
+    // Push ke chain
     chain.push(approverId);
     currentId = approverId;
   }
 
+  console.log(`📋 Chain untuk employee ${employeeId}: [${chain.join(',')}]`);
   return chain;
 }
 
@@ -263,24 +273,22 @@ router.post('/', requireAuth, async (req, res) => {
   if (!isManager) {
     // STAFF AJUKAN SENDIRI
     approvalChainIds = await buildApprovalChain(user.id);
-    let isDirectAndFinal = false;
-    if (approvalChainIds.length > 0) {
-      const allApproversResult = await query(
-        'SELECT id, level FROM users WHERE id = ANY($1)',
-        [approvalChainIds]
-      );
-      const approvers = approvalChainIds.map(id => 
-        allApproversResult.rows.find(r => r.id === id)
-      ).filter(Boolean);
-      
-      const directApprover = approvers[0];
-      const finalApprover = approvers.find(a => levelNum(a.level) >= 4);
-      
-      if (directApprover && finalApprover && directApprover.id === finalApprover.id) {
-        isDirectAndFinal = true;
-        console.log(`👤 Same person detected: ${directApprover.id} = direct + final approver`);
-      }
+    
+    if (approvalChainIds.length === 0) {
+      return res.status(400).json({ 
+        error: 'Belum ada approver untuk kamu. Hubungi admin untuk set atasan langsung.' 
+      });
     }
+  
+    const hasFinal = await validateChainHasFinal(approvalChainIds);
+    if (!hasFinal) {
+      return res.status(400).json({ 
+        error: 'Chain approver tidak punya level 4+ (Manager). Hubungi admin untuk lengkapi struktur atasan.' 
+      });
+    }
+  
+    initialStatus = 'pending';
+  }
     
     if (approvalChainIds.length === 0) {
       return res.status(400).json({ 
