@@ -258,6 +258,24 @@ router.post('/', requireAuth, async (req, res) => {
   if (!isManager) {
     // STAFF AJUKAN SENDIRI
     approvalChainIds = await buildApprovalChain(user.id);
+    let isDirectAndFinal = false;
+    if (approvalChainIds.length > 0) {
+      const allApproversResult = await query(
+        'SELECT id, level FROM users WHERE id = ANY($1)',
+        [approvalChainIds]
+      );
+      const approvers = approvalChainIds.map(id => 
+        allApproversResult.rows.find(r => r.id === id)
+      ).filter(Boolean);
+      
+      const directApprover = approvers[0];
+      const finalApprover = approvers.find(a => levelNum(a.level) >= 4);
+      
+      if (directApprover && finalApprover && directApprover.id === finalApprover.id) {
+        isDirectAndFinal = true;
+        console.log(`👤 Same person detected: ${directApprover.id} = direct + final approver`);
+      }
+    }
     
     if (approvalChainIds.length === 0) {
       return res.status(400).json({ 
