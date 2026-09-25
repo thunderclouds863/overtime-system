@@ -306,7 +306,7 @@ async function loadRecords() {
       approvalChain: r.approval_chain || [], approvalProgress: r.approval_progress || 0,
       directApproverId: r.direct_approver_id, directApprovalAt: r.direct_approval_at,
       finalApproverId: r.final_approver_id, finalApprovalAt: r.final_approval_at, jumpedIn: r.jumped_in,
-      start: r.actual_start, end: r.actual_end, duration: (parseFloat(r.actual_hours || 0)) * 3600000,
+      isDirectAndFinal: r.is_direct_and_final, start: r.actual_start, end: r.actual_end, duration: (parseFloat(r.actual_hours || 0)) * 3600000,
       autoStarted: r.auto_started, proof: r.proof_text, proofFile: r.proof_file_name,
       proofUrl: r.proof_file_url, proofExternalUrl: r.proof_external_url,
       proofNotes: r.proof_notes, proofSize: r.proof_file_size, proofAt: r.proof_uploaded_at,
@@ -423,10 +423,17 @@ function renderApprovalList() {
     const chainLen = r.approvalChain.length;
     const hasDirect = !!r.directApproverId;
     const hasFinal = !!r.finalApproverId;
+    const isDirectAndFinal = r.isDirectAndFinal === true;
+    
     let approvalStatus = '';
     if (r.status === 'pending') {
-      if (hasDirect && !hasFinal) approvalStatus = `<p class="text-emerald-600 text-[10px] font-bold">✓ Atasan langsung sudah approve · menunggu final</p>`;
-      else if (!hasDirect && chainLen > 0) approvalStatus = `<p class="text-blue-600 text-[10px] font-bold">📋 Approval bertingkat (${chainLen} tingkat)</p>`;
+      if (isDirectAndFinal) {
+        approvalStatus = `<p class="text-purple-600 text-[10px] font-bold">👤 Kamu atasan langsung & final approver — 1x approve</p>`;
+      } else if (hasDirect && !hasFinal) {
+        approvalStatus = `<p class="text-emerald-600 text-[10px] font-bold">✓ Atasan langsung sudah approve · menunggu final</p>`;
+      } else if (!hasDirect && chainLen > 0) {
+        approvalStatus = `<p class="text-blue-600 text-[10px] font-bold">📋 Approval bertingkat (${chainLen} tingkat)</p>`;
+      }
     }
     return `
     <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border ${r.status === 'pending' ? 'border-amber-200' : 'border-slate-100'} p-4 md:p-5 card-hover">
