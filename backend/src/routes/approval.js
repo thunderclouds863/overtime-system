@@ -110,7 +110,8 @@ router.get('/email-action', async (req, res) => {
       );
       await notifyUser(record.employee_id, 'rejected', {
         date: record.date, startTime: record.start_time,
-        note: `Ditolak oleh ${approverName}`, rejectedBy: approverName
+        note: `Ditolak oleh ${approverName}`, rejectedBy: approverName,
+        reason: record.reason, desc: record.description  // ← TAMBAH
       });
       return res.send(renderEmailActionPage('rejected', `Pengajuan <strong>${record.employee_name}</strong> ditolak. Karyawan sudah dapat notifikasi.`));
     }
@@ -122,7 +123,8 @@ router.get('/email-action', async (req, res) => {
         [`Revisi diminta oleh ${approverName}`, recordId]
       );
       await notifyUser(record.employee_id, 'revision', {
-        note: `Revisi diminta oleh ${approverName}`, requestedBy: approverName
+        note: `Revisi diminta oleh ${approverName}`, requestedBy: approverName,
+        reason: record.reason, desc: record.description  // ← TAMBAH
       });
       return res.send(renderEmailActionPage('forwarded', `Permintaan revisi terkirim ke <strong>${record.employee_name}</strong>.`));
     }
@@ -173,6 +175,7 @@ router.get('/email-action', async (req, res) => {
             directNote: `Disetujui oleh ${approverName} via email`,
             date: record.date, startTime: record.start_time,
             duration: Math.round(parseFloat(record.planned_duration?.split(':')[0] || 2)),
+            reason: record.reason, desc: record.description,  // ← TAMBAH
             approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
             rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
           })
@@ -296,6 +299,7 @@ router.post('/:id/approve-direct', requireAuth, requireManager, async (req, res)
           directNote: note || '-',
           date: record.date, startTime: record.start_time,
           duration: Math.round(parseFloat(record.planned_duration?.split(':')[0] || 2)),
+          reason: record.reason, desc: record.description,  // ← TAMBAH
           approveUrl: `${BACKEND_URL}/api/approval/email-action?token=${approveToken}`,
           rejectUrl: `${BACKEND_URL}/api/approval/email-action?token=${rejectToken}`
         })
@@ -382,7 +386,8 @@ router.post('/:id/reject', requireAuth, requireManager, async (req, res) => {
     const record = result.rows[0];
     await notifyUser(record.employee_id, 'rejected', {
       date: record.date, startTime: record.start_time,
-      note: note || `Ditolak oleh ${user.name}`, rejectedBy: user.name
+      note: note || `Ditolak oleh ${user.name}`, rejectedBy: user.name,
+      reason: record.reason, desc: record.description  // ← TAMBAH
     });
 
     res.json(record);
@@ -412,6 +417,7 @@ router.post('/:id/request-revision', requireAuth, requireManager, async (req, re
     const record = result.rows[0];
     await notifyUser(record.employee_id, 'revision', {
       note, requestedBy: user.name
+      reason: record.reason, desc: record.description
     });
 
     res.json(record);
@@ -483,11 +489,21 @@ router.post('/:id/verify-result', requireAuth, requireManager, async (req, res) 
 
     const record = result.rows[0];
     if (action === 'approve') {
-      await notifyUser(record.employee_id, 'verifyApproved', { rating });
+      await notifyUser(record.employee_id, 'verifyApproved', { 
+        rating,
+        date: record.date, startTime: record.start_time,        // ← TAMBAH
+        reason: record.reason, desc: record.description          // ← TAMBAH
+      });
     } else if (action === 'revision') {
-      await notifyUser(record.employee_id, 'proofRevision', { note });
+      await notifyUser(record.employee_id, 'proofRevision', { 
+        note,
+        reason: record.reason, desc: record.description          // ← TAMBAH
+      });
     } else if (action === 'reject') {
-      await notifyUser(record.employee_id, 'verifyRejected', { note });
+      await notifyUser(record.employee_id, 'verifyRejected', { 
+        note,
+        reason: record.reason, desc: record.description          // ← TAMBAH
+      });
     }
 
     res.json(record);
