@@ -271,7 +271,9 @@ router.post('/', requireAuth, async (req, res) => {
   let approvalChainIds = [];
 
   if (!isManager) {
+    // ===========================
     // STAFF AJUKAN SENDIRI
+    // ===========================
     approvalChainIds = await buildApprovalChain(user.id);
     
     if (approvalChainIds.length === 0) {
@@ -288,25 +290,11 @@ router.post('/', requireAuth, async (req, res) => {
     }
   
     initialStatus = 'pending';
-  }
-    
-    if (approvalChainIds.length === 0) {
-      return res.status(400).json({ 
-        error: 'Belum ada approver untuk kamu. Hubungi admin untuk set atasan langsung.' 
-      });
-    }
-
-    const hasFinal = await validateChainHasFinal(approvalChainIds);
-    if (!hasFinal) {
-      return res.status(400).json({ 
-        error: 'Chain approver tidak punya level 4+ (Manager). Hubungi admin untuk lengkapi struktur atasan.' 
-      });
-    }
-
-    initialStatus = 'pending';
 
   } else {
+    // ===========================
     // MANAGER TUGASKAN LEMBUR
+    // ===========================
     if (userLevel >= 4) {
       // Manager level 4+ → langsung approve
       initialStatus = 'approved';
