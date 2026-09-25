@@ -175,9 +175,6 @@ async function buildApprovalChain(employeeId) {
   return finalChain;
 }
 
-  console.log(`📋 Chain untuk employee ${employeeId}: [${chain.join(',')}]`);
-  return chain;
-}
 
 async function validateChainHasFinal(chain) {
   if (chain.length === 0) return false;
