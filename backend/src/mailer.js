@@ -79,6 +79,17 @@ const infoBox = (title, text, color = '#e0e7ff', border = '#c7d2fe', textColor =
   </div>
 `;
 
+const reasonBox = (reason, desc) => `
+  <div style="background:#f8fafc;border-left:4px solid #6366f1;padding:14px 16px;border-radius:8px;margin:16px 0">
+    <p style="margin:0 0 8px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">📋 Alasan Lembur</p>
+    <p style="margin:0 0 ${desc ? '12px' : '0'};color:#0f172a;font-size:14px;font-weight:600;line-height:1.5">${reason}</p>
+    ${desc ? `
+      <p style="margin:0 0 8px;font-size:11px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">📝 Rencana Pekerjaan</p>
+      <p style="margin:0;color:#475569;font-size:13px;line-height:1.6">${desc}</p>
+    ` : ''}
+  </div>
+`;
+
 const wrap = (title, color, content, badge = '') => `
   <div style="font-family:'Segoe UI',system-ui,sans-serif;max-width:600px;margin:auto;background:#f7f7fb;padding:20px">
     <div style="background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);border:1px solid #e2e8f0">
@@ -115,7 +126,6 @@ export const templates = {
   // A. ALUR PENGAJUAN DARI STAFF (LEVEL 2)
   // ==========================================
 
-  // A1. Email ke ATASAN LANGSUNG (level 3) — ACTION
   newRequestDirect: (d) => ({
     subject: `[Lembur] 🔔 Pengajuan dari ${d.employeeName} — perlu approval kamu`,
     html: wrap('🔔 Perlu Approval Kamu', '#4f46e5', `
@@ -127,8 +137,8 @@ export const templates = {
         ${row('Jam Mulai', d.startTime)}
         ${row('Durasi', d.duration + ' jam')}
         ${row('Kategori', d.reason)}
-        ${row('Rencana', d.desc)}
       `)}
+      ${reasonBox(d.reason, d.desc)}
       ${d.approveUrl && d.rejectUrl ? btnGroup([
         { text: '✓ Setujui', url: d.approveUrl, color: '#059669' },
         { text: '✕ Tolak', url: d.rejectUrl, color: '#dc2626' },
@@ -140,7 +150,6 @@ export const templates = {
     `, 'ACTION')
   }),
 
-  // A2. Email ke FINAL APPROVER (level 4) — ACTION dengan opsi jump in
   newRequestFinal: (d) => ({
     subject: `[Lembur] 🔔 Pengajuan dari ${d.employeeName} — final approval`,
     html: wrap('🔔 Final Approval', '#4f46e5', `
@@ -155,6 +164,7 @@ export const templates = {
         ${row('Durasi', d.duration + ' jam')}
         ${row('Kategori', d.reason)}
       `)}
+      ${reasonBox(d.reason, d.desc)}
       ${!d.directApproved ? infoBox('⚠️ Atasan langsung belum review', `Kamu bisa <strong>jump in</strong> approve sekarang (lembur langsung jalan), atau tunggu <strong>${d.directApproverName}</strong> review dulu.`, '#fef3c7', '#fde68a', '#92400e') : infoBox('✓ Atasan langsung sudah approve', `Sekarang butuh approval kamu sebagai final approver. Setelah kamu approve, lembur bisa jalan.`, '#ecfdf5', '#a7f3d0', '#065f46')}
       ${d.approveUrl && d.rejectUrl ? btnGroup([
         { text: '✓ Approve Final', url: d.approveUrl, color: '#059669' },
@@ -166,7 +176,6 @@ export const templates = {
     `, 'ACTION')
   }),
 
-  // A3. Email ke STAFF (FYI: menunggu persetujuan)
   pendingApproval: (d) => ({
     subject: `[Lembur] ⏳ Pengajuan kamu sedang menunggu persetujuan`,
     html: wrap('⏳ Menunggu Persetujuan', '#64748b', `
@@ -176,6 +185,7 @@ export const templates = {
         ${row('Jam Mulai', d.startTime)}
         ${row('Durasi', d.duration + ' jam')}
       `)}
+      ${reasonBox(d.reason, d.desc)}
       ${infoBox('Alur approval', 'Atasan langsung review dulu → baru Manager (level 4+) final approve. Kamu akan dapat email di setiap tahap.', '#e0e7ff', '#c7d2fe', '#3730a3')}
       ${btnGroup([
         { text: '📱 Cek Status', url: APP_URL + '/employee.html', color: '#4f46e5' }
@@ -183,7 +193,6 @@ export const templates = {
     `, 'FYI')
   }),
 
-  // A4. Email ke FINAL APPROVER setelah atasan langsung approve — ACTION
   directApprovedNotifyFinal: (d) => ({
     subject: `[Lembur] ✅ Atasan langsung sudah approve — giliran kamu final`,
     html: wrap('✅ Atasan Langsung Approve', '#059669', `
@@ -192,11 +201,12 @@ export const templates = {
         ${row('Karyawan', d.employeeName)}
         ${row('Atasan Langsung', d.directApproverName)}
         ${row('Approved pada', d.directApprovedAt || '-')}
-        ${row('Catatan', d.directNote || '-')}
+        ${row('Catatan Atasan', d.directNote || '-')}
         ${row('Tanggal Lembur', d.date)}
         ${row('Jam Mulai', d.startTime)}
         ${row('Durasi', d.duration + ' jam')}
       `)}
+      ${reasonBox(d.reason, d.desc)}
       ${infoBox('⚡ Aksi kamu', 'Setelah kamu approve, lembur bisa langsung jalan. Timer auto-start akan aktif di jam yang ditentukan.', '#ecfdf5', '#a7f3d0', '#065f46')}
       ${d.approveUrl && d.rejectUrl ? btnGroup([
         { text: '✓ Approve Final', url: d.approveUrl, color: '#059669' },
@@ -208,7 +218,6 @@ export const templates = {
     `, 'ACTION')
   }),
 
-  // A5. Email FYI ke STAFF setelah atasan langsung approve
   partialApproval: (d) => ({
     subject: `[Lembur] ⏳ Atasan langsung sudah approve, tunggu final approval`,
     html: wrap('⏳ Persetujuan Bertahap', '#0ea5e9', `
@@ -218,6 +227,7 @@ export const templates = {
         ${row('Jam Mulai', d.startTime)}
         ${row('Status', '1 dari 2 tahap selesai')}
       `)}
+      ${reasonBox(d.reason, d.desc)}
       ${infoBox('Langkah selanjutnya', 'Sekarang menunggu <strong>final approval</strong> dari Manager. Setelah itu lembur bisa jalan.', '#e0e7ff', '#c7d2fe', '#3730a3')}
       ${btnGroup([
         { text: '📱 Cek Status', url: APP_URL + '/employee.html', color: '#4f46e5' }
@@ -229,7 +239,6 @@ export const templates = {
   // B. FINAL APPROVED / JUMP IN
   // ==========================================
 
-  // B1. Email ke STAFF — approved (via alur normal)
   approved: (d) => ({
     subject: '[Lembur] ✅ Pengajuan kamu disetujui final',
     html: wrap('✅ Disetujui Final', '#059669', `
@@ -239,6 +248,7 @@ export const templates = {
         ${row('Jam Mulai', d.startTime)}
         ${row('Final Approver', d.finalApproverName || '-')}
       `)}
+      ${reasonBox(d.reason, d.desc)}
       ${fyiBox('Timer akan otomatis berjalan saat jam tiba. Pastikan berada di area kantor (radius 100m) saat mulai.')}
       ${btnGroup([
         { text: '📱 Buka Sistem', url: APP_URL + '/employee.html', color: '#059669' }
@@ -246,7 +256,6 @@ export const templates = {
     `, 'ACTION')
   }),
 
-  // B2. Email ke STAFF — approved via jump in
   approvedJumpIn: (d) => ({
     subject: '[Lembur] ✅ Pengajuan kamu disetujui (jump in approve)',
     html: wrap('✅ Disetujui (Jump In)', '#059669', `
@@ -257,13 +266,13 @@ export const templates = {
         ${row('Jam Mulai', d.startTime)}
         ${row('Final Approver', d.finalApproverName)}
       `)}
+      ${reasonBox(d.reason, d.desc)}
       ${btnGroup([
         { text: '📱 Buka Sistem', url: APP_URL + '/employee.html', color: '#059669' }
       ])}
     `, 'ACTION')
   }),
 
-  // B3. Email FYI ke ATASAN LANGSUNG kalau di-jump-in
   jumpedInNotifyDirect: (d) => ({
     subject: `[Lembur] ℹ️ Manager sudah approve duluan — ${d.employeeName}`,
     html: wrap('ℹ️ Manager Sudah Approve', '#64748b', `
@@ -274,6 +283,7 @@ export const templates = {
         ${row('Approved pada', d.finalApprovedAt || '-')}
         ${row('Tanggal Lembur', d.date)}
       `)}
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
       ${fyiBox(`Kamu tidak perlu approve lagi. Lembur sudah disetujui dan bisa jalan.`, '#e0e7ff', '#c7d2fe', '#3730a3')}
       ${btnGroup([
         { text: '🔍 Buka Sistem', url: APP_URL + '/manager.html', color: '#4f46e5' }
@@ -294,8 +304,9 @@ export const templates = {
         ${row('Jam', d.startTime)}
         ${row('Ditolak oleh', d.rejectedBy || '-')}
       `)}
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
       <div style="background:#fef2f2;border:1px solid #fecaca;padding:12px;border-radius:12px;margin:16px 0">
-        <p style="margin:0;color:#991b1b"><strong>Alasan:</strong> ${d.note}</p>
+        <p style="margin:0;color:#991b1b"><strong>Alasan Penolakan:</strong> ${d.note}</p>
       </div>
       ${btnGroup([
         { text: '📱 Buka Sistem', url: APP_URL + '/employee.html', color: '#4f46e5' }
@@ -311,6 +322,7 @@ export const templates = {
         <p style="margin:0;color:#92400e"><strong>Catatan:</strong> ${d.note}</p>
       </div>
       ${infoBox('Diminta revisi oleh', d.requestedBy || 'Atasan', '#fef3c7', '#fde68a', '#92400e')}
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
       <p style="margin:0 0 16px;color:#0f172a">Kamu bisa mengubah <strong>tanggal, jam mulai, durasi</strong>, kategori, dan rencana pekerjaan.</p>
       ${btnGroup([
         { text: '✏️ Revisi Sekarang', url: APP_URL + '/employee.html', color: '#d97706' }
@@ -327,8 +339,8 @@ export const templates = {
         ${row('Jam Mulai', d.startTime)}
         ${row('Durasi', d.duration + ' jam')}
         ${row('Kategori', d.reason)}
-        ${row('Rencana', d.desc)}
       `)}
+      ${reasonBox(d.reason, d.desc)}
       ${d.approveUrl && d.rejectUrl ? btnGroup([
         { text: '✓ Setujui', url: d.approveUrl, color: '#059669' },
         { text: '✕ Tolak', url: d.rejectUrl, color: '#dc2626' },
@@ -350,6 +362,7 @@ export const templates = {
         ${row('Jam Mulai', d.startTime)}
         ${row('Durasi', d.duration + ' jam')}
       `)}
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
       ${btnGroup([
         { text: '🔍 Buka Sistem', url: APP_URL + '/manager.html', color: '#4f46e5' }
       ])}
@@ -369,6 +382,7 @@ export const templates = {
         ${row('Jam Mulai', d.startTime)}
         ${row('Durasi Rencana', d.duration + ' jam')}
       `)}
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
       ${fyiBox('Jangan keluar dari radius kantor, nanti lembur dihentikan otomatis. Setelah selesai, upload bukti hasil kerja.', '#e0e7ff', '#c7d2fe', '#3730a3')}
       ${btnGroup([
         { text: '📱 Buka Sistem', url: APP_URL + '/employee.html', color: '#0ea5e9' }
@@ -382,9 +396,14 @@ export const templates = {
       <p style="margin:0 0 16px;color:#0f172a">Karyawan telah selesai lembur dan upload bukti. Mohon verifikasi:</p>
       ${dataTable(`
         ${row('Karyawan', d.employeeName)}
+        ${row('Tanggal', d.date || '-')}
         ${row('Durasi Aktual', d.duration)}
-        ${row('Bukti', d.proof || '-')}
       `)}
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
+      <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px;border-radius:12px;margin:16px 0">
+        <p style="margin:0 0 6px;font-size:11px;color:#065f46;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">📎 Bukti Hasil Kerja</p>
+        <p style="margin:0;color:#065f46;font-size:14px;line-height:1.6">${d.proof || '-'}</p>
+      </div>
       ${btnGroup([
         { text: '🔍 Verifikasi Sekarang', url: APP_URL + '/manager.html', color: '#ea580c' }
       ])}
@@ -396,9 +415,11 @@ export const templates = {
     html: wrap('⏳ Bukti Terkirim', '#64748b', `
       <p style="margin:0 0 16px;color:#0f172a">Bukti hasil kerja kamu sudah terkirim ke atasan. Mohon tunggu verifikasi.</p>
       ${dataTable(`
+        ${row('Tanggal', d.date || '-')}
         ${row('Durasi Aktual', d.duration)}
         ${row('Waktu Submit', d.submittedAt || '-')}
       `)}
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
       ${fyiBox('Kamu akan dapat email setelah atasan verifikasi (approve, minta revisi, atau tolak).')}
     `, 'FYI')
   }),
@@ -407,6 +428,11 @@ export const templates = {
     subject: '[Lembur] ⭐ Hasil kerja kamu disetujui',
     html: wrap('⭐ Hasil Kerja Disetujui', '#059669', `
       <p style="margin:0 0 16px;color:#0f172a">Hasil lembur kamu telah <strong>diverifikasi dan disetujui</strong>.</p>
+      ${d.date ? dataTable(`
+        ${row('Tanggal', d.date)}
+        ${row('Jam Mulai', d.startTime || '-')}
+      `) : ''}
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
       <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:16px;border-radius:12px;margin:16px 0;text-align:center">
         <p style="font-size:32px;margin:0;color:#f59e0b;letter-spacing:4px">${'★'.repeat(d.rating)}${'☆'.repeat(5 - d.rating)}</p>
         <p style="margin:4px 0 0;font-size:12px;color:#065f46">Rating: ${d.rating}/5</p>
@@ -425,6 +451,7 @@ export const templates = {
       <div style="background:#fffbeb;border:1px solid #fde68a;padding:12px;border-radius:12px;margin:16px 0">
         <p style="margin:0;color:#92400e"><strong>Catatan:</strong> ${d.note}</p>
       </div>
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
       ${btnGroup([
         { text: '📎 Upload Ulang', url: APP_URL + '/employee.html', color: '#d97706' }
       ])}
@@ -437,9 +464,13 @@ export const templates = {
       <p style="margin:0 0 16px;color:#0f172a"><strong>${d.employeeName}</strong> telah kirim ulang bukti. Mohon verifikasi:</p>
       ${dataTable(`
         ${row('Karyawan', d.employeeName)}
-        ${row('Bukti Baru', d.proof || '-')}
         ${row('Waktu', d.submittedAt || '-')}
       `)}
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
+      <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px;border-radius:12px;margin:16px 0">
+        <p style="margin:0 0 6px;font-size:11px;color:#065f46;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">📎 Bukti Baru</p>
+        <p style="margin:0;color:#065f46;font-size:14px;line-height:1.6">${d.proof || '-'}</p>
+      </div>
       ${btnGroup([
         { text: '🔍 Verifikasi Sekarang', url: APP_URL + '/manager.html', color: '#ea580c' }
       ])}
@@ -453,6 +484,7 @@ export const templates = {
       <div style="background:#fef2f2;border:1px solid #fecaca;padding:12px;border-radius:12px;margin:16px 0">
         <p style="margin:0;color:#991b1b"><strong>Alasan:</strong> ${d.note}</p>
       </div>
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
       <p style="margin:0 0 16px;color:#0f172a">Lembur ini tidak akan dihitung.</p>
       ${btnGroup([
         { text: '📱 Buka Sistem', url: APP_URL + '/employee.html', color: '#4f46e5' }
@@ -475,6 +507,7 @@ export const templates = {
         ${row('Tanggal', d.date || '-')}
         ${row('Durasi', d.duration || '-')}
       `)}
+      ${d.originalReason ? reasonBox(d.originalReason, d.desc) : ''}
       <p style="margin:0 0 16px;color:#0f172a">Hubungi atasan kalau kamu merasa ini keliru.</p>
       ${btnGroup([
         { text: '📱 Buka Sistem', url: APP_URL + '/employee.html', color: '#4f46e5' }
@@ -491,7 +524,8 @@ export const templates = {
         ${row('Tanggal', d.date || '-')}
         ${row('Durasi', d.duration || '-')}
       `)}
-      ${fyiBox(`<strong>Alasan:</strong> ${d.reason}`, '#fef2f2', '#fecaca', '#991b1b')}
+      ${d.originalReason ? reasonBox(d.originalReason, d.desc) : ''}
+      ${fyiBox(`<strong>Alasan tidak dihitung:</strong> ${d.reason}`, '#fef2f2', '#fecaca', '#991b1b')}
     `, 'FYI')
   }),
 
@@ -506,6 +540,7 @@ export const templates = {
         ${row('Jarak dari Kantor', d.distance ? d.distance + 'm' : '-')}
         ${row('Waktu Berhenti', d.stoppedAt || '-')}
       `)}
+      ${d.originalReason ? reasonBox(d.originalReason, d.desc) : ''}
       <p style="margin:0 0 16px;color:#0f172a">Lembur bisa diajukan ulang saat sudah kembali di area kantor.</p>
       ${btnGroup([
         { text: '📱 Buka Sistem', url: APP_URL + '/employee.html', color: '#4f46e5' }
@@ -522,6 +557,7 @@ export const templates = {
         ${row('Jarak', d.distance ? d.distance + 'm' : '-')}
         ${row('Waktu', d.stoppedAt || '-')}
       `)}
+      ${d.originalReason ? reasonBox(d.originalReason, d.desc) : ''}
       ${fyiBox(`<strong>Alasan:</strong> ${d.reason}`, '#fef2f2', '#fecaca', '#991b1b')}
     `, 'FYI')
   }),
@@ -539,8 +575,8 @@ export const templates = {
         ${row('Jam Mulai', d.startTime)}
         ${row('Durasi', d.duration + ' jam')}
         ${row('Kategori', d.reason)}
-        ${row('Instruksi', d.desc)}
       `)}
+      ${reasonBox(d.reason, d.desc)}
       ${fyiBox('Lembur ini sudah otomatis disetujui. Timer akan jalan saat jam tiba.')}
       ${btnGroup([
         { text: '📱 Buka Sistem', url: APP_URL + '/employee.html', color: '#4f46e5' }
@@ -556,7 +592,9 @@ export const templates = {
         ${row('Karyawan', d.employeeName)}
         ${row('Tanggal', d.date)}
         ${row('Jam Mulai', d.startTime)}
+        ${row('Durasi', d.duration + ' jam')}
       `)}
+      ${d.reason ? reasonBox(d.reason, d.desc) : ''}
     `, 'FYI')
   })
 };
