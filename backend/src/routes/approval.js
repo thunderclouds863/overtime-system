@@ -449,7 +449,7 @@ router.post('/:id/request-revision', requireAuth, requireManager, async (req, re
 
     const record = result.rows[0];
     await notifyUser(record.employee_id, 'revision', {
-      note, requestedBy: user.name
+      note, requestedBy: user.name,
       reason: record.reason, desc: record.description
     });
 
@@ -530,12 +530,12 @@ router.post('/:id/verify-result', requireAuth, requireManager, async (req, res) 
     } else if (action === 'revision') {
       await notifyUser(record.employee_id, 'proofRevision', { 
         note,
-        reason: record.reason, desc: record.description          // ← TAMBAH
+        reason: record.reason, desc: record.description          
       });
     } else if (action === 'reject') {
       await notifyUser(record.employee_id, 'verifyRejected', { 
         note,
-        reason: record.reason, desc: record.description          // ← TAMBAH
+        reason: record.reason, desc: record.description          
       });
     }
 
