@@ -115,7 +115,7 @@ async function notifyAllManagers(templateName, data) {
 async function buildApprovalChain(employeeId) {
   const chain = [];
   let currentId = employeeId;
-  const visited = new Set();
+  const visited = new Set([employeeId]);
 
   for (let i = 0; i < 10; i++) {
     if (visited.has(currentId)) break;
@@ -133,6 +133,11 @@ async function buildApprovalChain(employeeId) {
 
     const approverId = parseInt(approverIds[0]);
     if (!approverId) break;
+
+    if (visited.has(approverId)) {
+      console.warn(`⚠️ Loop terdeteksi di chain: ${approverId} sudah ada di visited`);
+      break;
+    }
 
     const approverResult = await query(
       'SELECT id, level, full_name, is_active FROM users WHERE id = $1',
