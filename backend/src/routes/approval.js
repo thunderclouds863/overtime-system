@@ -111,7 +111,7 @@ router.get('/email-action', async (req, res) => {
       await notifyUser(record.employee_id, 'rejected', {
         date: record.date, startTime: record.start_time,
         note: `Ditolak oleh ${approverName}`, rejectedBy: approverName,
-        reason: record.reason, desc: record.description  // ← TAMBAH
+        reason: record.reason, desc: record.description  
       });
       return res.send(renderEmailActionPage('rejected', `Pengajuan <strong>${record.employee_name}</strong> ditolak. Karyawan sudah dapat notifikasi.`));
     }
@@ -215,12 +215,14 @@ router.get('/email-action', async (req, res) => {
         await notifyUser(record.employee_id, 'approvedJumpIn', {
           finalApproverName: approverName,
           directApproverName: '-',
-          date: record.date, startTime: record.start_time
+          date: record.date, startTime: record.start_time,
+          reason: record.reason, desc: record.description
         });
       } else {
         await notifyUser(record.employee_id, 'approved', {
           finalApproverName: approverName,
-          date: record.date, startTime: record.start_time
+          date: record.date, startTime: record.start_time,
+          reason: record.reason, desc: record.description
         });
       }
 
@@ -375,7 +377,8 @@ router.post('/:id/approve-final', requireAuth, requireManager, async (req, res) 
     if (jumpedIn) {
       await notifyUser(record.employee_id, 'approvedJumpIn', {
         finalApproverName: user.name,
-        date: record.date, startTime: record.start_time
+        date: record.date, startTime: record.start_time,
+        reason: record.reason, desc: record.description
       });
       const chain = record.approval_chain || [];
       if (chain.length > 0) {
@@ -383,13 +386,15 @@ router.post('/:id/approve-final', requireAuth, requireManager, async (req, res) 
           employeeName: record.employee_name,
           finalApproverName: user.name,
           finalApprovedAt: new Date().toLocaleString('id-ID'),
-          date: record.date
+          date: record.date,
+          reason: record.reason, desc: record.description
         });
       }
     } else {
       await notifyUser(record.employee_id, 'approved', {
         finalApproverName: user.name,
-        date: record.date, startTime: record.start_time
+        date: record.date, startTime: record.start_time,
+        reason: record.reason, desc: record.description
       });
     }
 
