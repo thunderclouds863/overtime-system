@@ -114,50 +114,66 @@ async function notifyAllManagers(templateName, data) {
 
 async function buildApprovalChain(employeeId) {
   const chain = [];
-  let currentId = employeeId;
-  const visited = new Set();   // ← kosong, employeeId jangan dimasukin dulu
-
-  for (let i = 0; i < 10; i++) {
-    // Ambil user saat ini
-    const result = await query(
-      'SELECT id, approver_ids, level, full_name FROM users WHERE id = $1',
-      [currentId]
+  const visited = new Set([employeeId]);
+  
+  // BFS/DFS: ambil semua approver, urutkan berdasarkan level (paling rendah ke tinggi)
+  let currentIds = [employeeId];
+  
+  for (let depth = 0; depth < 10; depth++) {
+    const nextIds = new Set();
+    
+    for (const cid of currentIds) {
+      const result = await query(
+        'SELECT approver_ids FROM users WHERE id = $1',
+        [cid]
+      );
+      const user = result.rows[0];
+      if (!user) continue;
+      
+      const approverIds = (user.approver_ids || []).map(id => parseInt(id)).filter(id => !isNaN(id));
+      
+      for (const aid of approverIds) {
+        if (visited.has(aid)) continue;
+        visited.add(aid);
+        nextIds.add(aid);
+      }
+    }
+    
+    if (nextIds.size === 0) break;
+    
+    // Ambil semua info approver baru
+    const approversResult = await query(
+      'SELECT id, level, full_name, is_active FROM users WHERE id = ANY($1) AND is_active = true',
+      [Array.from(nextIds)]
     );
-    const user = result.rows[0];
-    if (!user) break;
-
-    // Tandai user ini udah dikunjungi
-    if (visited.has(user.id)) {
-      console.warn(`⚠️ Loop terdeteksi: user ${user.id} sudah dikunjungi`);
-      break;
+    
+    // Sort berdasarkan level number (paling rendah dulu = atasan langsung)
+    const sortedApprovers = approversResult.rows.sort((a, b) => levelNum(a.level) - levelNum(b.level));
+    
+    for (const approver of sortedApprovers) {
+      chain.push(approver.id);
     }
-    visited.add(user.id);
-
-    const approverIds = user.approver_ids || [];
-    if (approverIds.length === 0) break;
-
-    const approverId = parseInt(approverIds[0]);
-    if (!approverId || isNaN(approverId)) break;
-
-    // Ambil approver
-    const approverResult = await query(
-      'SELECT id, level, full_name, is_active FROM users WHERE id = $1',
-      [approverId]
-    );
-    const approver = approverResult.rows[0];
-    if (!approver) {
-      console.warn(`⚠️ Approver ${approverId} tidak ditemukan`);
-      break;
-    }
-    if (!approver.is_active) {
-      console.warn(`⚠️ Approver ${approver.full_name} tidak aktif`);
-      break;
-    }
-
-    // Push ke chain
-    chain.push(approverId);
-    currentId = approverId;
+    
+    currentIds = Array.from(nextIds);
   }
+  
+  // Sort chain berdasarkan level (paling rendah dulu)
+  // Ambil detail final
+  const finalResult = await query(
+    'SELECT id, level FROM users WHERE id = ANY($1)',
+    [chain]
+  );
+  const withLevels = chain.map(id => {
+    const u = finalResult.rows.find(r => r.id === id);
+    return { id, level: levelNum(u?.level) };
+  }).filter(x => x.id);
+  
+  withLevels.sort((a, b) => a.level - b.level);
+  
+  const finalChain = withLevels.map(x => x.id);
+  console.log(`📋 Chain untuk employee ${employeeId}: [${finalChain.join(',')}]`);
+  return finalChain;
+}
 
   console.log(`📋 Chain untuk employee ${employeeId}: [${chain.join(',')}]`);
   return chain;
