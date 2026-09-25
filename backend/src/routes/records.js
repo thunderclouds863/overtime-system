@@ -302,12 +302,30 @@ router.post('/', requireAuth, async (req, res) => {
   }
 
   try {
+    let isDirectAndFinal = false;
+    if (!isManager && approvalChainIds.length > 0) {
+      const allApproversResult = await query(
+        'SELECT id, level FROM users WHERE id = ANY($1)',
+        [approvalChainIds]
+      );
+      const approvers = approvalChainIds.map(id => 
+        allApproversResult.rows.find(r => r.id === id)
+      ).filter(Boolean);
+      
+      const directApprover = approvers[0];
+      const finalApprover = approvers.find(a => levelNum(a.level) >= 4);
+      
+      if (directApprover && finalApprover && directApprover.id === finalApprover.id) {
+        isDirectAndFinal = true;
+      }
+    }
+    
     const result = await query(
       `INSERT INTO overtime_records
        (employee_id, employee_name, date, start_time, planned_duration,
         planned_start, reason, description, source, status, is_holiday,
-        approval_chain, approval_progress)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        approval_chain, approval_progress, is_direct_and_final)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
       [
         targetId, targetName,
@@ -319,7 +337,8 @@ router.post('/', requireAuth, async (req, res) => {
         initialStatus,
         holiday,
         approvalChainIds,
-        0
+        0,
+        isDirectAndFinal 
       ]
     );
 
