@@ -190,7 +190,8 @@ router.get('/email-action', async (req, res) => {
         return res.send(renderEmailActionPage('error', `Hanya level 4+ (Manager) yang bisa final approve. Level kamu: ${approver?.level || '-'}`));
       }
 
-      const jumpedIn = !record.direct_approver_id;
+      const isDirectAndFinal = record.is_direct_and_final === true;
+      const jumpedIn = !record.direct_approver_id && !isDirectAndFinal;
       
       await query(
         `UPDATE overtime_records 
@@ -256,12 +257,41 @@ router.post('/:id/approve-direct', requireAuth, requireManager, async (req, res)
   }
 
   try {
+    // Re-evaluate is_direct_and_final setelah revisi
+    const chainForCheck = record.approval_chain || [];
+    let isDirectAndFinalAfterRevise = false;
+    if (chainForCheck.length > 0) {
+      const approversCheck = await query(
+        'SELECT id, level FROM users WHERE id = ANY($1)',
+        [chainForCheck]
+      );
+      const approvers = chainForCheck.map(id => 
+        approversCheck.rows.find(r => r.id === id)
+      ).filter(Boolean);
+      const directApprover = approvers[0];
+      const finalApprover = approvers.find(a => levelNum(a.level) >= 4);
+      if (directApprover && finalApprover && directApprover.id === finalApprover.id) {
+        isDirectAndFinalAfterRevise = true;
+      }
+    }
+    
     const result = await query(
-      `UPDATE overtime_records 
-       SET direct_approver_id = $1, direct_approval_at = NOW(), direct_approval_note = $2, updated_at = NOW()
-       WHERE id = $3 AND status = 'pending'
+      `UPDATE overtime_records
+       SET date = $1, start_time = $2, planned_duration = $3, planned_start = $4,
+           is_holiday = $5, reason = $6, description = $7, proof_text = $8,
+           status = 'pending', approval_progress = 0,
+           direct_approver_id = NULL, direct_approval_at = NULL, direct_approval_note = NULL,
+           final_approver_id = NULL, final_approval_at = NULL, jumped_in = FALSE,
+           is_direct_and_final = $9,
+           revision_count = revision_count + 1, updated_at = NOW()
+       WHERE id = $10
        RETURNING *`,
-      [user.id, note || null, id]
+      [
+        finalDate, finalStartTime, `${finalDuration} hours`, plannedStart.toISOString(),
+        holiday, reason || record.reason, description, proof || record.proof_text,
+        isDirectAndFinalAfterRevise,
+        id
+      ]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan / bukan pending' });
 
@@ -328,7 +358,8 @@ router.post('/:id/approve-final', requireAuth, requireManager, async (req, res) 
     if (!record) return res.status(404).json({ error: 'Tidak ditemukan' });
     if (record.status !== 'pending') return res.status(400).json({ error: 'Bukan pending' });
 
-    const jumpedIn = !record.direct_approver_id;
+    const isDirectAndFinal = record.is_direct_and_final === true;
+    const jumpedIn = !record.direct_approver_id && !isDirectAndFinal;
 
     await query(
       `UPDATE overtime_records 
@@ -491,8 +522,8 @@ router.post('/:id/verify-result', requireAuth, requireManager, async (req, res) 
     if (action === 'approve') {
       await notifyUser(record.employee_id, 'verifyApproved', { 
         rating,
-        date: record.date, startTime: record.start_time,        // ← TAMBAH
-        reason: record.reason, desc: record.description          // ← TAMBAH
+        date: record.date, startTime: record.start_time,       
+        reason: record.reason, desc: record.description         
       });
     } else if (action === 'revision') {
       await notifyUser(record.employee_id, 'proofRevision', { 
