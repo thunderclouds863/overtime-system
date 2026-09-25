@@ -180,7 +180,7 @@ export const templates = {
       `)}
       ${reasonBox(d.reason, d.desc)}
       ${d.isDirectAndFinal 
-      ? infoBox('👤 Kamu atasan langsung & final approver', `Kamu adalah <strong>atasan langsung</strong> dari <strong>${d.employeeName}</strong>. Karena levelmu 4+, approvalmu langsung <strong>final</strong> — lembur bisa jalan.`, '#e0e7ff', '#c7d2fe', '#3730a3')
+      ? infoBox('👤 Kamu atasan langsung & final approver', `Kamu adalah <strong>atasan langsung</strong> dari <strong>${d.employeeName}</strong>. Karena levelmu 4+, approvalmu langsung <strong>final</strong>.`, '#e0e7ff', '#c7d2fe', '#3730a3')
       : !d.directApproved 
         ? infoBox('⚠️ Atasan langsung belum review', `Kamu bisa <strong>jump in</strong> approve sekarang (lembur langsung jalan), atau tunggu <strong>${d.directApproverName}</strong> review dulu.`, '#fef3c7', '#fde68a', '#92400e') 
         : infoBox('✓ Atasan langsung sudah approve', `Sekarang butuh approval kamu sebagai final approver. Setelah kamu approve, lembur bisa jalan.`, '#ecfdf5', '#a7f3d0', '#065f46')}
