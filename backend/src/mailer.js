@@ -120,6 +120,20 @@ const dataTable = (rows) => `
   <table style="width:100%;border-collapse:collapse;margin:16px 0">${rows}</table>
 `;
 
+const fmtDate = (d) => {
+  if (!d) return '-';
+  try {
+    return new Date(d).toLocaleDateString('id-ID', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    });
+  } catch {
+    return String(d);
+  }
+};
+
 export const templates = {
 
   // ==========================================
@@ -190,7 +204,7 @@ export const templates = {
         ${row('Durasi', d.duration + ' jam')}
       `)}
       ${reasonBox(d.reason, d.desc)}
-      ${infoBox('Alur approval', 'Atasan langsung review dulu → baru Manager (level 4+) final approve. Kamu akan dapat email di setiap tahap.', '#e0e7ff', '#c7d2fe', '#3730a3')}
+      ${d.isDirectAndFinal    ? infoBox('Alur approval', 'Karena atasan langsung kamu juga punya wewenang final approval, cukup 1x approve saja. Setelah disetujui, lembur bisa langsung jalan.', '#e0e7ff', '#c7d2fe', '#3730a3')   : infoBox('Alur approval', 'Atasan langsung review dulu → baru Manager (level 4+) final approve. Kamu akan dapat email di setiap tahap.', '#e0e7ff', '#c7d2fe', '#3730a3')}
       ${btnGroup([
         { text: '📱 Cek Status', url: APP_URL + '/employee.html', color: '#4f46e5' }
       ])}
@@ -202,7 +216,6 @@ export const templates = {
     html: wrap('✅ Atasan Langsung Approve', '#059669', `
       <p style="margin:0 0 16px;color:#0f172a"><strong>${d.directApproverName}</strong> (atasan langsung) sudah <strong>approve</strong> pengajuan ini. Sekarang butuh final approval kamu:</p>
       ${dataTable(`
-        ${reasonBox(d.reason, d.desc)}
         ${row('Karyawan', d.employeeName)}
         ${row('Atasan Langsung', d.directApproverName)}
         ${row('Approved pada', d.directApprovedAt || '-')}
