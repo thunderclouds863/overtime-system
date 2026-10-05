@@ -964,8 +964,8 @@ async function submitRequest() {
 
   if (!date || !reason || !desc) return toast('Lengkapi semua field *', 'bg-red-600');
   if (durasi < 1) return toast('Durasi minimal 1 jam', 'bg-red-600');
-  const planned = timeToDate(date, start);
-  if (planned < new Date()) return toast('Jam mulai sudah terlewat', 'bg-red-600');
+  // Jam mulai TIDAK dicek — lembur tetap dihitung dari 17:00 / 08:00
+  // Karyawan boleh ajukan kapan saja sebelum jam 18:00
 
   const originalText = btn.textContent;
   btn.disabled = true;
@@ -998,7 +998,6 @@ async function submitRequest() {
     btn.textContent = originalText;
   }
 }
-
 async function manualStart(recId) {
   toast('Verifikasi GPS...', 'bg-brand-600');
   const gps = await fetchGPS();
