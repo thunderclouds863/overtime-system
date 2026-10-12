@@ -11,6 +11,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 tailwind.config = {
   theme: {
@@ -48,26 +50,6 @@ tailwind.config = {
   .stat-grad-5 { background: linear-gradient(135deg, #ec4899, #f43f5e); }
   .stat-grad-6 { background: linear-gradient(135deg, #8b5cf6, #d946ef); }
   @media (max-width: 767px) { main { padding-bottom: 90px; } }
-
-  /* ============ PDF STYLING ============ */
-  .pdf-page {
-    width: 210mm;
-    min-height: 297mm;
-    padding: 12mm 15mm;
-    background: #ffffff;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', sans-serif;
-    font-size: 11px;
-    line-height: 1.4;
-    color: #0f172a;
-    page-break-after: always;
-  }
-  .pdf-page:last-child { page-break-after: auto; }
-  .pdf-page h1 { font-size: 16px; margin: 0; }
-  .pdf-page h2 { font-size: 10px; margin: 0 0 6px 0; }
-  .pdf-page table { font-size: 10.5px; }
-  .pdf-page td { padding: 4px 8px !important; }
-  .pdf-page p { margin: 0 0 4px 0; }
 </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
@@ -263,12 +245,12 @@ tailwind.config = {
   <section id="tab-rekap" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Download Rekap</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Export data lembur ke Excel atau PDF</p>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Export ke Excel atau PDF (semua bukti sekaligus)</p>
     </div>
 
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-6 max-w-2xl">
       <div class="bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 md:p-4 mb-5">
-        <p class="text-xs text-brand-900"><strong>💡 Info:</strong> Excel berisi data lengkap. PDF berisi bukti per record (bisa semua sekaligus).</p>
+        <p class="text-xs text-brand-900"><strong>💡 Info:</strong> Excel berisi data lengkap + hyperlink cetak. PDF berisi bukti lembur lengkap dengan GPS, approval, dan penilaian.</p>
       </div>
 
       <div class="grid md:grid-cols-2 gap-3 md:gap-4">
@@ -298,16 +280,10 @@ tailwind.config = {
         </div>
       </div>
 
-      <div class="flex flex-col gap-2 md:gap-3 mt-6">
-        <button onclick="downloadRekap()" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-500/25 active:scale-[0.98]">
-          📥 Download Excel
-        </button>
-        <button onclick="downloadRekapPDF()" id="btnDownloadRekapPDF" class="w-full bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-red-500/25 active:scale-[0.98]">
-          📄 Download PDF Semua
-        </button>
-        <button onclick="previewRekap()" class="w-full border border-brand-200 text-brand-700 hover:bg-brand-50 font-bold py-3.5 rounded-2xl transition active:scale-[0.98]">
-          👁 Preview Data
-        </button>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 mt-6">
+        <button onclick="downloadRekap()" id="btnDownloadExcel" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-500/25 active:scale-[0.98]">📥 Download Excel</button>
+        <button onclick="downloadRekapPDF()" id="btnDownloadRekapPDF" class="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-red-500/25 active:scale-[0.98]">📄 Download PDF Semua</button>
+        <button onclick="previewRekap()" class="md:col-span-2 border border-brand-200 text-brand-700 hover:bg-brand-50 font-bold py-3.5 rounded-2xl transition active:scale-[0.98]">👁 Preview Data</button>
       </div>
 
       <div id="rekapPreview" class="mt-5 hidden">
@@ -392,7 +368,7 @@ tailwind.config = {
           <div id="approverList" class="mt-1.5 border border-slate-200 rounded-2xl p-2 max-h-40 overflow-y-auto space-y-1 bg-slate-50">
             <p class="text-xs text-slate-400 text-center py-2">Memuat atasan...</p>
           </div>
-          <p class="text-[10px] text-slate-400 mt-1">Centang atasan langsung</p>
+          <p class="text-[10px] text-slate-400 mt-1">Centang atasan langsung (untuk approval bertingkat)</p>
         </div>
       </div>
       <div class="flex gap-2 mt-5 pt-4 border-t border-slate-100">
@@ -739,9 +715,9 @@ function resetFilter() {
 }
 
 // ============================================
-// RENDER HTML untuk PDF (digunakan single & bulk)
+// BUILD BUKTI HTML
 // ============================================
-function buildBuktiHTML(r, pageInfo = '') {
+function buildBuktiHTML(r, pageLabel = '') {
   const statusText = statusLabel(r.status);
   const verifyStars = r.verify_rating ? '★'.repeat(r.verify_rating) + '☆'.repeat(5 - r.verify_rating) : '-';
   const approvedDate = r.approved_at ? new Date(r.approved_at).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
@@ -758,91 +734,93 @@ function buildBuktiHTML(r, pageInfo = '') {
   const verifyHash = Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
 
   return `
-    <div style="display:flex;align-items:center;gap:14px;border-bottom:3px solid #6366f1;padding-bottom:12px;margin-bottom:16px">
-      <img src="logo-cimory.png" alt="Cimory" style="width:50px;height:50px;object-fit:contain;flex-shrink:0" crossorigin="anonymous">
+    <div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #6366f1;padding-bottom:16px;margin-bottom:24px">
+      <img src="logo-cimory.png" alt="Cimory" style="width:60px;height:60px;object-fit:contain;flex-shrink:0" crossorigin="anonymous">
       <div style="flex:1">
-        <h1 style="margin:0;font-size:16px;color:#0f172a;font-weight:800">BUKTI PELAKSANAAN LEMBUR</h1>
-        <p style="margin:2px 0 0;font-size:10px;color:#64748b">Sistem Monitoring Lembur Cimory</p>
+        <h1 style="margin:0;font-size:20px;color:#0f172a;font-weight:800">BUKTI PELAKSANAAN LEMBUR</h1>
+        <p style="margin:2px 0 0;font-size:12px;color:#64748b">Sistem Monitoring Lembur Cimory</p>
       </div>
-      <div style="text-align:right;font-size:9px;color:#94a3b8">
+      <div style="text-align:right;font-size:10px;color:#94a3b8">
         <p style="margin:0">No. Bukti</p>
-        <p style="margin:2px 0 0;font-weight:700;color:#6366f1;font-size:13px">#OT-${String(r.id).padStart(5,'0')}</p>
+        <p style="margin:2px 0 0;font-weight:700;color:#6366f1;font-size:14px">#OT-${String(r.id).padStart(5,'0')}</p>
+        ${pageLabel ? `<p style="margin:4px 0 0;font-size:9px">${pageLabel}</p>` : ''}
       </div>
     </div>
 
-    <div style="margin-bottom:14px">
-      <h2 style="margin:0 0 8px;font-size:10px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Informasi Karyawan</h2>
-      <table style="width:100%;border-collapse:collapse;font-size:11px">
-        <tr><td style="padding:4px 0;color:#64748b;width:120px">Nama</td><td style="padding:4px 0;font-weight:600;color:#0f172a">${r.employee_name}</td></tr>
-        <tr><td style="padding:4px 0;color:#64748b">Email</td><td style="padding:4px 0;color:#0f172a">${r.employee_email || '-'}</td></tr>
-        <tr><td style="padding:4px 0;color:#64748b">Level</td><td style="padding:4px 0;color:#0f172a">${r.employee_level || '-'}</td></tr>
-        <tr><td style="padding:4px 0;color:#64748b">Jabatan</td><td style="padding:4px 0;color:#0f172a">${r.jabatan || '-'}</td></tr>
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Informasi Karyawan</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:8px 0;color:#64748b;width:140px">Nama</td><td style="padding:8px 0;font-weight:600;color:#0f172a">${r.employee_name}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Email</td><td style="padding:8px 0;color:#0f172a">${r.employee_email || '-'}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Level</td><td style="padding:8px 0;color:#0f172a">${r.employee_level || '-'}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Jabatan</td><td style="padding:8px 0;color:#0f172a">${r.jabatan || '-'}</td></tr>
       </table>
     </div>
 
-    <div style="margin-bottom:14px">
-      <h2 style="margin:0 0 8px;font-size:10px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Detail Lembur</h2>
-      <table style="width:100%;border-collapse:collapse;font-size:11px;background:#f8fafc;border-radius:6px">
-        <tr><td style="padding:6px 10px;color:#64748b;width:120px">Tanggal</td><td style="padding:6px 10px;font-weight:600;color:#0f172a">${new Date(r.date).toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'})} ${r.is_holiday ? '(Hari Libur)' : '(Hari Kerja)'}</td></tr>
-        <tr><td style="padding:6px 10px;color:#64748b">Jam Rencana</td><td style="padding:6px 10px;color:#0f172a">${r.start_time} · ${r.planned_hours || 0} jam</td></tr>
-        <tr><td style="padding:6px 10px;color:#64748b">Waktu Aktual</td><td style="padding:6px 10px;color:#0f172a">${actualStart} — ${actualEnd}</td></tr>
-        <tr><td style="padding:6px 10px;color:#64748b">Durasi Aktual</td><td style="padding:6px 10px;font-weight:700;color:#10b981">${r.actual_hours ? parseFloat(r.actual_hours).toFixed(2) + ' jam' : '-'}</td></tr>
-        <tr><td style="padding:6px 10px;color:#64748b">Kategori</td><td style="padding:6px 10px;color:#0f172a">${r.reason}</td></tr>
-        <tr><td style="padding:6px 10px;color:#64748b">Sumber</td><td style="padding:6px 10px;color:#0f172a">${r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan'}</td></tr>
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Detail Lembur</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;background:#f8fafc;border-radius:8px;padding:12px">
+        <tr><td style="padding:8px 12px;color:#64748b;width:140px">Tanggal</td><td style="padding:8px 12px;font-weight:600;color:#0f172a">${new Date(r.date).toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'})} ${r.is_holiday ? '(Hari Libur)' : '(Hari Kerja)'}</td></tr>
+        <tr><td style="padding:8px 12px;color:#64748b">Jam Rencana</td><td style="padding:8px 12px;color:#0f172a">${r.start_time} · ${r.planned_hours || 0} jam</td></tr>
+        <tr><td style="padding:8px 12px;color:#64748b">Waktu Aktual</td><td style="padding:8px 12px;color:#0f172a">${actualStart} — ${actualEnd}</td></tr>
+        <tr><td style="padding:8px 12px;color:#64748b">Durasi Aktual</td><td style="padding:8px 12px;font-weight:700;color:#10b981">${r.actual_hours ? parseFloat(r.actual_hours).toFixed(2) + ' jam' : '-'}</td></tr>
+        <tr><td style="padding:8px 12px;color:#64748b">Kategori</td><td style="padding:8px 12px;color:#0f172a">${r.reason}</td></tr>
+        <tr><td style="padding:8px 12px;color:#64748b">Sumber</td><td style="padding:8px 12px;color:#0f172a">${r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan'}</td></tr>
       </table>
     </div>
 
-    <div style="margin-bottom:14px">
-      <h2 style="margin:0 0 8px;font-size:10px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Rencana Pekerjaan</h2>
-      <div style="background:#f8fafc;padding:8px 10px;border-radius:6px;font-size:11px;color:#0f172a;line-height:1.5">${r.description || '-'}</div>
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Rencana Pekerjaan</h2>
+      <div style="background:#f8fafc;padding:12px;border-radius:8px;font-size:13px;color:#0f172a;line-height:1.6">${r.description || '-'}</div>
     </div>
 
-    <div style="margin-bottom:14px">
-      <h2 style="margin:0 0 8px;font-size:10px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Bukti Hasil Kerja</h2>
-      <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:8px 10px;border-radius:6px;font-size:11px;color:#065f46;line-height:1.5">
-        ${r.proof_text || '(Belum ada bukti)'}
-        ${r.proof_file_name ? `<p style="margin:6px 0 0;font-size:10px;color:#059669">📎 ${r.proof_file_name}</p>` : ''}
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Bukti Hasil Kerja</h2>
+      <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px;border-radius:8px;font-size:13px;color:#065f46;line-height:1.6">
+        ${r.proof_text || '(Belum ada bukti yang diupload)'}
+        ${r.proof_file_name ? `<p style="margin:8px 0 0;font-size:11px;color:#059669">📎 ${r.proof_file_name}</p>` : ''}
+        ${r.proof_uploaded_at ? `<p style="margin:4px 0 0;font-size:10px;color:#94a3b8">Diunggah: ${new Date(r.proof_uploaded_at).toLocaleString('id-ID')}</p>` : ''}
       </div>
     </div>
 
-    <div style="margin-bottom:14px">
-      <h2 style="margin:0 0 8px;font-size:10px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Persetujuan Atasan</h2>
-      <div style="border:1px solid #e2e8f0;padding:10px;border-radius:6px;font-size:11px">
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Persetujuan Atasan</h2>
+      <div style="border:1px solid #e2e8f0;padding:16px;border-radius:8px;font-size:13px">
         <table style="width:100%;border-collapse:collapse">
-          <tr><td style="padding:4px 0;color:#64748b;width:120px">Status</td><td style="padding:4px 0;font-weight:700;color:${r.status === 'completed' ? '#10b981' : r.status === 'rejected' ? '#dc2626' : '#f59e0b'}">${statusText}</td></tr>
-          ${r.approved_at ? `<tr><td style="padding:4px 0;color:#64748b">Disetujui</td><td style="padding:4px 0;color:#0f172a">${approvedDate}</td></tr>` : ''}
-          ${r.approval_note ? `<tr><td style="padding:4px 0;color:#64748b;vertical-align:top">Catatan</td><td style="padding:4px 0;color:#0f172a;font-style:italic">"${r.approval_note}"</td></tr>` : ''}
+          <tr><td style="padding:6px 0;color:#64748b;width:140px">Status</td><td style="padding:6px 0;font-weight:700;color:${r.status === 'completed' ? '#10b981' : r.status === 'rejected' ? '#dc2626' : '#f59e0b'}">${statusText}</td></tr>
+          ${r.approved_at ? `<tr><td style="padding:6px 0;color:#64748b">Disetujui Pada</td><td style="padding:6px 0;color:#0f172a">${approvedDate}</td></tr>` : ''}
+          ${r.approval_note ? `<tr><td style="padding:6px 0;color:#64748b;vertical-align:top">Catatan</td><td style="padding:6px 0;color:#0f172a;font-style:italic">"${r.approval_note}"</td></tr>` : ''}
         </table>
       </div>
     </div>
 
     ${r.verify_rating ? `
-    <div style="margin-bottom:14px">
-      <h2 style="margin:0 0 8px;font-size:10px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Penilaian Hasil Kerja</h2>
-      <div style="border:1px solid #e2e8f0;padding:10px;border-radius:6px;font-size:11px;text-align:center;background:#fefce8">
-        <p style="margin:0;font-size:24px;letter-spacing:4px;color:#f59e0b">${verifyStars}</p>
-        <p style="margin:6px 0 0;font-weight:700;color:#0f172a">Rating: ${r.verify_rating}/5</p>
-        ${r.verify_note ? `<p style="margin:6px 0 0;font-style:italic;color:#475569;font-size:10px">"${r.verify_note}"</p>` : ''}
-        ${r.verified_at ? `<p style="margin:6px 0 0;font-size:9px;color:#94a3b8">Diverifikasi: ${verifiedDate}${r.verified_by_level ? ' · Level ' + r.verified_by_level : ''}</p>` : ''}
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Penilaian Hasil Kerja</h2>
+      <div style="border:1px solid #e2e8f0;padding:16px;border-radius:8px;font-size:13px;text-align:center;background:#fefce8">
+        <p style="margin:0;font-size:32px;letter-spacing:6px;color:#f59e0b">${verifyStars}</p>
+        <p style="margin:8px 0 0;font-weight:700;color:#0f172a">Rating: ${r.verify_rating}/5</p>
+        ${r.verify_note ? `<p style="margin:8px 0 0;font-style:italic;color:#475569">"${r.verify_note}"</p>` : ''}
+        ${r.verified_at ? `<p style="margin:8px 0 0;font-size:11px;color:#94a3b8">Diverifikasi: ${verifiedDate}${r.verified_by_level ? ' · Level ' + r.verified_by_level : ''}</p>` : ''}
       </div>
     </div>
     ` : ''}
 
-    <div style="margin-top:20px;padding-top:10px;border-top:2px dashed #cbd5e1;display:flex;justify-content:space-between;align-items:center;font-size:9px;color:#94a3b8">
+    <div style="margin-top:32px;padding-top:16px;border-top:2px dashed #cbd5e1;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#94a3b8">
       <div>
-        ${pageInfo ? `<p style="margin:0">${pageInfo}</p>` : ''}
-        <p style="margin:2px 0 0">Dicetak: ${new Date().toLocaleString('id-ID')}</p>
+        <p style="margin:0">Dokumen ini digenerate otomatis oleh sistem</p>
+        <p style="margin:4px 0 0">Dicetak: ${new Date().toLocaleString('id-ID')}</p>
       </div>
       <div style="text-align:right">
         <p style="margin:0">Hash Verifikasi</p>
-        <p style="margin:2px 0 0;font-family:monospace;font-weight:700;color:#6366f1;font-size:11px">${verifyHash}</p>
+        <p style="margin:4px 0 0;font-family:monospace;font-weight:700;color:#6366f1;font-size:12px">${verifyHash}</p>
       </div>
     </div>
   `;
 }
 
 // ============================================
-// PDF SINGLE
+// OPEN BUKTI (SINGLE)
 // ============================================
 async function openBukti(recordId) {
   try {
@@ -851,8 +829,6 @@ async function openBukti(recordId) {
     if (!r) return toast('Record tidak ditemukan', 'bg-red-600');
 
     currentBuktiRecord = r;
-
-    // Render preview di modal (bukan yang di-PDF)
     document.getElementById('buktiContent').innerHTML = buildBuktiHTML(r);
 
     document.getElementById('modalBukti').classList.remove('hidden');
@@ -868,6 +844,9 @@ function closeBuktiModal() {
   currentBuktiRecord = null;
 }
 
+// ============================================
+// DOWNLOAD PDF — SINGLE
+// ============================================
 async function downloadBuktiPDF() {
   if (!currentBuktiRecord) return toast('Tidak ada bukti untuk dicetak', 'bg-red-600');
 
@@ -876,23 +855,20 @@ async function downloadBuktiPDF() {
   btn.disabled = true;
   btn.textContent = '⏳ Membuat PDF...';
 
-  // Buat container off-screen dengan ukuran A4 yang benar
-  const container = document.createElement('div');
-  container.style.position = 'fixed';
-  container.style.left = '-9999px';
-  container.style.top = '0';
-  container.style.width = '210mm';
-  container.style.background = '#ffffff';
-  container.innerHTML = `
-    <div class="pdf-page">
-      ${buildBuktiHTML(currentBuktiRecord)}
-    </div>
-  `;
-  document.body.appendChild(container);
-
   try {
-    // Tunggu logo ter-load
-    await new Promise(r => setTimeout(r, 1200));
+    const element = document.getElementById('buktiContent');
+
+    const originalWidth = element.style.width;
+    const originalMaxWidth = element.style.maxWidth;
+    const originalPadding = element.style.padding;
+
+    element.style.width = '210mm';
+    element.style.maxWidth = '210mm';
+    element.style.padding = '12mm 15mm';
+    element.style.background = '#ffffff';
+    element.style.boxSizing = 'border-box';
+
+    await new Promise(r => setTimeout(r, 1000));
 
     const filename = `Bukti-Lembur_${String(currentBuktiRecord.id).padStart(5,'0')}_${currentBuktiRecord.employee_name.replace(/\s+/g,'-')}_${currentBuktiRecord.date}.pdf`;
 
@@ -907,103 +883,30 @@ async function downloadBuktiPDF() {
         backgroundColor: '#ffffff',
         logging: false,
         scrollX: 0,
-        scrollY: 0,
-        windowWidth: container.scrollWidth,
-        windowHeight: container.scrollHeight
+        scrollY: 0
       },
       jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
       pagebreak: { mode: ['avoid-all'] }
     };
 
-    await html2pdf().set(opt).from(container).save();
+    await html2pdf().set(opt).from(element).save();
+
+    element.style.width = originalWidth;
+    element.style.maxWidth = originalMaxWidth;
+    element.style.padding = originalPadding;
+
     toast('✅ PDF berhasil di-download', 'bg-emerald-600');
   } catch (err) {
     console.error('PDF error:', err);
     toast('❌ Gagal buat PDF: ' + err.message, 'bg-red-600');
   } finally {
-    document.body.removeChild(container);
     btn.disabled = false;
     btn.textContent = originalText;
   }
 }
 
 // ============================================
-// PDF BULK (semua record)
-// ============================================
-async function downloadRekapPDF() {
-  const btn = document.getElementById('btnDownloadRekapPDF');
-  const originalText = btn.textContent;
-
-  try {
-    const data = await fetchRekapData();
-    if (data.length === 0) return toast('Tidak ada data', 'bg-amber-600');
-
-    btn.disabled = true;
-    btn.textContent = `⏳ Menyiapkan (${data.length} record)...`;
-
-    // Buat container off-screen
-    const container = document.createElement('div');
-    container.style.position = 'fixed';
-    container.style.left = '-9999px';
-    container.style.top = '0';
-    container.style.width = '210mm';
-    container.style.background = '#ffffff';
-
-    // Generate halaman per record
-    const pages = data.map((r, idx) => `
-      <div class="pdf-page">
-        ${buildBuktiHTML(r, `Halaman ${idx + 1} dari ${data.length}`)}
-      </div>
-    `).join('');
-
-    container.innerHTML = pages;
-    document.body.appendChild(container);
-
-    btn.textContent = `⏳ Render halaman...`;
-    // Tunggu semua logo ter-load
-    await new Promise(r => setTimeout(r, 1500 + (data.length * 100)));
-
-    btn.textContent = `⏳ Generate PDF...`;
-
-    const start = document.getElementById('rekapStart').value || 'awal';
-    const end = document.getElementById('rekapEnd').value || 'akhir';
-    const filename = `Bukti-Lembur_Semua_${start}_${end}.pdf`;
-
-    const opt = {
-      margin: 0,
-      filename: filename,
-      image: { type: 'jpeg', quality: 0.9 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        letterRendering: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: container.scrollWidth,
-        windowHeight: container.scrollHeight
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'], after: '.pdf-page' }
-    };
-
-    await html2pdf().set(opt).from(container).save();
-
-    document.body.removeChild(container);
-    toast(`✅ PDF berhasil: ${data.length} halaman`, 'bg-emerald-600');
-  } catch (err) {
-    console.error('Bulk PDF error:', err);
-    toast('❌ Gagal buat PDF: ' + err.message, 'bg-red-600');
-    document.querySelectorAll('div[style*="-9999px"]').forEach(el => el.remove());
-  } finally {
-    btn.disabled = false;
-    btn.textContent = originalText;
-  }
-}
-
-// ============================================
-// REKAP DATA
+// REKAP — Excel + PDF
 // ============================================
 async function loadRekapEmployees() {
   try {
@@ -1045,6 +948,7 @@ async function previewRekap() {
             <th class="text-left py-1">Nama</th>
             <th class="text-left py-1">Tanggal</th>
             <th class="text-left py-1">Status</th>
+            <th class="text-left py-1">Bukti</th>
           </tr>
         </thead>
         <tbody>
@@ -1054,6 +958,7 @@ async function previewRekap() {
               <td class="py-1.5">${r.employee_name}</td>
               <td class="py-1.5">${new Date(r.date).toLocaleDateString('id-ID')}</td>
               <td class="py-1.5">${statusLabel(r.status)}</td>
+              <td class="py-1.5 text-brand-600">🔗 Cetak</td>
             </tr>
           `).join('')}
         </tbody>
@@ -1093,11 +998,28 @@ async function downloadRekap() {
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    const extraCol = range.e.c + 1;
+    const headerCell = XLSX.utils.encode_cell({ r: 0, c: extraCol });
+    ws[headerCell] = { v: 'Cetak Bukti', t: 's' };
+    ws['!ref'] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: range.e.r, c: extraCol } });
+
+    data.forEach((r, idx) => {
+      const rowIdx = idx + 1;
+      const cellRef = XLSX.utils.encode_cell({ r: rowIdx, c: extraCol });
+      const url = `${APP_URL}/admin.html?print=${r.id}`;
+      ws[cellRef] = {
+        v: `🖨 Klik untuk cetak #${r.id}`,
+        t: 's',
+        l: { Target: url, Tooltip: 'Buka sistem & cetak PDF bukti lembur' }
+      };
+    });
+
     ws['!cols'] = [
       { wch: 12 }, { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 15 }, { wch: 12 },
       { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 20 },
       { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 8 }, { wch: 15 }, { wch: 25 },
-      { wch: 30 }, { wch: 12 }, { wch: 25 }
+      { wch: 30 }, { wch: 12 }, { wch: 25 }, { wch: 25 }
     ];
 
     const wb = XLSX.utils.book_new();
@@ -1106,17 +1028,110 @@ async function downloadRekap() {
     const start = document.getElementById('rekapStart').value || 'awal';
     const end = document.getElementById('rekapEnd').value || 'akhir';
     XLSX.writeFile(wb, `Rekap-Lembur_${start}_${end}.xlsx`);
-    toast(`✓ Downloaded: ${data.length} record`, 'bg-emerald-600');
+    toast(`✓ Downloaded: ${data.length} record dengan link cetak`, 'bg-emerald-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 // ============================================
-// AUTO-OPEN DARI URL ?print=ID
+// DOWNLOAD PDF SEMUA REKAP (BULK)
+// ============================================
+async function downloadRekapPDF() {
+  const btn = document.getElementById('btnDownloadRekapPDF');
+  const originalText = btn.textContent;
+
+  try {
+    const data = await fetchRekapData();
+    if (data.length === 0) return toast('Tidak ada data', 'bg-amber-600');
+
+    if (data.length > 30) {
+      if (!confirm(`Ada ${data.length} record. PDF akan memakan waktu ~${Math.round(data.length * 2.5)} detik. Lanjutkan?`)) return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = `⏳ Menyiapkan...`;
+
+    // Pastikan jsPDF & html2canvas tersedia
+    if (!window.html2canvas) {
+      throw new Error('html2canvas belum dimuat. Refresh halaman.');
+    }
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      throw new Error('jsPDF belum dimuat. Refresh halaman.');
+    }
+
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+    const container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.top = '0';
+    container.style.left = '0';
+    container.style.zIndex = '-1';
+    container.style.opacity = '0';
+    container.style.pointerEvents = 'none';
+    container.style.width = '210mm';
+    container.style.background = '#ffffff';
+    document.body.appendChild(container);
+
+    for (let i = 0; i < data.length; i++) {
+      const r = data[i];
+      btn.textContent = `⏳ Render ${i + 1}/${data.length}...`;
+
+      const page = document.createElement('div');
+      page.style.width = '210mm';
+      page.style.minHeight = '297mm';
+      page.style.padding = '12mm 15mm';
+      page.style.background = '#ffffff';
+      page.style.boxSizing = 'border-box';
+      page.style.fontFamily = "'Segoe UI', system-ui, sans-serif";
+      page.style.fontSize = '12px';
+      page.style.lineHeight = '1.4';
+      page.style.color = '#0f172a';
+      page.innerHTML = buildBuktiHTML(r, `Halaman ${i + 1} dari ${data.length}`);
+
+      container.innerHTML = '';
+      container.appendChild(page);
+
+      // Tunggu logo load
+      await new Promise(res => setTimeout(res, 500));
+
+      const canvas = await html2canvas(page, {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.9);
+
+      if (i > 0) pdf.addPage();
+      pdf.addImage(imgData, 'JPEG', 0, 0, 210, 297);
+    }
+
+    document.body.removeChild(container);
+
+    const start = document.getElementById('rekapStart').value || 'awal';
+    const end = document.getElementById('rekapEnd').value || 'akhir';
+    pdf.save(`Bukti-Lembur_Semua_${start}_${end}.pdf`);
+
+    toast(`✅ PDF berhasil: ${data.length} halaman`, 'bg-emerald-600');
+  } catch (err) {
+    console.error('Bulk PDF error:', err);
+    toast('❌ Gagal: ' + err.message, 'bg-red-600');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+// ============================================
+// CHECK URL PARAM ?print=ID
 // ============================================
 async function checkPrintParam() {
   const params = new URLSearchParams(window.location.search);
   const printId = params.get('print');
   if (printId) {
+    console.log(`🖨 Auto-open bukti untuk record ID: ${printId}`);
     window.history.replaceState({}, '', window.location.pathname);
     switchTab('records');
     await new Promise(r => setTimeout(r, 500));
@@ -1124,6 +1139,9 @@ async function checkPrintParam() {
   }
 }
 
+// ============================================
+// INIT
+// ============================================
 const today = new Date();
 const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
 document.getElementById('rekapStart').valueAsDate = firstDay;
