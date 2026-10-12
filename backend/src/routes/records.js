@@ -16,6 +16,7 @@ const SUBMIT_DEADLINE_HOUR = 18;
 const START_HOUR_WEEKDAY = 17;
 const START_HOUR_HOLIDAY = 8;
 const MIN_OVERTIME_HOURS = 1;
+const TIMEZONE_OFFSET = '+07:00'; // WIB
 
 function isHoliday(dateStr) {
   const d = new Date(dateStr + 'T00:00:00');
@@ -71,6 +72,13 @@ function haversine(lat1, lon1, lat2, lon2) {
   const dLon = toRad(lon2 - lon1);
   const a = Math.sin(dLat/2)**2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Build Date object dengan timezone WIB eksplisit
+function buildWIBDate(dateStr, timeStr) {
+  // dateStr format: "2026-09-24"
+  // timeStr format: "17:00"
+  return new Date(`${dateStr}T${timeStr}:00${TIMEZONE_OFFSET}`);
 }
 
 async function notifyUser(userId, templateName, data) {
@@ -173,7 +181,7 @@ async function validateChainHasFinal(chain) {
 }
 
 // ============================================
-// GET /employees/list
+// GET /employees/list — bawahan user (rekursif)
 // ============================================
 router.get('/employees/list', requireAuth, requireManager, async (req, res) => {
   const user = req.user;
@@ -255,11 +263,10 @@ router.post('/', requireAuth, async (req, res) => {
 
   const defaultHour = holiday ? START_HOUR_HOLIDAY : START_HOUR_WEEKDAY;
   const finalStartTime = start_time || `${String(defaultHour).padStart(2, '0')}:00`;
-  const plannedStart = new Date(`${date}T${finalStartTime}:00`);
 
-  // Tidak blokir walau jam mulai sudah lewat.
-  // Jam lembur tetap dihitung dari finalStartTime (17:00 / 08:00).
-  // Kalau aktual < 1 jam, tetap tidak dihitung (validasi di /finish).
+  // ⚡ FIX: pakai timezone WIB eksplisit (+07:00)
+  const plannedStart = buildWIBDate(date, finalStartTime);
+
   if (isToday && plannedStart < now) {
     console.log(`ℹ️ Pengajuan setelah jam ${finalStartTime}. planned_start tetap ${finalStartTime}.`);
   }
@@ -375,7 +382,6 @@ router.post('/', requireAuth, async (req, res) => {
       const samePerson = directApprover && finalApprover &&
                           directApprover.id === finalApprover.id;
 
-      console.log(`👥 Same person check: direct=${directApprover?.id}, final=${finalApprover?.id}, samePerson=${samePerson}`);
       if (samePerson) {
         const approveToken = jwt.sign(
           { recordId: record.id, action: 'approve-final', approverId: finalApprover.id },
@@ -698,7 +704,7 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
     }
 
     const record = result.rows[0];
-    const stoppedAt = new Date().toLocaleString('id-ID');
+    const stoppedAt = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
     const reasonText = reason || `Keluar radius kantor (${distance}m)`;
 
     await notifyUser(record.employee_id, 'autoStopEmployee', {
@@ -810,7 +816,7 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
 
     const record = result.rows[0];
     const durationStr = `${durationHours.toFixed(2)} jam`;
-    const submittedAt = new Date().toLocaleString('id-ID');
+    const submittedAt = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
     const mgrSent = await notifyAllManagers('proofSubmitted', {
       employeeName: record.employee_name, duration: durationStr, proof: proof_text
@@ -887,9 +893,10 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
 
     const defaultHour = holiday ? START_HOUR_HOLIDAY : START_HOUR_WEEKDAY;
     const finalStartTime = start_time || `${String(defaultHour).padStart(2, '0')}:00`;
-    const plannedStart = new Date(`${finalDate}T${finalStartTime}:00`);
 
-    // Tidak blokir walau jam mulai sudah lewat (sama seperti POST /)
+    // ⚡ FIX: pakai timezone WIB eksplisit
+    const plannedStart = buildWIBDate(finalDate, finalStartTime);
+
     if (isToday && plannedStart < now) {
       console.log(`ℹ️ Revisi setelah jam ${finalStartTime}. planned_start tetap ${finalStartTime}.`);
     }
@@ -1053,7 +1060,7 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
 
     const record = result.rows[0];
-    const submittedAt = new Date().toLocaleString('id-ID');
+    const submittedAt = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
 
     const mgrSent = await notifyAllManagers('proofRevisionResubmitted', {
       employeeName: record.employee_name, proof: proof_text, submittedAt
