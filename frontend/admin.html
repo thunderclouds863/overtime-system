@@ -107,7 +107,6 @@ tailwind.config = {
 
 <main class="md:ml-60 pt-16 md:pt-20 pb-24 md:pb-8 px-3 md:px-6 max-w-[1500px]">
 
-  <!-- ====== DASHBOARD ====== -->
   <section id="tab-dashboard" class="tab-content space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Dashboard Admin</h1>
@@ -155,7 +154,6 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- ====== USERS ====== -->
   <section id="tab-users" class="tab-content hidden space-y-4">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
@@ -186,7 +184,6 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- ====== RECORDS ====== -->
   <section id="tab-records" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Semua Record Lembur</h1>
@@ -233,7 +230,6 @@ tailwind.config = {
               <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Tanggal</th>
               <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden lg:table-cell">Jam</th>
               <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Durasi</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden lg:table-cell">Disetujui Oleh</th>
               <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Status</th>
               <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Aksi</th>
             </tr>
@@ -244,16 +240,15 @@ tailwind.config = {
     </div>
   </section>
 
-  <!-- ====== REKAP ====== -->
   <section id="tab-rekap" class="tab-content hidden space-y-4">
     <div>
       <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Download Rekap</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Export data lembur ke Excel dengan hyperlink cetak bukti</p>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Export data lembur ke Excel atau PDF</p>
     </div>
 
     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-6 max-w-2xl">
       <div class="bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 md:p-4 mb-5">
-        <p class="text-xs text-brand-900"><strong>💡 Info:</strong> Excel akan berisi data lengkap + <strong>hyperlink</strong> di kolom "Cetak Bukti". Klik link di Excel → buka sistem & tampilkan modal cetak PDF.</p>
+        <p class="text-xs text-brand-900"><strong>💡 Info:</strong> Excel untuk rekap data lengkap. PDF untuk cetak bukti lembur per halaman (1 record = 1 halaman).</p>
       </div>
 
       <div class="grid md:grid-cols-2 gap-3 md:gap-4">
@@ -284,8 +279,15 @@ tailwind.config = {
       </div>
 
       <div class="flex flex-col md:flex-row gap-2 md:gap-3 mt-6">
-        <button onclick="downloadRekap()" class="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-500/25 active:scale-[0.98]">📥 Download Excel</button>
-        <button onclick="previewRekap()" class="flex-1 border border-brand-200 text-brand-700 hover:bg-brand-50 font-bold py-3.5 rounded-2xl transition active:scale-[0.98]">👁 Preview Data</button>
+        <button onclick="downloadRekap()" class="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-500/25 active:scale-[0.98]">
+          📥 Download Excel
+        </button>
+        <button onclick="downloadRekapPDF()" id="btnDownloadRekapPDF" class="flex-1 bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-red-500/25 active:scale-[0.98]">
+          📄 Download PDF Semua
+        </button>
+        <button onclick="previewRekap()" class="flex-1 border border-brand-200 text-brand-700 hover:bg-brand-50 font-bold py-3.5 rounded-2xl transition active:scale-[0.98]">
+          👁 Preview
+        </button>
       </div>
 
       <div id="rekapPreview" class="mt-5 hidden">
@@ -297,7 +299,6 @@ tailwind.config = {
 
 </main>
 
-<!-- MODAL USER -->
 <div id="userModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden z-50 overflow-y-auto">
   <div class="min-h-full flex items-end md:items-center justify-center p-0 md:p-4 py-0 md:py-8">
     <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-6 modal-in">
@@ -382,31 +383,6 @@ tailwind.config = {
   </div>
 </div>
 
-<!-- MODAL ADMIN APPROVE -->
-<div id="modalAdminReview" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
-  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
-    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
-    <div class="flex items-start justify-between mb-4">
-      <div>
-        <div class="flex items-center gap-2 mb-1">
-          <span class="text-[10px] bg-amber-100 text-amber-700 font-bold px-2 py-0.5 rounded-full">ADMIN</span>
-        </div>
-        <h3 class="font-extrabold text-slate-800 text-lg">Review Pengajuan</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Approve langsung sebagai admin</p>
-      </div>
-      <button onclick="closeModal('modalAdminReview')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
-    </div>
-    <div id="adminReviewContent" class="space-y-3 text-sm"></div>
-    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Catatan (opsional)</label>
-    <textarea id="adminReviewNote" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50" placeholder="Catatan untuk karyawan"></textarea>
-    <div class="grid grid-cols-2 gap-2 mt-5">
-      <button onclick="adminReject()" class="border border-red-200 text-red-600 hover:bg-red-50 py-3 rounded-2xl text-sm font-bold">❌ Tolak</button>
-      <button onclick="adminApprove()" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-2xl text-sm font-bold shadow-lg">✅ Setujui</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL BUKTI -->
 <div id="modalBukti" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center z-50 p-0 md:p-4 overflow-y-auto">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-2xl w-full modal-in my-0 md:my-8">
     <div class="flex items-center justify-between p-4 md:p-5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-3xl">
@@ -446,7 +422,6 @@ document.getElementById('adminEmail').textContent = user.email;
 
 let allApprovers = [];
 let currentBuktiRecord = null;
-let adminReviewTargetId = null;
 
 function toast(msg, color='bg-ink-900') {
   const t = document.getElementById('toast');
@@ -458,6 +433,12 @@ function toast(msg, color='bg-ink-900') {
 }
 
 function logout() { localStorage.clear(); window.location.href = 'index.html'; }
+
+function levelNum(level) {
+  if (!level) return 0;
+  const m = String(level).match(/^(\d+)/);
+  return m ? parseInt(m[1]) : 0;
+}
 
 async function api(path, opts = {}) {
   const res = await fetch(`${API_URL}${path}`, {
@@ -472,12 +453,6 @@ async function api(path, opts = {}) {
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Request gagal');
   return data;
-}
-
-function closeModal(id) {
-  const el = document.getElementById(id);
-  el.classList.add('hidden');
-  el.classList.remove('flex');
 }
 
 function switchTab(tab) {
@@ -504,18 +479,6 @@ function switchTab(tab) {
   if (tab === 'rekap') loadRekapEmployees();
 }
 
-function statusLabel(s) {
-  const map = {
-    pending: '⏳ PENDING', approved: '✅ DISETUJUI', rejected: '❌ DITOLAK', revision: '✏️ REVISI',
-    active: '🔴 AKTIF', cancelled: '🚫 DIBATALKAN', pending_verification: '🔍 VERIFIKASI',
-    proof_revision: '📎 REVISI BUKTI', verify_rejected: '❌ HASIL DITOLAK', completed: '✓ SELESAI'
-  };
-  return map[s] || s;
-}
-
-// ============================================
-// DASHBOARD
-// ============================================
 async function loadStats() {
   try {
     const s = await api('/api/admin/stats');
@@ -533,7 +496,7 @@ async function loadStats() {
       return;
     }
     el.innerHTML = records.slice(0, 10).map(r => `
-      <div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition">
+      <div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition card-hover">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-sm">${r.is_holiday ? '🏖' : '💼'}</div>
         <div class="flex-1 min-w-0">
           <p class="text-xs md:text-sm font-semibold text-slate-800 truncate">${r.employee_name} — ${r.reason}</p>
@@ -544,9 +507,15 @@ async function loadStats() {
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ============================================
-// USERS
-// ============================================
+function statusLabel(s) {
+  const map = {
+    pending: '⏳ PENDING', approved: '✅ DISETUJUI', rejected: '❌ DITOLAK', revision: '✏️ REVISI',
+    active: '🔴 AKTIF', cancelled: '🚫 DIBATALKAN', pending_verification: '🔍 VERIFIKASI',
+    proof_revision: '📎 REVISI BUKTI', verify_rejected: '❌ HASIL DITOLAK', completed: '✓ SELESAI'
+  };
+  return map[s] || s;
+}
+
 async function loadApprovers() {
   const el = document.getElementById('approverList');
   el.innerHTML = '<p class="text-xs text-slate-400 text-center py-2">Memuat atasan...</p>';
@@ -650,6 +619,15 @@ async function saveUser() {
   if (!full_name) return toast('Nama wajib', 'bg-red-600');
   if (!level) return toast('Level wajib', 'bg-red-600');
 
+  const levelNumVal = levelNum(level);
+
+  if (role === 'employee' && levelNumVal < 2) {
+    if (!confirm('Level 1 (Worker) tidak bisa ajukan lembur. Lanjutkan?')) return;
+  }
+  if ((role === 'manager' || role === 'admin') && levelNumVal < 3) {
+    return toast('Manager/Admin harus level 3+ untuk bisa approve', 'bg-red-600');
+  }
+
   try {
     if (id) {
       const payload = { full_name, role, jabatan, level, approver_ids };
@@ -688,9 +666,6 @@ async function deleteUser(id) {
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-// ============================================
-// RECORDS
-// ============================================
 async function loadRecords() {
   const params = new URLSearchParams();
   const status = document.getElementById('filterStatus').value;
@@ -704,14 +679,13 @@ async function loadRecords() {
     const records = await api('/api/admin/records?' + params.toString());
     const el = document.getElementById('recordsTable');
     if (records.length === 0) {
-      el.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>';
+      el.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400 text-sm">Belum ada data</td></tr>';
       return;
     }
     el.innerHTML = records.map(r => {
       const duration = r.actual_hours ? `${parseFloat(r.actual_hours).toFixed(1)}j` :
-                       (r.planned_hours ? `${r.planned_hours}j` : '-');
+                       (r.planned_hours ? `${r.planned_hours}j (rencana)` : '-');
       const canPrint = ['completed', 'verify_rejected', 'pending_verification'].includes(r.status);
-      const canReview = r.status === 'pending';
       return `
       <tr class="hover:bg-slate-50 transition">
         <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">
@@ -722,18 +696,15 @@ async function loadRecords() {
           <span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">${r.employee_level || '-'}</span>
         </td>
         <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm">${new Date(r.date).toLocaleDateString('id-ID')} ${r.is_holiday ? '🏖' : '💼'}</td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">${r.start_time || '-'}</td>
+        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">${r.start_time}${r.actual_end ? ' — ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
         <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm hidden md:table-cell">${duration}</td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">${r.approver_name || '-'}</td>
         <td class="px-3 md:px-4 py-3">
           <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">${statusLabel(r.status)}</span>
         </td>
         <td class="px-3 md:px-4 py-3">
-          <div class="flex gap-2 items-center">
-            ${canReview ? `<button onclick="openAdminReview(${r.id})" class="bg-gradient-to-r from-brand-600 to-neon-violet text-white text-[10px] md:text-xs font-bold px-2.5 py-1.5 rounded-lg shadow whitespace-nowrap">✓ Review</button>` : ''}
-            ${canPrint ? `<button onclick="openBukti(${r.id})" class="text-brand-600 hover:text-brand-800 text-xs font-bold whitespace-nowrap">🖨 Cetak</button>` : ''}
-            ${!canReview && !canPrint ? '<span class="text-xs text-slate-300">—</span>' : ''}
-          </div>
+          ${canPrint ? `
+            <button onclick="openBukti(${r.id})" class="text-brand-600 hover:text-brand-800 text-xs font-bold whitespace-nowrap">🖨 Cetak</button>
+          ` : '<span class="text-xs text-slate-300">—</span>'}
         </td>
       </tr>
     `}).join('');
@@ -748,63 +719,115 @@ function resetFilter() {
 }
 
 // ============================================
-// ADMIN REVIEW PENDING
+// HELPER: Generate HTML untuk 1 record (dipakai modal + bulk PDF)
 // ============================================
-function openAdminReview(id) {
-  adminReviewTargetId = id;
-  // Cari record dari API
-  api('/api/admin/records?limit=1000').then(records => {
-    const r = records.find(x => x.id === id);
-    if (!r) return toast('Record tidak ditemukan', 'bg-red-600');
+function buildBuktiHTML(r, index = null, total = null) {
+  const statusText = statusLabel(r.status);
+  const verifyStars = r.verify_rating ? '★'.repeat(r.verify_rating) + '☆'.repeat(5 - r.verify_rating) : '-';
+  const approvedDate = r.approved_at ? new Date(r.approved_at).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
+  const verifiedDate = r.verified_at ? new Date(r.verified_at).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
+  const actualStart = r.actual_start ? new Date(r.actual_start).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
+  const actualEnd = r.actual_end ? new Date(r.actual_end).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
 
-    document.getElementById('adminReviewContent').innerHTML = `
-      <div class="bg-gradient-to-br from-slate-50 to-brand-50 rounded-2xl p-4 space-y-2 border border-slate-100">
-        <div class="flex justify-between text-xs"><span class="text-slate-500">Karyawan</span><span class="font-bold">${r.employee_name} (${r.employee_level || '-'})</span></div>
-        <div class="flex justify-between text-xs"><span class="text-slate-500">Tanggal</span><span class="font-bold">${new Date(r.date).toLocaleDateString('id-ID')} ${r.is_holiday ? '🏖' : '💼'}</span></div>
-        <div class="flex justify-between text-xs"><span class="text-slate-500">Jam Mulai</span><span class="font-bold">${r.start_time || '-'}</span></div>
-        <div class="flex justify-between text-xs"><span class="text-slate-500">Durasi</span><span class="font-bold">${r.planned_hours || 0} jam</span></div>
-        <div class="flex justify-between text-xs"><span class="text-slate-500">Kategori</span><span class="font-bold">${r.reason}</span></div>
+  const hashInput = `${r.id}-${r.employee_name}-${r.date}-${r.status}`;
+  let hash = 0;
+  for (let i = 0; i < hashInput.length; i++) {
+    hash = ((hash << 5) - hash) + hashInput.charCodeAt(i);
+    hash = hash & hash;
+  }
+  const verifyHash = Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
+
+  const pageInfo = (index !== null && total !== null)
+    ? `<p style="margin:0">Halaman ${index + 1} dari ${total}</p>`
+    : '';
+
+  return `
+    <div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #6366f1;padding-bottom:16px;margin-bottom:24px">
+      <img src="logo-cimory.png" alt="Cimory" style="width:60px;height:60px;object-fit:contain;flex-shrink:0" crossorigin="anonymous">
+      <div style="flex:1">
+        <h1 style="margin:0;font-size:20px;color:#0f172a;font-weight:800">BUKTI PELAKSANAAN LEMBUR</h1>
+        <p style="margin:2px 0 0;font-size:12px;color:#64748b">Sistem Monitoring Lembur Cimory</p>
       </div>
-      <div><p class="text-[10px] text-slate-500 uppercase font-bold mb-1">Rencana Pekerjaan</p><p>${r.description || '-'}</p></div>
-    `;
-    document.getElementById('adminReviewNote').value = '';
-    document.getElementById('modalAdminReview').classList.remove('hidden');
-    document.getElementById('modalAdminReview').classList.add('flex');
-  }).catch(err => toast(err.message, 'bg-red-600'));
-}
+      <div style="text-align:right;font-size:10px;color:#94a3b8">
+        <p style="margin:0">No. Bukti</p>
+        <p style="margin:2px 0 0;font-weight:700;color:#6366f1;font-size:14px">#OT-${String(r.id).padStart(5,'0')}</p>
+      </div>
+    </div>
 
-async function adminApprove() {
-  if (!adminReviewTargetId) return;
-  try {
-    await api(`/api/admin/records/${adminReviewTargetId}/admin-approve`, {
-      method: 'POST',
-      body: JSON.stringify({ note: document.getElementById('adminReviewNote').value.trim() || null })
-    });
-    closeModal('modalAdminReview');
-    await loadRecords();
-    toast('✓ Lembur disetujui oleh admin', 'bg-emerald-600');
-    adminReviewTargetId = null;
-  } catch (err) { toast(err.message, 'bg-red-600'); }
-}
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Informasi Karyawan</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tr><td style="padding:8px 0;color:#64748b;width:140px">Nama</td><td style="padding:8px 0;font-weight:600;color:#0f172a">${r.employee_name}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Email</td><td style="padding:8px 0;color:#0f172a">${r.employee_email || '-'}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Level</td><td style="padding:8px 0;color:#0f172a">${r.employee_level || '-'}</td></tr>
+        <tr><td style="padding:8px 0;color:#64748b">Jabatan</td><td style="padding:8px 0;color:#0f172a">${r.jabatan || '-'}</td></tr>
+      </table>
+    </div>
 
-async function adminReject() {
-  if (!adminReviewTargetId) return;
-  const note = document.getElementById('adminReviewNote').value.trim();
-  if (!note) return toast('Alasan wajib diisi', 'bg-red-600');
-  try {
-    await api(`/api/admin/records/${adminReviewTargetId}/admin-reject`, {
-      method: 'POST',
-      body: JSON.stringify({ note })
-    });
-    closeModal('modalAdminReview');
-    await loadRecords();
-    toast('Lembur ditolak oleh admin', 'bg-red-600');
-    adminReviewTargetId = null;
-  } catch (err) { toast(err.message, 'bg-red-600'); }
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Detail Lembur</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;background:#f8fafc;border-radius:8px;padding:12px">
+        <tr><td style="padding:8px 12px;color:#64748b;width:140px">Tanggal</td><td style="padding:8px 12px;font-weight:600;color:#0f172a">${new Date(r.date).toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'})} ${r.is_holiday ? '(Hari Libur)' : '(Hari Kerja)'}</td></tr>
+        <tr><td style="padding:8px 12px;color:#64748b">Jam Rencana</td><td style="padding:8px 12px;color:#0f172a">${r.start_time} · ${r.planned_hours || 0} jam</td></tr>
+        <tr><td style="padding:8px 12px;color:#64748b">Waktu Aktual</td><td style="padding:8px 12px;color:#0f172a">${actualStart} — ${actualEnd}</td></tr>
+        <tr><td style="padding:8px 12px;color:#64748b">Durasi Aktual</td><td style="padding:8px 12px;font-weight:700;color:#10b981">${r.actual_hours ? parseFloat(r.actual_hours).toFixed(2) + ' jam' : '-'}</td></tr>
+        <tr><td style="padding:8px 12px;color:#64748b">Kategori</td><td style="padding:8px 12px;color:#0f172a">${r.reason}</td></tr>
+        <tr><td style="padding:8px 12px;color:#64748b">Sumber</td><td style="padding:8px 12px;color:#0f172a">${r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan'}</td></tr>
+      </table>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Rencana Pekerjaan</h2>
+      <div style="background:#f8fafc;padding:12px;border-radius:8px;font-size:13px;color:#0f172a;line-height:1.6">${r.description || '-'}</div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Bukti Hasil Kerja</h2>
+      <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px;border-radius:8px;font-size:13px;color:#065f46;line-height:1.6">
+        ${r.proof_text || '(Belum ada bukti yang diupload)'}
+        ${r.proof_file_name ? `<p style="margin:8px 0 0;font-size:11px;color:#059669">📎 ${r.proof_file_name}</p>` : ''}
+        ${r.proof_uploaded_at ? `<p style="margin:4px 0 0;font-size:10px;color:#94a3b8">Diunggah: ${new Date(r.proof_uploaded_at).toLocaleString('id-ID')}</p>` : ''}
+      </div>
+    </div>
+
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Persetujuan Atasan</h2>
+      <div style="border:1px solid #e2e8f0;padding:16px;border-radius:8px;font-size:13px">
+        <table style="width:100%;border-collapse:collapse">
+          <tr><td style="padding:6px 0;color:#64748b;width:140px">Status</td><td style="padding:6px 0;font-weight:700;color:${r.status === 'completed' ? '#10b981' : r.status === 'rejected' ? '#dc2626' : '#f59e0b'}">${statusText}</td></tr>
+          ${r.approved_at ? `<tr><td style="padding:6px 0;color:#64748b">Disetujui Pada</td><td style="padding:6px 0;color:#0f172a">${approvedDate}</td></tr>` : ''}
+          ${r.approval_note ? `<tr><td style="padding:6px 0;color:#64748b;vertical-align:top">Catatan</td><td style="padding:6px 0;color:#0f172a;font-style:italic">"${r.approval_note}"</td></tr>` : ''}
+        </table>
+      </div>
+    </div>
+
+    ${r.verify_rating ? `
+    <div style="margin-bottom:20px">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Penilaian Hasil Kerja</h2>
+      <div style="border:1px solid #e2e8f0;padding:16px;border-radius:8px;font-size:13px;text-align:center;background:#fefce8">
+        <p style="margin:0;font-size:32px;letter-spacing:6px;color:#f59e0b">${verifyStars}</p>
+        <p style="margin:8px 0 0;font-weight:700;color:#0f172a">Rating: ${r.verify_rating}/5</p>
+        ${r.verify_note ? `<p style="margin:8px 0 0;font-style:italic;color:#475569">"${r.verify_note}"</p>` : ''}
+        ${r.verified_at ? `<p style="margin:8px 0 0;font-size:11px;color:#94a3b8">Diverifikasi: ${verifiedDate}${r.verified_by_level ? ' · Level ' + r.verified_by_level : ''}</p>` : ''}
+      </div>
+    </div>
+    ` : ''}
+
+    <div style="margin-top:32px;padding-top:16px;border-top:2px dashed #cbd5e1;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#94a3b8">
+      <div>
+        ${pageInfo}
+        <p style="margin:${pageInfo ? '4px' : '0'} 0 0">Dicetak: ${new Date().toLocaleString('id-ID')}</p>
+      </div>
+      <div style="text-align:right">
+        <p style="margin:0">Hash Verifikasi</p>
+        <p style="margin:4px 0 0;font-family:monospace;font-weight:700;color:#6366f1;font-size:12px">${verifyHash}</p>
+      </div>
+    </div>
+  `;
 }
 
 // ============================================
-// CETAK BUKTI
+// SINGLE PDF (per record)
 // ============================================
 async function openBukti(recordId) {
   try {
@@ -813,108 +836,7 @@ async function openBukti(recordId) {
     if (!r) return toast('Record tidak ditemukan', 'bg-red-600');
 
     currentBuktiRecord = r;
-
-    const statusText = statusLabel(r.status);
-    const verifyStars = r.verify_rating ? '★'.repeat(r.verify_rating) + '☆'.repeat(5 - r.verify_rating) : '-';
-    const approvedDate = r.approved_at ? new Date(r.approved_at).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
-    const verifiedDate = r.verified_at ? new Date(r.verified_at).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
-    const actualStart = r.actual_start ? new Date(r.actual_start).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
-    const actualEnd = r.actual_end ? new Date(r.actual_end).toLocaleString('id-ID', {dateStyle:'long', timeStyle:'short'}) : '-';
-
-    const hashInput = `${r.id}-${r.employee_name}-${r.date}-${r.status}`;
-    let hash = 0;
-    for (let i = 0; i < hashInput.length; i++) {
-      hash = ((hash << 5) - hash) + hashInput.charCodeAt(i);
-      hash = hash & hash;
-    }
-    const verifyHash = Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
-
-    document.getElementById('buktiContent').innerHTML = `
-      <div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #6366f1;padding-bottom:16px;margin-bottom:24px">
-        <img src="logo-cimory.png" alt="Cimory" style="width:60px;height:60px;object-fit:contain;flex-shrink:0" crossorigin="anonymous">
-        <div style="flex:1">
-          <h1 style="margin:0;font-size:20px;color:#0f172a;font-weight:800">BUKTI PELAKSANAAN LEMBUR</h1>
-          <p style="margin:2px 0 0;font-size:12px;color:#64748b">Sistem Monitoring Lembur Cimory</p>
-        </div>
-        <div style="text-align:right;font-size:10px;color:#94a3b8">
-          <p style="margin:0">No. Bukti</p>
-          <p style="margin:2px 0 0;font-weight:700;color:#6366f1;font-size:14px">#OT-${String(r.id).padStart(5,'0')}</p>
-        </div>
-      </div>
-
-      <div style="margin-bottom:20px">
-        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Informasi Karyawan</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:13px">
-          <tr><td style="padding:8px 0;color:#64748b;width:140px">Nama</td><td style="padding:8px 0;font-weight:600;color:#0f172a">${r.employee_name}</td></tr>
-          <tr><td style="padding:8px 0;color:#64748b">Email</td><td style="padding:8px 0;color:#0f172a">${r.employee_email || '-'}</td></tr>
-          <tr><td style="padding:8px 0;color:#64748b">Level</td><td style="padding:8px 0;color:#0f172a">${r.employee_level || '-'}</td></tr>
-          <tr><td style="padding:8px 0;color:#64748b">Jabatan</td><td style="padding:8px 0;color:#0f172a">${r.jabatan || '-'}</td></tr>
-        </table>
-      </div>
-
-      <div style="margin-bottom:20px">
-        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Detail Lembur</h2>
-        <table style="width:100%;border-collapse:collapse;font-size:13px;background:#f8fafc;border-radius:8px;padding:12px">
-          <tr><td style="padding:8px 12px;color:#64748b;width:140px">Tanggal</td><td style="padding:8px 12px;font-weight:600;color:#0f172a">${new Date(r.date).toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'})} ${r.is_holiday ? '(Hari Libur)' : '(Hari Kerja)'}</td></tr>
-          <tr><td style="padding:8px 12px;color:#64748b">Jam Mulai</td><td style="padding:8px 12px;color:#0f172a">${r.start_time || '-'}</td></tr>
-          <tr><td style="padding:8px 12px;color:#64748b">Durasi Rencana</td><td style="padding:8px 12px;color:#0f172a">${r.planned_hours || 0} jam</td></tr>
-          <tr><td style="padding:8px 12px;color:#64748b">Waktu Aktual</td><td style="padding:8px 12px;color:#0f172a">${actualStart} — ${actualEnd}</td></tr>
-          <tr><td style="padding:8px 12px;color:#64748b">Durasi Aktual</td><td style="padding:8px 12px;font-weight:700;color:#10b981">${r.actual_hours ? parseFloat(r.actual_hours).toFixed(2) + ' jam' : '-'}</td></tr>
-          <tr><td style="padding:8px 12px;color:#64748b">Kategori</td><td style="padding:8px 12px;color:#0f172a">${r.reason}</td></tr>
-          <tr><td style="padding:8px 12px;color:#64748b">Sumber</td><td style="padding:8px 12px;color:#0f172a">${r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan'}</td></tr>
-          <tr><td style="padding:8px 12px;color:#64748b">Disetujui Oleh</td><td style="padding:8px 12px;color:#0f172a;font-weight:600">${r.approver_name || '-'}</td></tr>
-        </table>
-      </div>
-
-      <div style="margin-bottom:20px">
-        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Rencana Pekerjaan</h2>
-        <div style="background:#f8fafc;padding:12px;border-radius:8px;font-size:13px;color:#0f172a;line-height:1.6">${r.description || '-'}</div>
-      </div>
-
-      <div style="margin-bottom:20px">
-        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Bukti Hasil Kerja</h2>
-        <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px;border-radius:8px;font-size:13px;color:#065f46;line-height:1.6">
-          ${r.proof_text || '(Belum ada bukti yang diupload)'}
-          ${r.proof_file_name ? `<p style="margin:8px 0 0;font-size:11px;color:#059669">📎 ${r.proof_file_name}</p>` : ''}
-          ${r.proof_uploaded_at ? `<p style="margin:4px 0 0;font-size:10px;color:#94a3b8">Diunggah: ${new Date(r.proof_uploaded_at).toLocaleString('id-ID')}</p>` : ''}
-        </div>
-      </div>
-
-      <div style="margin-bottom:20px">
-        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Persetujuan Atasan</h2>
-        <div style="border:1px solid #e2e8f0;padding:16px;border-radius:8px;font-size:13px">
-          <table style="width:100%;border-collapse:collapse">
-            <tr><td style="padding:6px 0;color:#64748b;width:140px">Status</td><td style="padding:6px 0;font-weight:700;color:${r.status === 'completed' ? '#10b981' : r.status === 'rejected' ? '#dc2626' : '#f59e0b'}">${statusText}</td></tr>
-            <tr><td style="padding:6px 0;color:#64748b">Disetujui Oleh</td><td style="padding:6px 0;color:#0f172a;font-weight:600">${r.approver_name || '-'}</td></tr>
-            ${r.approved_at ? `<tr><td style="padding:6px 0;color:#64748b">Disetujui Pada</td><td style="padding:6px 0;color:#0f172a">${approvedDate}</td></tr>` : ''}
-            ${r.approval_note ? `<tr><td style="padding:6px 0;color:#64748b;vertical-align:top">Catatan</td><td style="padding:6px 0;color:#0f172a;font-style:italic">"${r.approval_note}"</td></tr>` : ''}
-          </table>
-        </div>
-      </div>
-
-      ${r.verify_rating ? `
-      <div style="margin-bottom:20px">
-        <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Penilaian Hasil Kerja</h2>
-        <div style="border:1px solid #e2e8f0;padding:16px;border-radius:8px;font-size:13px;text-align:center;background:#fefce8">
-          <p style="margin:0;font-size:32px;letter-spacing:6px;color:#f59e0b">${verifyStars}</p>
-          <p style="margin:8px 0 0;font-weight:700;color:#0f172a">Rating: ${r.verify_rating}/5</p>
-          ${r.verify_note ? `<p style="margin:8px 0 0;font-style:italic;color:#475569">"${r.verify_note}"</p>` : ''}
-          ${r.verified_at ? `<p style="margin:8px 0 0;font-size:11px;color:#94a3b8">Diverifikasi: ${verifiedDate}${r.verified_by_level ? ' · Level ' + r.verified_by_level : ''}</p>` : ''}
-        </div>
-      </div>
-      ` : ''}
-
-      <div style="margin-top:32px;padding-top:16px;border-top:2px dashed #cbd5e1;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#94a3b8">
-        <div>
-          <p style="margin:0">Dokumen ini digenerate otomatis oleh sistem</p>
-          <p style="margin:4px 0 0">Dicetak: ${new Date().toLocaleString('id-ID')}</p>
-        </div>
-        <div style="text-align:right">
-          <p style="margin:0">Hash Verifikasi</p>
-          <p style="margin:4px 0 0;font-family:monospace;font-weight:700;color:#6366f1;font-size:12px">${verifyHash}</p>
-        </div>
-      </div>
-    `;
+    document.getElementById('buktiContent').innerHTML = buildBuktiHTML(r);
 
     document.getElementById('modalBukti').classList.remove('hidden');
     document.getElementById('modalBukti').classList.add('flex');
@@ -962,7 +884,83 @@ async function downloadBuktiPDF() {
 }
 
 // ============================================
-// REKAP
+// BULK PDF (semua record)
+// ============================================
+async function downloadRekapPDF() {
+  const btn = document.getElementById('btnDownloadRekapPDF');
+  const originalText = btn.textContent;
+
+  try {
+    const data = await fetchRekapData();
+    if (data.length === 0) return toast('Tidak ada data', 'bg-amber-600');
+
+    if (data.length > 100) {
+      const ok = confirm(`Ada ${data.length} record. PDF akan besar dan butuh waktu lama. Lanjutkan?`);
+      if (!ok) return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = `⏳ Membuat PDF (0/${data.length})...`;
+
+    const container = document.createElement('div');
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    container.style.top = '0';
+    container.style.width = '700px';
+    container.style.background = '#ffffff';
+    container.style.fontFamily = "'Segoe UI',sans-serif";
+    container.id = 'pdfBulkContainer';
+
+    const pages = data.map((r, index) => `
+      <div class="pdf-page" style="page-break-after: always; padding: 20px 0; ${index === data.length - 1 ? 'page-break-after: auto;' : ''}">
+        ${buildBuktiHTML(r, index, data.length)}
+      </div>
+    `).join('');
+
+    container.innerHTML = pages;
+    document.body.appendChild(container);
+
+    btn.textContent = `⏳ Render halaman...`;
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    btn.textContent = `⏳ Generate PDF (${data.length} halaman)...`;
+
+    const start = document.getElementById('rekapStart').value || 'awal';
+    const end = document.getElementById('rekapEnd').value || 'akhir';
+    const filename = `Bukti-Lembur_Semua_${start}_${end}.pdf`;
+
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.95 },
+      html2canvas: {
+        scale: 2,
+        useCORS: true,
+        letterRendering: true,
+        backgroundColor: '#ffffff',
+        logging: false
+      },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+      pagebreak: { mode: ['css', 'legacy'], after: '.pdf-page' }
+    };
+
+    await html2pdf().set(opt).from(container).save();
+
+    document.body.removeChild(container);
+    toast(`✅ PDF berhasil: ${data.length} halaman`, 'bg-emerald-600');
+  } catch (err) {
+    console.error('Bulk PDF error:', err);
+    toast('❌ Gagal buat PDF: ' + err.message, 'bg-red-600');
+    const c = document.getElementById('pdfBulkContainer');
+    if (c && c.parentNode) c.parentNode.removeChild(c);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+// ============================================
+// REKAP DATA (untuk Excel + PDF)
 // ============================================
 async function loadRekapEmployees() {
   try {
@@ -997,33 +995,29 @@ async function previewRekap() {
       return;
     }
     document.getElementById('previewContent').innerHTML = `
-      <table class="w-full text-[11px]">
-        <thead class="text-slate-500 text-[10px] uppercase border-b border-slate-200">
+      <table class="w-full">
+        <thead class="text-slate-500 text-[10px] uppercase">
           <tr>
-            <th class="text-left py-2 px-1">ID</th>
-            <th class="text-left py-2 px-1">Nama</th>
-            <th class="text-left py-2 px-1">Tanggal</th>
-            <th class="text-left py-2 px-1">Jam</th>
-            <th class="text-left py-2 px-1">Durasi</th>
-            <th class="text-left py-2 px-1">Status</th>
-            <th class="text-left py-2 px-1">Disetujui Oleh</th>
+            <th class="text-left py-1">ID</th>
+            <th class="text-left py-1">Nama</th>
+            <th class="text-left py-1">Tanggal</th>
+            <th class="text-left py-1">Status</th>
+            <th class="text-left py-1">Bukti</th>
           </tr>
         </thead>
         <tbody>
           ${data.slice(0, 20).map(r => `
-            <tr class="border-b border-slate-100">
-              <td class="py-1.5 px-1 font-mono text-[10px] text-slate-500">#OT-${String(r.id).padStart(5,'0')}</td>
-              <td class="py-1.5 px-1 font-medium text-slate-700">${r.employee_name}</td>
-              <td class="py-1.5 px-1 text-slate-600">${new Date(r.date).toLocaleDateString('id-ID')}</td>
-              <td class="py-1.5 px-1 text-slate-600">${r.start_time || '-'}</td>
-              <td class="py-1.5 px-1 font-semibold text-slate-700">${r.planned_hours || 0}j</td>
-              <td class="py-1.5 px-1">${statusLabel(r.status)}</td>
-              <td class="py-1.5 px-1 text-slate-600">${r.approver_name || '-'}</td>
+            <tr class="border-t border-slate-200">
+              <td class="py-1.5 font-mono text-[10px]">#OT-${String(r.id).padStart(5,'0')}</td>
+              <td class="py-1.5">${r.employee_name}</td>
+              <td class="py-1.5">${new Date(r.date).toLocaleDateString('id-ID')}</td>
+              <td class="py-1.5">${statusLabel(r.status)}</td>
+              <td class="py-1.5 text-brand-600">🔗 Cetak</td>
             </tr>
           `).join('')}
         </tbody>
       </table>
-      ${data.length > 20 ? `<p class="text-center mt-2 text-slate-400 text-[10px]">...dan ${data.length - 20} lainnya</p>` : ''}
+      ${data.length > 20 ? `<p class="text-center mt-2 text-slate-400">...dan ${data.length - 20} lainnya</p>` : ''}
     `;
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
@@ -1043,9 +1037,8 @@ async function downloadRekap() {
       'Jenis Hari': r.is_holiday ? 'Hari Libur' : 'Hari Kerja',
       'Jam Mulai': r.start_time || '-',
       'Jam Selesai': r.actual_end ? new Date(r.actual_end).toLocaleTimeString('id-ID', {hour:'2-digit',minute:'2-digit'}) : '-',
-      'Durasi Rencana': r.planned_hours ? r.planned_hours + ' jam' : '-',
       'Durasi Aktual': r.actual_hours ? parseFloat(r.actual_hours).toFixed(2) + ' jam' : '-',
-      'Disetujui Oleh': r.approver_name || '-',
+      'Durasi Rencana': r.planned_hours ? r.planned_hours + ' jam' : '-',
       'Kategori': r.reason,
       'Deskripsi': r.description,
       'Sumber': r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan',
@@ -1079,9 +1072,9 @@ async function downloadRekap() {
 
     ws['!cols'] = [
       { wch: 12 }, { wch: 20 }, { wch: 25 }, { wch: 8 }, { wch: 15 }, { wch: 12 },
-      { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 20 },
-      { wch: 20 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 8 }, { wch: 15 },
-      { wch: 25 }, { wch: 30 }, { wch: 12 }, { wch: 25 }, { wch: 25 }
+      { wch: 12 }, { wch: 10 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 20 },
+      { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 8 }, { wch: 15 }, { wch: 25 },
+      { wch: 30 }, { wch: 12 }, { wch: 25 }, { wch: 25 }
     ];
 
     const wb = XLSX.utils.book_new();
@@ -1090,18 +1083,17 @@ async function downloadRekap() {
     const start = document.getElementById('rekapStart').value || 'awal';
     const end = document.getElementById('rekapEnd').value || 'akhir';
     XLSX.writeFile(wb, `Rekap-Lembur_${start}_${end}.xlsx`);
-    toast(`✓ Downloaded: ${data.length} record dengan link cetak`, 'bg-emerald-600');
+    toast(`✓ Downloaded: ${data.length} record`, 'bg-emerald-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
 // ============================================
-// AUTO-OPEN dari URL ?print=ID
+// AUTO-OPEN DARI URL ?print=ID
 // ============================================
 async function checkPrintParam() {
   const params = new URLSearchParams(window.location.search);
   const printId = params.get('print');
   if (printId) {
-    console.log(`🖨 Auto-open bukti untuk record ID: ${printId}`);
     window.history.replaceState({}, '', window.location.pathname);
     switchTab('records');
     await new Promise(r => setTimeout(r, 500));
