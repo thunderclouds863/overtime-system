@@ -1,13 +1,32 @@
 import { Router } from 'express';
 import { query } from '../db.js';
 import { hashPassword, requireAuth, requireAdmin, requireReviewer } from '../auth.js';
+import { sendEmail, templates } from '../mailer.js';
 
 const router = Router();
 
-// ============================================
-// USER MANAGEMENT (hanya admin)
-// ============================================
+function levelNum(level) {
+  if (!level) return 0;
+  const m = String(level).match(/^(\d+)/);
+  return m ? parseInt(m[1]) : 0;
+}
 
+async function notifyUser(userId, templateName, data) {
+  try {
+    const result = await query('SELECT email FROM users WHERE id = $1', [userId]);
+    const email = result.rows[0]?.email;
+    if (!email) return 0;
+    const r = await sendEmail({ to: email, ...templates[templateName](data) });
+    return r.success ? 1 : 0;
+  } catch (err) {
+    console.error('notifyUser error:', err.message);
+    return 0;
+  }
+}
+
+// ============================================
+// USER MANAGEMENT
+// ============================================
 router.get('/users', requireAuth, requireAdmin, async (req, res) => {
   try {
     const result = await query(
@@ -122,7 +141,7 @@ router.get('/approvers', requireAuth, requireAdmin, async (req, res) => {
 });
 
 // ============================================
-// RECORDS — admin & reviewer bisa akses
+// RECORDS — admin & reviewer
 // ============================================
 router.get('/records', requireAuth, requireReviewer, async (req, res) => {
   const { status, start_date, end_date, employee_id, limit = 500 } = req.query;
@@ -133,10 +152,13 @@ router.get('/records', requireAuth, requireReviewer, async (req, res) => {
         u.email as employee_email,
         u.jabatan,
         u.level as employee_level,
+        COALESCE(ap.full_name, ap2.full_name) as approver_name,
         ROUND(COALESCE(EXTRACT(EPOCH FROM r.planned_duration), 0) / 3600.0, 2) as planned_hours,
         ROUND(COALESCE(EXTRACT(EPOCH FROM r.actual_duration), 0) / 3600.0, 2) as actual_hours
       FROM overtime_records r
       LEFT JOIN users u ON u.id = r.employee_id
+      LEFT JOIN users ap ON ap.id = r.approved_by
+      LEFT JOIN users ap2 ON ap2.id = r.final_approver_id
       WHERE 1=1
     `;
     const params = [];
@@ -158,7 +180,93 @@ router.get('/records', requireAuth, requireReviewer, async (req, res) => {
 });
 
 // ============================================
-// STATS — admin & reviewer bisa akses
+// ADMIN APPROVE PENDING
+// ============================================
+router.post('/records/:id/admin-approve', requireAuth, requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { note } = req.body;
+
+  try {
+    const recordResult = await query('SELECT * FROM overtime_records WHERE id = $1', [id]);
+    const record = recordResult.rows[0];
+
+    if (!record) return res.status(404).json({ error: 'Record tidak ditemukan' });
+    if (record.status !== 'pending') {
+      return res.status(400).json({ error: `Record bukan pending (status: ${record.status})` });
+    }
+
+    // Admin approve = langsung final approve
+    await query(
+      `UPDATE overtime_records
+       SET status = 'approved',
+           approved_by = $1, approved_at = NOW(),
+           final_approver_id = $1, final_approval_at = NOW(),
+           approval_note = $2, updated_at = NOW()
+       WHERE id = $3`,
+      [req.user.id, note || `Disetujui oleh admin (${req.user.name})`, id]
+    );
+
+    console.log(`✅ Admin ${req.user.name} approve record ${id}`);
+
+    // Notif ke employee
+    await notifyUser(record.employee_id, 'approved', {
+      date: record.date,
+      startTime: record.start_time,
+      finalApproverName: req.user.name,
+      reason: record.reason,
+      desc: record.description
+    });
+
+    res.json({ success: true, message: 'Lembur disetujui oleh admin' });
+  } catch (err) {
+    console.error('admin-approve error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.post('/records/:id/admin-reject', requireAuth, requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  const { note } = req.body;
+
+  if (!note) return res.status(400).json({ error: 'Alasan wajib diisi' });
+
+  try {
+    const recordResult = await query('SELECT * FROM overtime_records WHERE id = $1', [id]);
+    const record = recordResult.rows[0];
+
+    if (!record) return res.status(404).json({ error: 'Record tidak ditemukan' });
+    if (record.status !== 'pending') {
+      return res.status(400).json({ error: `Record bukan pending (status: ${record.status})` });
+    }
+
+    await query(
+      `UPDATE overtime_records
+       SET status = 'rejected',
+           approval_note = $1, rejected_at = NOW(), updated_at = NOW()
+       WHERE id = $2`,
+      [`Ditolak admin (${req.user.name}): ${note}`, id]
+    );
+
+    console.log(`❌ Admin ${req.user.name} reject record ${id}`);
+
+    await notifyUser(record.employee_id, 'rejected', {
+      date: record.date,
+      startTime: record.start_time,
+      note: note,
+      rejectedBy: req.user.name,
+      reason: record.reason,
+      desc: record.description
+    });
+
+    res.json({ success: true, message: 'Lembur ditolak oleh admin' });
+  } catch (err) {
+    console.error('admin-reject error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// STATS
 // ============================================
 router.get('/stats', requireAuth, requireReviewer, async (req, res) => {
   try {
@@ -167,8 +275,6 @@ router.get('/stats', requireAuth, requireReviewer, async (req, res) => {
     const activeNow = await query("SELECT COUNT(*) FROM overtime_records WHERE status = 'active'");
     const pendingApproval = await query("SELECT COUNT(*) FROM overtime_records WHERE status = 'pending'");
     const pendingVerify = await query("SELECT COUNT(*) FROM overtime_records WHERE status = 'pending_verification'");
-    
-    // Total jam bulan ini — dari completed + pending_verification (yang sudah ada durasi aktual)
     const completedMonth = await query(`
       SELECT COALESCE(SUM(EXTRACT(EPOCH FROM actual_duration))/3600, 0) as total_hours
       FROM overtime_records
@@ -185,20 +291,6 @@ router.get('/stats', requireAuth, requireReviewer, async (req, res) => {
       pending_verify: parseInt(pendingVerify.rows[0].count),
       hours_this_month: parseFloat(completedMonth.rows[0].total_hours).toFixed(1)
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ============================================
-// REVIEWER LIST (untuk dropdown)
-// ============================================
-router.get('/reviewers', requireAuth, requireAdmin, async (req, res) => {
-  try {
-    const result = await query(
-      `SELECT id, email, full_name FROM users WHERE role = 'reviewer' AND is_active = true ORDER BY full_name`
-    );
-    res.json(result.rows);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
