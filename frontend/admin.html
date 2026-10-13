@@ -617,9 +617,6 @@ async function saveUser() {
 
   const levelNumVal = levelNum(level);
 
-  if (role === 'employee' && levelNumVal < 2) {
-    if (!confirm('Level 1 (Worker) tidak bisa ajukan lembur. Lanjutkan?')) return;
-  }
   if ((role === 'manager' || role === 'admin') && levelNumVal < 3) {
     return toast('Manager/Admin harus level 3+ untuk bisa approve', 'bg-red-600');
   }
