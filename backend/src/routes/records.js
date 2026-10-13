@@ -260,9 +260,9 @@ router.post('/', requireAuth, async (req, res) => {
     return res.status(400).json({ error: 'Durasi minimal 1 jam' });
   }
 
-  if (!isManager && userLevel !== 2) {
+  if (!isManager && (userLevel < 1 || userLevel > 2)) {
     return res.status(403).json({
-      error: `Hanya level 2 (Staff) yang bisa mengajukan lembur sendiri. Level kamu: ${user.level || '-'}`
+      error: `Hanya level 1-2 (Worker/Staff) yang bisa mengajukan lembur sendiri. Level kamu: ${user.level || '-'}`
     });
   }
 
