@@ -688,7 +688,7 @@ async function loadRecords() {
         <td class="px-3 md:px-4 py-3 text-xs hidden md:table-cell">
           <span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">${r.employee_level || '-'}</span>
         </td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm">${new Date(r.date).toLocaleDateString('id-ID')} ${r.is_holiday ? '🏖' : '💼'}</td>
+        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm">${new Date(r.date).toLocaleDateString('id-ID')}</td>
         <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">${r.start_time}${r.actual_end ? ' — ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
         <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm hidden md:table-cell">${duration}</td>
         <td class="px-3 md:px-4 py-3">
