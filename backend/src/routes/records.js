@@ -97,6 +97,10 @@ function getNowWIBTime() {
   return `${String(nowWIB.getHours()).padStart(2, '0')}:${String(nowWIB.getMinutes()).padStart(2, '0')}`;
 }
 
+function buildEmailActionToken(payload) {
+  return jwt.sign(payload, process.env.JWT_SECRET);
+}
+
 async function notifyUser(userId, templateName, data) {
   try {
     const result = await query('SELECT email FROM users WHERE id = $1', [userId]);
@@ -277,11 +281,9 @@ router.post('/', requireAuth, async (req, res) => {
     });
   }
 
-  // Jam mulai: dari request, atau default sesuai jenis hari
   let finalStartTime = start_time || getDefaultStartTime(date);
   let plannedStart = buildWIBDate(date, finalStartTime);
 
-  // Kalau hari ini dan jam mulai sudah lewat → auto-adjust ke jam sekarang (WIB)
   if (isToday && plannedStart < now) {
     const nowTime = getNowWIBTime();
     finalStartTime = nowTime;
@@ -312,7 +314,6 @@ router.post('/', requireAuth, async (req, res) => {
     }
 
     initialStatus = 'pending';
-
   } else {
     if (userLevel >= 4) {
       initialStatus = 'approved';
@@ -382,7 +383,6 @@ router.post('/', requireAuth, async (req, res) => {
     console.log(`✅ Record ID=${record.id}, status=${record.status}, source=${record.source}, start=${finalStartTime} WIB, chain=[${approvalChainIds.join(',')}]`);
 
     let emailSent = 0;
-    const JWT_SECRET = process.env.JWT_SECRET;
     const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
 
     if (!isManager) {
@@ -396,18 +396,14 @@ router.post('/', requireAuth, async (req, res) => {
 
       const directApprover = allApprovers[0];
       const finalApprover = allApprovers.find(a => levelNum(a.level) >= 4);
-
-      const samePerson = directApprover && finalApprover &&
-                          directApprover.id === finalApprover.id;
+      const samePerson = directApprover && finalApprover && directApprover.id === finalApprover.id;
 
       if (samePerson) {
-        const approveToken = jwt.sign(
-          { recordId: record.id, action: 'approve-final', approverId: finalApprover.id },
-          JWT_SECRET, { expiresIn: '24h' }
+        const approveToken = buildEmailActionToken(
+          { recordId: record.id, action: 'approve-final', approverId: finalApprover.id }
         );
-        const rejectToken = jwt.sign(
-          { recordId: record.id, action: 'reject', approverId: finalApprover.id },
-          JWT_SECRET, { expiresIn: '24h' }
+        const rejectToken = buildEmailActionToken(
+          { recordId: record.id, action: 'reject', approverId: finalApprover.id }
         );
 
         const r = await sendEmail({
@@ -426,16 +422,13 @@ router.post('/', requireAuth, async (req, res) => {
           })
         });
         if (r.success) emailSent++;
-
       } else {
         if (directApprover?.email) {
-          const approveToken = jwt.sign(
-            { recordId: record.id, action: 'approve-direct', approverId: directApprover.id },
-            JWT_SECRET, { expiresIn: '24h' }
+          const approveToken = buildEmailActionToken(
+            { recordId: record.id, action: 'approve-direct', approverId: directApprover.id }
           );
-          const rejectToken = jwt.sign(
-            { recordId: record.id, action: 'reject', approverId: directApprover.id },
-            JWT_SECRET, { expiresIn: '24h' }
+          const rejectToken = buildEmailActionToken(
+            { recordId: record.id, action: 'reject', approverId: directApprover.id }
           );
 
           const r = await sendEmail({
@@ -454,13 +447,11 @@ router.post('/', requireAuth, async (req, res) => {
         }
 
         if (finalApprover?.email) {
-          const approveToken = jwt.sign(
-            { recordId: record.id, action: 'approve-final', approverId: finalApprover.id },
-            JWT_SECRET, { expiresIn: '24h' }
+          const approveToken = buildEmailActionToken(
+            { recordId: record.id, action: 'approve-final', approverId: finalApprover.id }
           );
-          const rejectToken = jwt.sign(
-            { recordId: record.id, action: 'reject', approverId: finalApprover.id },
-            JWT_SECRET, { expiresIn: '24h' }
+          const rejectToken = buildEmailActionToken(
+            { recordId: record.id, action: 'reject', approverId: finalApprover.id }
           );
 
           const r = await sendEmail({
@@ -488,7 +479,6 @@ router.post('/', requireAuth, async (req, res) => {
         reason, desc: description
       });
       emailSent += fyiSent;
-
     } else {
       if (userLevel >= 4) {
         const assignedSent = await notifyUser(targetId, 'assigned', {
@@ -505,7 +495,6 @@ router.post('/', requireAuth, async (req, res) => {
           duration: durationNum
         });
         emailSent += fyiSent;
-
       } else {
         const allApproversResult = await query(
           'SELECT id, email, full_name, level FROM users WHERE id = ANY($1)',
@@ -518,13 +507,11 @@ router.post('/', requireAuth, async (req, res) => {
         const finalApprover = allApprovers.find(a => levelNum(a.level) >= 4);
 
         if (finalApprover?.email) {
-          const approveToken = jwt.sign(
-            { recordId: record.id, action: 'approve-final', approverId: finalApprover.id },
-            JWT_SECRET, { expiresIn: '24h' }
+          const approveToken = buildEmailActionToken(
+            { recordId: record.id, action: 'approve-final', approverId: finalApprover.id }
           );
-          const rejectToken = jwt.sign(
-            { recordId: record.id, action: 'reject', approverId: finalApprover.id },
-            JWT_SECRET, { expiresIn: '24h' }
+          const rejectToken = buildEmailActionToken(
+            { recordId: record.id, action: 'reject', approverId: finalApprover.id }
           );
 
           const r = await sendEmail({
@@ -653,11 +640,11 @@ router.post('/:id/start', requireAuth, async (req, res) => {
   try {
     const result = await query(
       `UPDATE overtime_records
-       SET status = 'active', actual_start = NOW(),
+       SET status = 'active', actual_start = COALESCE(actual_start, NOW()),
            gps_lat = $1, gps_lng = $2, gps_accuracy = $3, gps_distance = $4,
            auto_started = FALSE, updated_at = NOW()
        WHERE id = $5 AND (employee_id = $6 OR $7 IN ('manager', 'admin'))
-         AND status = 'approved'
+         AND status IN ('approved', 'pending', 'active')
        RETURNING *`,
       [lat, lng, accuracy, distance, id, user.id, user.role]
     );
@@ -909,11 +896,9 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
       return res.status(400).json({ error: `Batas pengajuan sudah lewat (maks ${SUBMIT_DEADLINE_HOUR}:00)` });
     }
 
-    // Jam mulai: dari request, atau default sesuai jenis hari
     let finalStartTime = start_time || getDefaultStartTime(finalDate);
     let plannedStart = buildWIBDate(finalDate, finalStartTime);
 
-    // Kalau hari ini dan jam mulai sudah lewat → auto-adjust ke jam sekarang (WIB)
     if (isToday && plannedStart < now) {
       const nowTime = getNowWIBTime();
       finalStartTime = nowTime;
@@ -955,20 +940,16 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
     const directApprover = allApprovers[0];
     const finalApprover = allApprovers.find(a => levelNum(a.level) >= 4);
 
-    const JWT_SECRET = process.env.JWT_SECRET;
     const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
     let emailSent = 0;
-
     const samePerson = directApprover && finalApprover && directApprover.id === finalApprover.id;
 
     if (samePerson) {
-      const approveToken = jwt.sign(
-        { recordId: updated.id, action: 'approve-final', approverId: finalApprover.id },
-        JWT_SECRET, { expiresIn: '24h' }
+      const approveToken = buildEmailActionToken(
+        { recordId: updated.id, action: 'approve-final', approverId: finalApprover.id }
       );
-      const rejectToken = jwt.sign(
-        { recordId: updated.id, action: 'reject', approverId: finalApprover.id },
-        JWT_SECRET, { expiresIn: '24h' }
+      const rejectToken = buildEmailActionToken(
+        { recordId: updated.id, action: 'reject', approverId: finalApprover.id }
       );
       const r = await sendEmail({
         to: finalApprover.email,
@@ -985,13 +966,11 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
       if (r.success) emailSent++;
     } else {
       if (directApprover?.email) {
-        const approveToken = jwt.sign(
-          { recordId: updated.id, action: 'approve-direct', approverId: directApprover.id },
-          JWT_SECRET, { expiresIn: '24h' }
+        const approveToken = buildEmailActionToken(
+          { recordId: updated.id, action: 'approve-direct', approverId: directApprover.id }
         );
-        const rejectToken = jwt.sign(
-          { recordId: updated.id, action: 'reject', approverId: directApprover.id },
-          JWT_SECRET, { expiresIn: '24h' }
+        const rejectToken = buildEmailActionToken(
+          { recordId: updated.id, action: 'reject', approverId: directApprover.id }
         );
         const r = await sendEmail({
           to: directApprover.email,
