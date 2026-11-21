@@ -1,0 +1,12 @@
+# Render Blueprint untuk instance DEMO (bukan production)
+services:
+  - type: web
+    name: overtime-demo
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
