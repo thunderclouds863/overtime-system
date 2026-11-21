@@ -10,5 +10,6 @@ su postgres -c "$PGBIN/pg_ctl -D $PGDATA -o '-c listen_addresses=127.0.0.1 -p $P
 "$PGBIN/createdb" -h 127.0.0.1 -p "$PGPORT" -U postgres overtime
 export DATABASE_URL="postgres://postgres@127.0.0.1:$PGPORT/overtime"
 export JWT_SECRET="${JWT_SECRET:-$(head -c 32 /dev/urandom | base64)}"
+cp "$(dirname "$0")/demo-banner.js" "$(dirname "$0")/../frontend/demo-banner.js"
 cd "$(dirname "$0")/../backend"
 exec node src/index.js
