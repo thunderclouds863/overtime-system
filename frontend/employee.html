@@ -529,7 +529,8 @@ tailwind.config = {
 </div>
 
 <script>
-const API_URL = 'https://overtime-backend-wd4c.onrender.com';
+// Instance demo (frontend disajikan backend di onrender.com) → pakai origin yang sama
+const API_URL = location.hostname.endsWith('.onrender.com') ? location.origin : 'https://overtime-backend-wd4c.onrender.com';
 const SUPABASE_URL = 'https://yokwtposthhzldhbohob.supabase.co';
 const SUPABASE_ANON_KEY = 'REDACTED_SUPABASE_ANON_KEY';
 const SUPABASE_BUCKET = 'proof-files';
@@ -615,6 +616,10 @@ function getBrowserGPS() {
   });
 }
 async function fetchGPS() {
+  // Instance demo: simulasikan posisi di kantor supaya penguji dari mana pun bisa mencoba alur
+  if (location.hostname.endsWith('.onrender.com')) {
+    return { lat: OFFICE.lat + 0.0003, lng: OFFICE.lng + 0.0003, acc: 15, simulated: true };
+  }
   try {
     return await Promise.race([getBrowserGPS(), delay(4000).then(()=>{throw new Error('timeout');})]);
   } catch {

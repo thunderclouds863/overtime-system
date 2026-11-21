@@ -8,6 +8,15 @@ import adminRouter from './routes/admin.js';
 import recordsRouter from './routes/records.js';
 import approvalRouter from './routes/approval.js';
 import schedulerRouter from './routes/scheduler.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { pool } from './db.js';
+
+// DEMO_MODE=1: instance portfolio terpisah — schema + akun demo otomatis,
+// frontend disajikan dari backend yang sama (satu URL).
+const DEMO_MODE = process.env.DEMO_MODE === '1';
+const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -58,12 +67,16 @@ app.get('/health', (req, res) => {
   });
 });
 
-app.get('/', (req, res) => {
-  res.json({
-    name: 'Overtime Management API',
-    version: '1.0.0'
+if (DEMO_MODE) {
+  app.use(express.static(path.join(ROOT_DIR, 'frontend')));
+} else {
+  app.get('/', (req, res) => {
+    res.json({
+      name: 'Overtime Management API',
+      version: '1.0.0'
+    });
   });
-});
+}
 
 app.use((err, req, res, next) => {
   console.error('Error:', err.message);
@@ -73,6 +86,18 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+async function start() {
+  if (DEMO_MODE) {
+    const sql = fs.readFileSync(path.join(ROOT_DIR, 'database/demo_schema.sql'), 'utf8');
+    await pool.query(sql);
+    console.log('🧪 DEMO_MODE: schema & akun demo siap');
+  }
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+}
+
+start().catch(err => {
+  console.error('Startup failed:', err);
+  process.exit(1);
 });
