@@ -30,8 +30,9 @@
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
 <header class="app-header flex items-center justify-between">
-  <div class="app-brand flex items-center gap-3">
-    <img src="logo-cimory.png" alt="Cimory">
+  <div class="app-brand flex items-center gap-2.5 sm:gap-3 min-w-0">
+    <img src="logo-cimory.png" alt="Cimory" class="shrink-0">
+    <span class="app-role-pill sm:hidden">Karyawan</span>
     <span class="divider hidden sm:block"></span>
     <div class="hidden sm:block">
       <p class="app-title">Sistem Lembur</p>
@@ -126,20 +127,29 @@
       </div>
     </div>
 
-    <div id="gpsBanner" class="rounded-2xl border border-slate-200 bg-white p-3.5 md:px-4 md:py-3">
+    <div id="gpsBanner" class="rounded-2xl border border-slate-200 bg-white p-4 md:px-5 md:py-3.5">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="gps-pin checking shrink-0" id="gpsBannerPin"><span class="text-sm" id="gpsBannerIcon" data-icon="pin"></span></div>
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full bg-slate-400" id="gpsBannerDot"></span>
-              <p class="text-xs font-semibold text-slate-500" id="gpsBannerLabel">Verifikasi lokasi</p>
-              <p class="text-sm font-bold text-slate-800 truncate" id="gpsBannerTitle">Cek posisi di area kantor</p>
+        <div class="flex items-start sm:items-center gap-3 min-w-0">
+          <div class="gps-pin checking shrink-0 mt-0.5 sm:mt-0" id="gpsBannerPin"><span class="text-sm" id="gpsBannerIcon" data-icon="pin"></span></div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center flex-wrap gap-x-2 gap-y-0.5">
+              <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                <span class="w-2 h-2 rounded-full bg-slate-400 shrink-0" id="gpsBannerDot"></span>
+                <span id="gpsBannerLabel">Verifikasi lokasi</span>
+              </span>
+              <span class="text-slate-300 hidden sm:inline">·</span>
+              <p class="text-sm font-bold text-slate-900" id="gpsBannerTitle">Cek posisi di area kantor</p>
             </div>
-            <p class="text-xs text-slate-500 mt-0.5"><span id="gpsBannerDesc">Radius 100m dari kantor</span> · Koord <span class="font-mono text-slate-700" id="gpsBannerCoord">—</span> · Jarak <span class="font-mono text-slate-700" id="gpsBannerDist">—</span> · Akurasi <span class="font-mono text-slate-700" id="gpsBannerAcc">—</span></p>
+            <p class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-0.5">
+              <span id="gpsBannerDesc">Radius 100 m dari kantor</span>
+              <span class="text-slate-300">·</span>
+              <span>Koord <span class="font-mono text-slate-700" id="gpsBannerCoord">—</span></span>
+              <span>Jarak <span class="font-mono text-slate-700" id="gpsBannerDist">—</span></span>
+              <span>Akurasi <span class="font-mono text-slate-700" id="gpsBannerAcc">—</span></span>
+            </p>
           </div>
         </div>
-        <button type="button" onclick="runGPSVerification('banner')" id="gpsBannerBtn" class="btn btn-secondary btn-sm shrink-0">
+        <button type="button" onclick="runGPSVerification('banner')" id="gpsBannerBtn" class="btn btn-secondary btn-sm w-full sm:w-auto shrink-0">
           Cek lokasi
         </button>
       </div>
@@ -166,12 +176,12 @@
 
     <div class="grid lg:grid-cols-5 gap-4">
       <div class="lg:col-span-3 bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
-        <div class="flex items-center justify-between mb-3">
-          <div>
+        <div class="flex items-start justify-between gap-2 mb-3">
+          <div class="min-w-0">
             <h2 class="font-bold text-slate-900 text-sm md:text-base">Jadwal Lembur Disetujui</h2>
             <p class="text-xs text-slate-500">Siap dimulai saat waktu lembur tiba dan berada di radius kantor</p>
           </div>
-          <span class="tag" id="upcomingCount">0 jadwal</span>
+          <span class="tag shrink-0" id="upcomingCount">0 jadwal</span>
         </div>
         <div id="upcomingList" class="row-list">
           <div class="text-center py-8 text-slate-400 text-sm">Belum ada jadwal lembur yang disetujui</div>
@@ -266,7 +276,7 @@
 
 </main>
 
-<div id="modalGPS" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+<div id="modalGPS" class="fixed inset-0 bg-slate-900/50 modal-overlay hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <div class="flex items-start justify-between mb-4">
@@ -297,7 +307,7 @@
   </div>
 </div>
 
-<div id="modalBukti" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+<div id="modalBukti" class="fixed inset-0 bg-slate-900/50 modal-overlay hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <div class="flex items-start justify-between mb-4">
@@ -351,11 +361,16 @@
   </div>
 </div>
 
-<div id="modalCancel" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+<div id="modalCancel" class="fixed inset-0 bg-slate-900/50 modal-overlay hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-sm w-full p-6 modal-in">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
-    <h3 class="font-extrabold text-slate-900 text-lg">Batalkan Sesi Lembur?</h3>
-    <p class="text-xs text-slate-500 mt-1">Atasan akan menerima pemberitahuan pembatalan sesi ini.</p>
+    <div class="flex items-start justify-between gap-2">
+      <div>
+        <h3 class="font-extrabold text-slate-900 text-lg">Batalkan Sesi Lembur?</h3>
+        <p class="text-xs text-slate-500 mt-1">Atasan akan menerima pemberitahuan pembatalan sesi ini.</p>
+      </div>
+      <button type="button" onclick="closeModal('modalCancel')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
     <label for="cancelReason" class="block text-xs font-semibold text-slate-700 mt-4">Alasan pembatalan <span class="text-red-600">*</span></label>
     <textarea id="cancelReason" rows="2" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-red-600 focus:ring-2 focus:ring-red-600/15 focus:outline-none"></textarea>
     <div class="flex gap-2 mt-5">
@@ -365,11 +380,16 @@
   </div>
 </div>
 
-<div id="modalEdit" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+<div id="modalEdit" class="fixed inset-0 bg-slate-900/50 modal-overlay hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
-    <h3 class="font-extrabold text-slate-900 text-lg">Revisi Pengajuan</h3>
-    <p class="text-xs text-slate-500 mt-1 mb-4">Perbarui tanggal, jam, atau rencana kerja lalu kirim ulang.</p>
+    <div class="flex items-start justify-between gap-2 mb-4">
+      <div>
+        <h3 class="font-extrabold text-slate-900 text-lg">Revisi Pengajuan</h3>
+        <p class="text-xs text-slate-500 mt-1">Perbarui tanggal, jam, atau rencana kerja lalu kirim ulang.</p>
+      </div>
+      <button type="button" onclick="closeModal('modalEdit')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
     <div id="editNote" class="note tone-wait mb-4"></div>
     <label for="editDate" class="block text-xs font-semibold text-slate-700">Tanggal <span class="text-red-600">*</span></label>
     <input type="date" id="editDate" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none">
@@ -403,11 +423,16 @@
   </div>
 </div>
 
-<div id="modalEditProof" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+<div id="modalEditProof" class="fixed inset-0 bg-slate-900/50 modal-overlay hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
-    <h3 class="font-extrabold text-slate-900 text-lg">Revisi Bukti</h3>
-    <p class="text-xs text-slate-500 mt-1 mb-4">Perbarui bukti hasil kerja sesuai catatan verifikasi atasan.</p>
+    <div class="flex items-start justify-between gap-2 mb-4">
+      <div>
+        <h3 class="font-extrabold text-slate-900 text-lg">Revisi Bukti</h3>
+        <p class="text-xs text-slate-500 mt-1">Perbarui bukti hasil kerja sesuai catatan verifikasi atasan.</p>
+      </div>
+      <button type="button" onclick="closeModal('modalEditProof')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
     <div id="editProofNote" class="note tone-wait mb-4"></div>
 
     <label for="editProofText" class="block text-xs font-semibold text-slate-700">Deskripsi hasil kerja</label>
@@ -429,9 +454,9 @@
   </div>
 </div>
 
-<div id="toast" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 bg-ink-900 text-white px-4 py-3 rounded-2xl text-sm hidden z-[60] shadow-2xl max-w-xs modal-in"></div>
+<div id="toast" class="fixed bottom-24 md:bottom-6 left-4 sm:left-auto right-4 md:right-6 bg-ink-900 text-white px-4 py-3 rounded-2xl text-sm hidden z-[60] shadow-2xl sm:max-w-xs modal-in"></div>
 
-<div id="autoStartNotif" class="fixed top-20 right-4 md:right-6 bg-white border border-slate-200 border-l-4 border-l-emerald-600 rounded-2xl shadow-xl p-4 hidden z-50 notif-slide max-w-sm">
+<div id="autoStartNotif" class="fixed top-20 left-4 sm:left-auto right-4 md:right-6 bg-white border border-slate-200 border-l-4 border-l-emerald-600 rounded-2xl shadow-xl p-4 hidden z-50 notif-slide sm:max-w-sm">
   <div class="flex items-start gap-3">
     <div class="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-700 font-bold shrink-0" id="notifIcon">!</div>
     <div class="flex-1">
@@ -470,7 +495,7 @@ let gpsState = { status: 'idle', lat: null, lng: null, acc: null, distance: null
 
 function toast(msg, color='bg-ink-900') {
   const t = document.getElementById('toast');
-  t.className = `fixed bottom-24 md:bottom-6 right-4 md:right-6 ${color} text-white px-4 py-3 rounded-2xl text-sm z-[60] shadow-2xl max-w-xs modal-in`;
+  t.className = `fixed bottom-24 md:bottom-6 left-4 sm:left-auto right-4 md:right-6 ${color} text-white px-4 py-3 rounded-2xl text-sm z-[60] shadow-2xl sm:max-w-xs modal-in`;
   t.textContent = msg;
   t.classList.remove('hidden');
   clearTimeout(t._t);
@@ -1233,7 +1258,7 @@ function renderEmpUpcoming() {
     const isSoon = diff > 0 && diff < 3600000;
     const canStartNow = diff < 3600000;
     return `
-      <div class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+      <div class="flex flex-wrap sm:flex-nowrap items-center gap-3 py-3 first:pt-0 last:pb-0">
         <div class="w-11 h-11 rounded-xl ${isReady ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-slate-100 text-slate-800'} flex flex-col items-center justify-center shrink-0">
           <p class="text-[11px] uppercase font-bold leading-none">${dt.toLocaleDateString('id-ID', {month:'short'})}</p>
           <p class="text-base font-extrabold leading-tight tabular-nums">${dt.getDate()}</p>
@@ -1242,7 +1267,7 @@ function renderEmpUpcoming() {
           <p class="font-bold text-slate-900 text-sm truncate">${r.reason}${UI.dayTag(r.isHoliday)}</p>
           <p class="text-xs text-slate-500 mt-0.5"><span class="font-mono">${r.startTime}</span> · ${r.plannedHours} jam · ${r.source === 'manager' ? 'Ditugaskan atasan' : 'Pengajuan sendiri'}</p>
         </div>
-        <div class="shrink-0 flex items-center gap-2">
+        <div class="w-full sm:w-auto shrink-0 flex items-center justify-end gap-2">
           ${isReady ? `
             <span class="badge tone-live">Waktunya mulai</span>
             <button type="button" onclick="manualStart(${r.id})" class="btn btn-success btn-sm">Mulai</button>
