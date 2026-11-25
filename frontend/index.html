@@ -13,27 +13,27 @@
 <link rel="stylesheet" href="assets/app.css">
 <script src="assets/ui.js"></script>
 </head>
-<body class="min-h-screen flex flex-col justify-between p-4 md:p-6">
+<body class="login-canvas min-h-screen flex flex-col justify-between p-4 md:p-6">
 
-<div class="flex-1 flex items-center justify-center py-8">
-  <main class="w-full max-w-[400px]">
+<div class="flex-1 flex items-center justify-center py-6 sm:py-8">
+  <main class="w-full max-w-[408px]">
     <div class="flex items-center gap-3.5 mb-6">
-      <img src="logo-cimory.png" alt="Cimory" class="h-11 w-auto object-contain">
-      <div class="border-l border-slate-300 pl-3.5">
-        <h1 class="text-base font-bold text-slate-900 leading-tight">Sistem Monitoring Lembur</h1>
+      <img src="logo-cimory.png" alt="Cimory" class="h-11 w-auto object-contain shrink-0">
+      <div class="border-l border-slate-300/90 pl-3.5 min-w-0">
+        <h1 class="text-base font-bold text-slate-900 leading-tight font-display">Sistem Monitoring Lembur</h1>
         <p class="text-xs text-slate-500 mt-0.5">Portal internal karyawan &amp; persetujuan</p>
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 md:p-7">
-      <h2 class="text-lg font-bold text-slate-900">Masuk ke akun</h2>
+    <div class="login-card bg-white rounded-2xl border border-slate-200/90 p-6 md:p-7">
+      <h2 class="text-lg font-bold text-slate-900 font-display">Masuk ke akun</h2>
       <p class="text-xs text-slate-500 mt-1 mb-5">Gunakan alamat email kantor yang terdaftar.</p>
 
       <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
         <div>
           <label for="email" class="block text-xs font-semibold text-slate-700 mb-1.5">Email kantor</label>
           <input type="email" id="email" required autocomplete="email"
-            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none transition"
+            class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
             placeholder="nama@cimory.com">
         </div>
 
@@ -41,10 +41,10 @@
           <label for="password" class="block text-xs font-semibold text-slate-700 mb-1.5">Kata sandi</label>
           <div class="relative">
             <input type="password" id="password" required autocomplete="current-password"
-              class="w-full pl-3.5 pr-10 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none transition"
+              class="w-full pl-3.5 pr-11 py-2.5 border border-slate-300 rounded-xl text-sm bg-white"
               placeholder="Masukkan kata sandi">
             <button type="button" id="togglePwd" onclick="togglePassword()" aria-label="Tampilkan kata sandi"
-              class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-400 hover:text-slate-700 rounded-lg transition">
+              class="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 text-slate-400 hover:text-slate-700 rounded-lg transition">
               <span data-icon="eye"></span>
             </button>
           </div>
@@ -58,14 +58,14 @@
           <p class="text-xs font-medium">Server sedang aktif kembali dari mode siaga. Mohon tunggu sekitar 30 detik…</p>
         </div>
 
-        <button type="submit" id="loginBtn" class="btn btn-primary btn-block">
+        <button type="submit" id="loginBtn" class="btn btn-primary btn-block mt-1">
           Masuk
         </button>
       </form>
 
-      <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+      <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between flex-wrap gap-x-2 gap-y-1 text-xs text-slate-500">
         <span>Kendala akses akun?</span>
-        <a href="mailto:hrdcimory1@gmail.com" class="font-semibold text-brand-600 hover:text-brand-800">hrdcimory1@gmail.com</a>
+        <a href="mailto:hrdcimory1@gmail.com" class="font-semibold text-brand-600 hover:text-brand-800 transition">hrdcimory1@gmail.com</a>
       </div>
     </div>
   </main>
