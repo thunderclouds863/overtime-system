@@ -16,8 +16,9 @@
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
 <header class="app-header flex items-center justify-between">
-  <div class="app-brand flex items-center gap-3">
-    <img src="logo-cimory.png" alt="Cimory">
+  <div class="app-brand flex items-center gap-2.5 sm:gap-3 min-w-0">
+    <img src="logo-cimory.png" alt="Cimory" class="shrink-0">
+    <span class="app-role-pill sm:hidden">Atasan</span>
     <span class="divider hidden sm:block"></span>
     <div class="hidden sm:block">
       <p class="app-title">Sistem Lembur</p>
@@ -120,10 +121,10 @@
           <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200">
             <tr>
               <th class="text-left px-3 md:px-4 py-3 font-bold">Karyawan</th>
-              <th class="text-left px-3 md:px-4 py-3 font-bold hidden md:table-cell">Level</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold hidden lg:table-cell">Level</th>
               <th class="text-left px-3 md:px-4 py-3 font-bold">Tanggal</th>
-              <th class="text-left px-3 md:px-4 py-3 font-bold hidden lg:table-cell">Jam</th>
-              <th class="text-left px-3 md:px-4 py-3 font-bold hidden md:table-cell">Durasi</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold hidden xl:table-cell">Jam</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold hidden lg:table-cell">Durasi</th>
               <th class="text-left px-3 md:px-4 py-3 font-bold">Status</th>
               <th class="text-left px-3 md:px-4 py-3 font-bold">Aksi</th>
             </tr>
@@ -135,8 +136,8 @@
   </section>
 </main>
 
-<div id="modalReview" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
-  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
+<div id="modalReview" class="fixed inset-0 bg-slate-900/50 modal-overlay hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-5 sm:p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <div class="flex items-start justify-between mb-4">
       <div><p class="text-xs font-semibold text-brand-600">Keputusan Persetujuan</p><h3 class="font-extrabold text-slate-900 text-lg">Review Pengajuan Lembur</h3></div>
@@ -145,12 +146,12 @@
     <div id="reviewContent" class="space-y-3 text-sm"></div>
     <label for="reviewNote" class="block text-xs font-semibold text-slate-700 mt-4">Catatan atasan</label>
     <textarea id="reviewNote" rows="2" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white" placeholder="Wajib diisi bila meminta revisi atau menolak pengajuan"></textarea>
-    <div id="reviewActions" class="grid grid-cols-3 gap-2 mt-5"></div>
+    <div id="reviewActions" class="flex flex-col-reverse sm:grid sm:grid-cols-3 gap-2 mt-5"></div>
   </div>
 </div>
 
-<div id="modalVerify" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
-  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
+<div id="modalVerify" class="fixed inset-0 bg-slate-900/50 modal-overlay hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-5 sm:p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <div class="flex items-start justify-between mb-4">
       <div><p class="text-xs font-semibold text-amber-700">Pemeriksaan Hasil</p><h3 class="font-extrabold text-slate-900 text-lg">Verifikasi Hasil Lembur</h3></div>
@@ -170,7 +171,7 @@
     </div>
     <label for="verifyNote" class="block text-xs font-semibold text-slate-700 mt-4">Catatan verifikasi</label>
     <textarea id="verifyNote" rows="2" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white" placeholder="Wajib diisi bila meminta revisi bukti atau menolak hasil"></textarea>
-    <div class="grid grid-cols-3 gap-2 mt-5">
+    <div class="flex flex-col-reverse sm:grid sm:grid-cols-3 gap-2 mt-5">
       <button type="button" onclick="verifyReject()" class="btn btn-secondary text-red-700 border-red-200 hover:bg-red-50">Tolak</button>
       <button type="button" onclick="verifyRevision()" class="btn btn-secondary text-amber-800 border-amber-200 hover:bg-amber-50">Minta Revisi</button>
       <button type="button" onclick="verifyApprove()" class="btn btn-success">Setujui Hasil</button>
@@ -178,7 +179,7 @@
   </div>
 </div>
 
-<div id="toast" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 bg-ink-900 text-white px-4 py-3 rounded-2xl text-sm hidden z-[60] shadow-2xl modal-in max-w-xs"></div>
+<div id="toast" class="fixed bottom-24 md:bottom-6 left-4 sm:left-auto right-4 md:right-6 bg-ink-900 text-white px-4 py-3 rounded-2xl text-sm hidden z-[60] shadow-2xl modal-in sm:max-w-xs"></div>
 
 <script>
 // Instance demo (frontend disajikan backend di onrender.com) → pakai origin yang sama
@@ -212,7 +213,7 @@ async function api(path, opts = {}) {
 
 function toast(msg, color = 'bg-ink-900') {
   const t = document.getElementById('toast');
-  t.className = `fixed bottom-24 md:bottom-6 right-4 md:right-6 ${color} text-white px-4 py-3 rounded-2xl text-sm z-[60] shadow-2xl modal-in max-w-xs`;
+  t.className = `fixed bottom-24 md:bottom-6 left-4 sm:left-auto right-4 md:right-6 ${color} text-white px-4 py-3 rounded-2xl text-sm z-[60] shadow-2xl modal-in sm:max-w-xs`;
   t.textContent = msg;
   t.classList.remove('hidden');
   clearTimeout(t._t);
@@ -630,17 +631,17 @@ function renderMonitorTable() {
   const tb = document.getElementById('monitorTable');
   if (records.length === 0) { tb.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-slate-400 text-sm">Belum ada data</td></tr>'; return; }
   tb.innerHTML = records.map(r => `
-    <tr class="hover:bg-slate-50 transition">
-      <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">${r.employee}<p class="text-[11px] text-slate-400 md:hidden font-normal">Level ${r.employeeLevel}</p></td>
-      <td class="px-3 md:px-4 py-3 text-xs hidden md:table-cell"><span class="tag font-mono">${r.employeeLevel}</span></td>
-      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm">${fmtDate(r.date)} ${UI.dayTag(r.isHoliday)}</td>
-      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs font-mono hidden lg:table-cell">${r.startTime}${r.end ? ' – ' + fmtTime(r.end) : ''}</td>
-      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm font-mono hidden md:table-cell">${r.duration ? fmtDurShort(r.duration) : (r.plannedHours + 'j')}</td>
+    <tr class="hover:bg-slate-50/80 transition">
+      <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">${r.employee}<p class="text-[11px] text-slate-400 lg:hidden font-normal">Level ${r.employeeLevel}</p></td>
+      <td class="px-3 md:px-4 py-3 text-xs hidden lg:table-cell"><span class="tag font-mono">${r.employeeLevel}</span></td>
+      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm whitespace-nowrap">${fmtDate(r.date)} ${UI.dayTag(r.isHoliday)}<p class="text-[11px] text-slate-400 font-mono lg:hidden mt-0.5">${r.startTime} · ${r.duration ? fmtDurShort(r.duration) : (r.plannedHours + 'j')}</p></td>
+      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs font-mono hidden xl:table-cell">${r.startTime}${r.end ? ' – ' + fmtTime(r.end) : ''}</td>
+      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm font-mono hidden lg:table-cell">${r.duration ? fmtDurShort(r.duration) : (r.plannedHours + 'j')}</td>
       <td class="px-3 md:px-4 py-3">${statusBadge(r.status)}</td>
       <td class="px-3 md:px-4 py-3">
-        ${r.status === 'pending' ? `<button type="button" onclick="openReview(${r.id})" class="text-brand-600 hover:text-brand-800 text-xs font-bold">Tinjau</button>` : ''}
-        ${r.status === 'pending_verification' ? `<button type="button" onclick="openVerify(${r.id})" class="text-amber-700 hover:text-amber-900 text-xs font-bold">Verifikasi</button>` : ''}
-        ${['rejected','revision'].includes(r.status) ? `<button type="button" onclick="reopenRecord(${r.id})" class="text-slate-600 hover:text-slate-900 text-xs font-bold">Buka</button>` : ''}
+        ${r.status === 'pending' ? `<button type="button" onclick="openReview(${r.id})" class="tbl-action text-brand-600 hover:text-brand-800">Tinjau</button>` : ''}
+        ${r.status === 'pending_verification' ? `<button type="button" onclick="openVerify(${r.id})" class="tbl-action tbl-action-amber text-amber-800 hover:text-amber-900">Verifikasi</button>` : ''}
+        ${['rejected','revision'].includes(r.status) ? `<button type="button" onclick="reopenRecord(${r.id})" class="tbl-action tbl-action-neutral text-slate-600 hover:text-slate-900">Buka</button>` : ''}
         ${['approved','completed','cancelled','active','proof_revision','verify_rejected'].includes(r.status) ? '<span class="text-xs text-slate-300">—</span>' : ''}
       </td>
     </tr>
