@@ -3,293 +3,213 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0f0f1e">
+<meta name="theme-color" content="#ffffff">
 <title>Karyawan — Sistem Lembur</title>
 <link rel="icon" type="image/png" href="logo-cimory.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-tailwind.config = {
-  theme: {
-    extend: {
-      fontFamily: {
-        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'system-ui', 'sans-serif']
-      },
-      colors: {
-        brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'},
-        ink: {900:'#0f0f1e',800:'#1a1a2e',700:'#25253d',600:'#33334f'},
-        neon: {pink:'#ec4899',violet:'#8b5cf6',cyan:'#06b6d4',lime:'#84cc16'}
-      }
-    }
-  }
-}
-</script>
+<script src="assets/theme.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="assets/ui.js"></script>
 <style>
-  * { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-  .font-display { font-family: 'Space Grotesk', system-ui, sans-serif; }
-  body { background: #f7f7fb; }
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 4px; }
-  .nav-item { transition: all 0.2s ease; }
-  .nav-item.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
-  .card-hover { transition: all 0.25s cubic-bezier(.2,.9,.3,1); }
-  .card-hover:active { transform: scale(0.98); }
-  .pulse-ring { box-shadow: 0 0 0 0 rgba(34,197,94,0.7); animation: pulseRing 2s infinite; }
-  @keyframes pulseRing { 0%{box-shadow:0 0 0 0 rgba(34,197,94,0.5);} 70%{box-shadow:0 0 0 12px rgba(34,197,94,0);} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0);} }
-  .gps-radar { position: relative; width: 120px; height: 120px; margin: 0 auto; }
-  .gps-radar::before, .gps-radar::after { content:''; position:absolute; inset:0; border-radius:50%; border:2px solid; }
-  .gps-radar::before { border-color: rgba(99,102,241,0.2); animation: radar 2s infinite; }
-  .gps-radar::after { border-color: rgba(99,102,241,0.4); animation: radar 2s infinite 1s; }
-  @keyframes radar { 0%{transform:scale(0.4); opacity:1;} 100%{transform:scale(1.3); opacity:0;} }
-  .gps-pin { position:absolute; top:50%; left:50%; transform: translate(-50%,-50%); width:52px; height:52px; border-radius:50%; display:flex; align-items:center; justify-content:center; transition: all 0.3s; }
-  .gps-pin.checking { background: #e0e7ff; color:#4f46e5; }
-  .gps-pin.success { background: #d1fae5; color:#059669; }
-  .gps-pin.fail { background: #fee2e2; color:#dc2626; }
-  .gps-pin-inner { animation: gpsPulse 1.2s ease-in-out infinite; }
-  @keyframes gpsPulse { 0%,100%{transform:scale(1);} 50%{transform:scale(1.1);} }
-  .gps-step { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:12px; transition: all 0.3s; font-size: 13px; }
-  .gps-step.pending { background: #f1f5f9; color:#94a3b8; }
-  .gps-step.active { background: #e0e7ff; color:#4f46e5; font-weight: 600; }
-  .gps-step.done { background: #d1fae5; color:#059669; font-weight: 600; }
-  .gps-step.fail { background: #fee2e2; color:#dc2626; font-weight: 600; }
-  .progress-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
-  .progress-fill { height: 100%; background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899); transition: width 0.4s ease; border-radius: 3px; }
-  .shake { animation: shake 0.4s; }
-  @keyframes shake { 0%,100%{transform:translateX(0);} 20%,60%{transform:translateX(-6px);} 40%,80%{transform:translateX(6px);} }
-  .ready-badge { position: relative; }
-  .ready-badge::before { content:''; position:absolute; inset:-4px; border-radius: 16px; background: linear-gradient(135deg, #10b981, #059669); opacity: 0.15; animation: readyPulse 2s infinite; }
-  @keyframes readyPulse { 0%,100%{opacity:0.15;} 50%{opacity:0.35;} }
-  .notif-slide { animation: notifSlide 0.4s cubic-bezier(.2,.9,.3,1); }
-  @keyframes notifSlide { from {transform: translateX(120%);} to {transform: translateX(0);} }
-  .stat-grad-1 { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-  .stat-grad-2 { background: linear-gradient(135deg, #f59e0b, #fb923c); }
-  .stat-grad-3 { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
-  .stat-grad-4 { background: linear-gradient(135deg, #10b981, #059669); }
-  .modal-in { animation: modalIn 0.3s cubic-bezier(.2,.9,.3,1); }
-  @keyframes modalIn { from {opacity:0; transform: scale(0.94) translateY(20px);} to {opacity:1; transform:scale(1) translateY(0);} }
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-  @media (max-width: 767px) { main { padding-bottom: 90px; } }
+  .gps-pin { width: 40px; height: 40px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; transition: background-color .2s, color .2s; }
+  .gps-pin.checking { background: #eef1fa; color: #2b3d93; }
+  .gps-pin.success { background: #dcf4e7; color: #0b6239; }
+  .gps-pin.fail { background: #fde6e6; color: #9f161c; }
+  .gps-step { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; font-size: 13px; border: 1px solid #e3e6ec; background: #fff; }
+  .gps-step.pending { color: #858da0; background: #f8f9fb; }
+  .gps-step.active { border-color: #bcc6e8; background: #eef1fa; color: #233279; font-weight: 600; }
+  .gps-step.done { border-color: #b7e4cc; background: #f2fbf6; color: #0b6239; font-weight: 600; }
+  .gps-step.fail { border-color: #f5bcbc; background: #fef4f4; color: #9f161c; font-weight: 600; }
+  .progress-bar { height: 6px; background: #e3e6ec; border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: #2b3d93; transition: width .3s ease; border-radius: 3px; }
 </style>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
-<header class="fixed top-0 left-0 right-0 h-14 md:h-16 bg-ink-900 text-white z-40 border-b border-slate-800">
-  <div class="h-full px-3 md:px-5 flex items-center justify-between">
-    <div class="flex items-center gap-2 md:gap-3">
-      <img src="logo-cimory.png" alt="Cimory" class="w-9 h-9 md:w-10 md:h-10 object-contain">
-      <div class="hidden sm:block">
-        <p class="text-xs md:text-sm font-bold">Employee Portal</p>
-        <p class="text-[9px] md:text-[10px] text-slate-400">Overtime Management</p>
-      </div>
+<header class="app-header flex items-center justify-between">
+  <div class="app-brand flex items-center gap-3">
+    <img src="logo-cimory.png" alt="Cimory">
+    <span class="divider hidden sm:block"></span>
+    <div class="hidden sm:block">
+      <p class="app-title">Sistem Lembur</p>
+      <p class="app-role">Karyawan</p>
     </div>
-    <div class="flex items-center gap-2">
-      <button onclick="openGPSModal()" class="flex items-center gap-1.5 text-[10px] md:text-xs bg-slate-800/70 hover:bg-slate-700 border border-slate-700 px-2.5 md:px-3 py-1.5 rounded-full transition">
-        <span class="w-1.5 h-1.5 bg-slate-400 rounded-full" id="gpsTopDot"></span>
-        <span id="gpsStatus" class="text-slate-300 font-medium hidden xs:inline">Cek GPS</span>
+  </div>
+  <div class="flex items-center gap-2 md:gap-3">
+    <button type="button" onclick="openGPSModal()" class="inline-flex items-center gap-2 h-[34px] px-2.5 rounded-lg border border-slate-200 text-[13px] font-semibold text-slate-600 hover:bg-slate-50 transition" aria-label="Status lokasi — cek ulang">
+        <span class="w-2 h-2 bg-slate-400 rounded-full" id="gpsTopDot"></span>
+        <span id="gpsStatus" class="hidden sm:inline">Cek GPS</span>
       </button>
-      <div class="flex items-center gap-2 pl-2 md:pl-3 border-l border-slate-800">
-        <div class="text-right hidden md:block">
-          <p class="text-xs font-semibold" id="userName">-</p>
-          <p class="text-[10px] text-violet-400 font-bold" id="userLevelLabel">-</p>
-        </div>
-        <div class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-neon-violet to-neon-pink flex items-center justify-center font-bold text-xs text-white" id="userAvatar">-</div>
-      </div>
-      <button onclick="logout()" class="text-[10px] md:text-xs bg-red-600/20 hover:bg-red-600/40 border border-red-500/40 text-red-300 px-2 md:px-3 py-1.5 rounded-full transition">🚪</button>
+    <div class="hidden md:block text-right leading-tight">
+      <p class="text-sm font-semibold text-slate-800" id="userName">-</p>
+      <p class="text-xs text-slate-500" id="userLevelLabel">-</p>
     </div>
+    <div class="avatar" id="userAvatar" aria-hidden="true">–</div>
+    <button type="button" onclick="logout()" class="btn-quiet inline-flex items-center" aria-label="Keluar"><span data-icon="logout"></span><span class="hidden sm:inline">Keluar</span></button>
   </div>
 </header>
 
-<aside class="hidden md:flex fixed top-16 left-0 bottom-0 w-60 bg-ink-900 text-slate-400 z-30 flex-col border-r border-slate-800">
-  <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-    <p class="text-[10px] uppercase text-slate-500 px-3 pt-2 pb-1 font-bold tracking-wider">Menu</p>
-    <a onclick="switchTab('emp-dashboard')" data-tab="emp-dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer active"><span>🏠</span> Dashboard</a>
-    <a onclick="switchTab('emp-ajukan')" data-tab="emp-ajukan" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>✍️</span> Ajukan Lembur</a>
-    <a onclick="switchTab('emp-riwayat')" data-tab="emp-riwayat" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>📜</span> Riwayat</a>
+<aside class="app-sidebar hidden md:flex flex-col">
+  <nav class="flex-1 px-3 pb-3 overflow-y-auto" aria-label="Menu utama">
+    <p class="nav-label">Menu</p>
+    <button type="button" onclick="switchTab('emp-dashboard')" data-tab="emp-dashboard" class="nav-item"><span data-icon="home"></span><span>Beranda</span></button>
+    <button type="button" onclick="switchTab('emp-ajukan')" data-tab="emp-ajukan" class="nav-item"><span data-icon="pencil"></span><span>Ajukan lembur</span></button>
+    <button type="button" onclick="switchTab('emp-riwayat')" data-tab="emp-riwayat" class="nav-item"><span data-icon="history"></span><span>Riwayat</span></button>
   </nav>
-  <div class="p-4 border-t border-slate-800 space-y-2">
-    <button onclick="openGPSModal()" class="w-full text-left bg-slate-800/50 hover:bg-slate-800 border border-slate-700 rounded-xl p-3 transition">
-      <div class="flex items-center gap-2 mb-1">
-        <span class="w-1.5 h-1.5 bg-green-400 rounded-full" id="gpsSideDot"></span>
-        <p class="text-[10px] uppercase text-slate-400 font-bold">Lokasi</p>
-      </div>
-      <p class="text-[11px] text-slate-300 font-mono" id="gpsSideCoord">-6.1920, 106.7376</p>
+  <div class="p-3 border-t border-slate-200">
+    <button type="button" onclick="openGPSModal()" class="w-full text-left rounded-lg px-3 py-2.5 hover:bg-slate-50 transition">
+      <span class="flex items-center gap-2 text-xs font-semibold text-slate-500"><span class="w-2 h-2 bg-slate-400 rounded-full" id="gpsSideDot"></span>Lokasi terakhir</span>
+      <span class="block text-xs text-slate-700 font-mono mt-1" id="gpsSideCoord">Belum dicek</span>
     </button>
   </div>
 </aside>
 
-<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 z-40 safe-bottom">
-  <div class="flex items-center justify-around px-2 py-2">
-    <button onclick="switchTab('emp-dashboard')" data-mobile-tab="emp-dashboard" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
-      <span class="text-xl">🏠</span>
-      <span class="text-[10px] font-semibold text-slate-600">Home</span>
-    </button>
-    <button onclick="switchTab('emp-ajukan')" data-mobile-tab="emp-ajukan" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
-      <span class="text-xl">✍️</span>
-      <span class="text-[10px] font-semibold text-slate-600">Ajukan</span>
-    </button>
-    <button onclick="switchTab('emp-riwayat')" data-mobile-tab="emp-riwayat" class="mobile-nav flex flex-col items-center gap-0.5 py-2 px-3 rounded-2xl min-w-[64px]">
-      <span class="text-xl">📜</span>
-      <span class="text-[10px] font-semibold text-slate-600">Riwayat</span>
-    </button>
+<nav class="mobile-nav-bar md:hidden" aria-label="Menu utama">
+  <div class="flex items-stretch">
+    <button type="button" onclick="switchTab('emp-dashboard')" data-mobile-tab="emp-dashboard" class="mobile-nav flex flex-col items-center gap-1"><span data-icon="home"></span><span>Beranda</span></button>
+    <button type="button" onclick="switchTab('emp-ajukan')" data-mobile-tab="emp-ajukan" class="mobile-nav flex flex-col items-center gap-1"><span data-icon="pencil"></span><span>Ajukan</span></button>
+    <button type="button" onclick="switchTab('emp-riwayat')" data-mobile-tab="emp-riwayat" class="mobile-nav flex flex-col items-center gap-1"><span data-icon="history"></span><span>Riwayat</span></button>
   </div>
 </nav>
 
-<main class="md:ml-60 pt-16 md:pt-20 pb-24 md:pb-8 px-3 md:px-8 max-w-[1400px]">
+<main class="md:ml-60 pt-[76px] md:pt-[88px] pb-24 md:pb-8 px-3 md:px-8 max-w-[1400px]">
 
-  <section id="tab-emp-dashboard" class="tab-content space-y-4">
+  <section id="tab-emp-dashboard" class="tab-content space-y-5">
     <div class="flex items-end justify-between flex-wrap gap-2">
       <div>
-        <p class="text-[11px] text-slate-500 font-medium">Halo, welcome back 👋</p>
-        <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display" id="welcomeName">-</h1>
+        <p class="text-xs text-slate-500">Selamat bekerja,</p>
+        <h1 class="text-xl md:text-2xl font-extrabold text-slate-900 font-display" id="welcomeName">-</h1>
       </div>
-      <p class="text-[10px] md:text-xs text-slate-500" id="todayDate"></p>
+      <p class="text-xs text-slate-500" id="todayDate"></p>
     </div>
 
-    <div id="gpsBanner" class="rounded-3xl border-2 transition-all duration-300 p-4 md:p-5">
-      <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
-        <div class="shrink-0">
-          <div class="gps-radar">
-            <div class="gps-pin checking" id="gpsBannerPin"><span class="gps-pin-inner text-xl md:text-2xl" id="gpsBannerIcon">📍</span></div>
-          </div>
+    <div id="activeCard" class="hidden rounded-2xl bg-white border border-slate-200 border-l-4 border-l-emerald-600 p-5 md:p-6">
+      <div class="flex items-center justify-between flex-wrap gap-2 pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-2.5">
+          <span class="w-2.5 h-2.5 bg-emerald-600 text-emerald-600 rounded-full live-dot"></span>
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-800">Sedang berjalan · sesi lembur aktif</span>
         </div>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 mb-1.5">
-            <span class="w-2 h-2 rounded-full bg-slate-400" id="gpsBannerDot"></span>
-            <p class="text-[10px] md:text-xs font-bold uppercase tracking-wider" id="gpsBannerLabel">Verifikasi Lokasi</p>
-          </div>
-          <p class="text-base md:text-lg font-extrabold text-slate-800" id="gpsBannerTitle">Cek lokasi kamu</p>
-          <p class="text-xs md:text-sm text-slate-500 mt-0.5" id="gpsBannerDesc">Radius 100m dari kantor</p>
-          <div class="grid grid-cols-3 gap-2 mt-3">
-            <div class="bg-white rounded-xl p-2 border border-slate-100">
-              <p class="text-[9px] text-slate-500 uppercase font-bold">Koordinat</p>
-              <p class="text-[10px] font-mono font-semibold text-slate-700 mt-0.5 truncate" id="gpsBannerCoord">—</p>
-            </div>
-            <div class="bg-white rounded-xl p-2 border border-slate-100">
-              <p class="text-[9px] text-slate-500 uppercase font-bold">Jarak</p>
-              <p class="text-[10px] font-semibold text-slate-700 mt-0.5" id="gpsBannerDist">—</p>
-            </div>
-            <div class="bg-white rounded-xl p-2 border border-slate-100">
-              <p class="text-[9px] text-slate-500 uppercase font-bold">Akurasi</p>
-              <p class="text-[10px] font-semibold text-slate-700 mt-0.5" id="gpsBannerAcc">—</p>
-            </div>
-          </div>
+        <div class="flex items-center gap-1.5">
+          <span id="activeAutoTag" class="hidden tag">Mulai otomatis</span>
+          <span class="tag" id="activeSource"></span>
         </div>
-        <div class="shrink-0">
-          <button onclick="runGPSVerification('banner')" id="gpsBannerBtn" class="w-full md:w-auto bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-3 rounded-2xl shadow-lg shadow-brand-500/25 transition whitespace-nowrap active:scale-95">
-            Cek Lokasi 📍
-          </button>
+      </div>
+
+      <div class="grid md:grid-cols-3 gap-4 items-center py-4">
+        <div>
+          <p class="text-xs text-slate-500">Durasi berjalan</p>
+          <p id="activeDuration" class="text-3xl md:text-4xl font-extrabold tabular-nums tracking-tight text-slate-900 mt-0.5">00:00:00</p>
         </div>
+        <div>
+          <p class="text-xs text-slate-500">Waktu mulai</p>
+          <p id="activeStart" class="font-bold text-sm text-slate-800 mt-0.5"></p>
+          <p id="activePlan" class="text-xs text-slate-500 mt-0.5"></p>
+        </div>
+        <div>
+          <p class="text-xs text-slate-500">Jarak lokasi awal</p>
+          <p id="activeLocation" class="font-bold text-sm text-slate-800 font-mono mt-0.5"></p>
+          <p class="text-xs text-slate-500 mt-0.5">Radius kantor maks. 100 m</p>
+        </div>
+      </div>
+
+      <div id="radiusStatus" class="note tone-info flex items-center gap-2">
+        <span class="w-2 h-2 bg-amber-500 rounded-full"></span>
+        <span>Memantau posisi terhadap radius kantor…</span>
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-slate-100">
+        <button type="button" onclick="cancelOvertime()" class="btn btn-secondary sm:w-auto">Batalkan sesi</button>
+        <button type="button" onclick="endOvertime()" class="btn btn-success flex-1">Selesaikan &amp; kirim bukti</button>
       </div>
     </div>
 
-    <div id="activeCard" class="hidden relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-700 text-white shadow-2xl shadow-emerald-900/30">
-      <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle at 20% 30%, white 1.5px, transparent 1.5px); background-size: 24px 24px;"></div>
-      <div class="relative p-5 md:p-6">
-        <div class="flex items-center justify-between mb-4">
-          <div class="flex items-center gap-2">
-            <span class="w-2 h-2 bg-white rounded-full pulse-ring"></span>
-            <span class="text-[10px] md:text-xs font-bold uppercase tracking-wider">LIVE · Sedang Lembur</span>
-          </div>
-          <div class="flex items-center gap-1.5">
-            <span id="activeAutoTag" class="hidden text-[10px] bg-white/20 px-2.5 py-1 rounded-full font-semibold">⚡ AUTO</span>
-            <span class="text-[10px] bg-white/20 px-2.5 py-1 rounded-full font-semibold" id="activeSource"></span>
+    <div id="gpsBanner" class="rounded-2xl border border-slate-200 bg-white p-3.5 md:px-4 md:py-3">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="gps-pin checking shrink-0" id="gpsBannerPin"><span class="text-sm" id="gpsBannerIcon" data-icon="pin"></span></div>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-slate-400" id="gpsBannerDot"></span>
+              <p class="text-xs font-semibold text-slate-500" id="gpsBannerLabel">Verifikasi lokasi</p>
+              <p class="text-sm font-bold text-slate-800 truncate" id="gpsBannerTitle">Cek posisi di area kantor</p>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5"><span id="gpsBannerDesc">Radius 100m dari kantor</span> · Koord <span class="font-mono text-slate-700" id="gpsBannerCoord">—</span> · Jarak <span class="font-mono text-slate-700" id="gpsBannerDist">—</span> · Akurasi <span class="font-mono text-slate-700" id="gpsBannerAcc">—</span></p>
           </div>
         </div>
-        <div class="text-center md:text-left">
-          <p class="text-emerald-100 text-[10px] md:text-xs mb-1">Durasi Berjalan</p>
-          <p id="activeDuration" class="text-4xl md:text-5xl font-extrabold tabular-nums tracking-tight font-display">00:00:00</p>
-        </div>
-        <div class="grid grid-cols-2 gap-3 mt-4">
+        <button type="button" onclick="runGPSVerification('banner')" id="gpsBannerBtn" class="btn btn-secondary btn-sm shrink-0">
+          Cek lokasi
+        </button>
+      </div>
+    </div>
+
+    <dl class="stats grid-cols-2 md:grid-cols-4">
+      <div class="stat">
+        <dt><span class="dot" style="--tone-dot:#2b3d93"></span>Jam bulan ini</dt>
+        <dd id="empStatHours">0.0<span>j</span></dd>
+      </div>
+      <div class="stat">
+        <dt><span class="dot" style="--tone-dot:#e0a000"></span>Menunggu approval</dt>
+        <dd id="empStatPending">0</dd>
+      </div>
+      <div class="stat">
+        <dt><span class="dot" style="--tone-dot:#ee6a10"></span>Verifikasi hasil</dt>
+        <dd id="empStatVerify">0</dd>
+      </div>
+      <div class="stat">
+        <dt><span class="dot" style="--tone-dot:#13a05e"></span>Selesai disetujui</dt>
+        <dd id="empStatApproved">0</dd>
+      </div>
+    </dl>
+
+    <div class="grid lg:grid-cols-5 gap-4">
+      <div class="lg:col-span-3 bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
+        <div class="flex items-center justify-between mb-3">
           <div>
-            <p class="text-emerald-100 text-[10px] mb-0.5">Mulai</p>
-            <p id="activeStart" class="font-bold text-xs"></p>
-            <p id="activePlan" class="text-emerald-200 text-[10px] mt-0.5"></p>
+            <h2 class="font-bold text-slate-900 text-sm md:text-base">Jadwal Lembur Disetujui</h2>
+            <p class="text-xs text-slate-500">Siap dimulai saat waktu lembur tiba dan berada di radius kantor</p>
           </div>
-          <div class="text-right">
-            <p class="text-emerald-100 text-[10px] mb-0.5">Lokasi</p>
-            <p class="font-bold text-xs">✓ GPS</p>
-            <p id="activeLocation" class="text-emerald-200 text-[10px] mt-0.5"></p>
-          </div>
+          <span class="tag" id="upcomingCount">0 jadwal</span>
         </div>
-
-        <div id="radiusStatus" class="mt-4 bg-white/10 rounded-2xl p-3 text-[11px] text-emerald-100 border border-white/20 flex items-center gap-2">
-          <span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span>
-          <span>Memantau radius kantor...</span>
-        </div>
-
-        <div class="grid grid-cols-2 gap-2 mt-3">
-          <button onclick="cancelOvertime()" class="bg-white/15 hover:bg-white/25 border border-white/30 text-white font-semibold py-3 rounded-2xl text-xs md:text-sm transition active:scale-95">✕ Batal</button>
-          <button onclick="endOvertime()" class="bg-white text-emerald-700 hover:bg-emerald-50 font-bold py-3 rounded-2xl text-xs md:text-sm shadow-lg transition active:scale-95">✓ Selesai</button>
+        <div id="upcomingList" class="row-list">
+          <div class="text-center py-8 text-slate-400 text-sm">Belum ada jadwal lembur yang disetujui</div>
         </div>
       </div>
-    </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="stat-grad-1 rounded-2xl p-4 text-white shadow-lg shadow-violet-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Total Jam</p>
-        <p id="empStatHours" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0.0<span class="text-sm opacity-80 ml-0.5">j</span></p>
-        <p class="text-[9px] opacity-75 mt-0.5 relative">Bulan ini</p>
-      </div>
-      <div class="stat-grad-2 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Menunggu</p>
-        <p id="empStatPending" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
-        <p class="text-[9px] opacity-75 mt-0.5 relative">Approval</p>
-      </div>
-      <div class="stat-grad-3 rounded-2xl p-4 text-white shadow-lg shadow-cyan-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Verifikasi</p>
-        <p id="empStatVerify" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
-        <p class="text-[9px] opacity-75 mt-0.5 relative">Hasil kerja</p>
-      </div>
-      <div class="stat-grad-4 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase tracking-wide relative">Disetujui</p>
-        <p id="empStatApproved" class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative">0</p>
-        <p class="text-[9px] opacity-75 mt-0.5 relative">Selesai ✓</p>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-5">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="font-bold text-slate-800 text-sm md:text-base">📅 Jadwal Disetujui</h2>
-        <span class="text-[10px] bg-brand-50 text-brand-700 font-bold px-2.5 py-1 rounded-full uppercase" id="upcomingCount">0 jadwal</span>
-      </div>
-      <div id="upcomingList" class="space-y-3">
-        <div class="text-center py-8 text-slate-400 text-sm">Belum ada jadwal</div>
-      </div>
-    </div>
-
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-5">
-      <h2 class="font-bold text-slate-800 mb-3 text-sm md:text-base">🔥 Aktivitas Terbaru</h2>
-      <div id="empRecent" class="space-y-2">
-        <div class="text-center py-8 text-slate-400 text-sm">Belum ada aktivitas</div>
+      <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-bold text-slate-900 text-sm md:text-base">Aktivitas Terbaru</h2>
+          <button type="button" onclick="switchTab('emp-riwayat')" class="text-xs font-semibold text-brand-600 hover:text-brand-800">Lihat semua</button>
+        </div>
+        <div id="empRecent" class="row-list">
+          <div class="text-center py-8 text-slate-400 text-sm">Belum ada aktivitas</div>
+        </div>
       </div>
     </div>
   </section>
 
   <section id="tab-emp-ajukan" class="tab-content hidden space-y-4">
     <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">✍️ Ajukan Lembur</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Isi form, atasan akan review</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-900 font-display">Ajukan Lembur</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Isi rencana kerja; pengajuan diteruskan ke atasan sesuai alur persetujuan.</p>
     </div>
-    <div class="grid lg:grid-cols-3 gap-4 md:gap-5">
-      <div class="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-slate-100 p-5 md:p-6">
-        <h2 class="font-bold text-slate-800 mb-1 text-sm md:text-base">Form Pengajuan</h2>
-        <p class="text-[11px] text-slate-500 mb-4">Field dengan <span class="text-red-500">*</span> wajib</p>
-        <div class="grid md:grid-cols-2 gap-3 md:gap-4">
+    <div class="grid lg:grid-cols-3 gap-4 md:gap-5 items-start">
+      <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 p-5 md:p-6">
+        <div class="flex items-baseline justify-between mb-4 pb-3 border-b border-slate-100">
+          <h2 class="font-bold text-slate-900 text-sm md:text-base">Detail Pengajuan</h2>
+          <p class="text-xs text-slate-500">Kolom bertanda <span class="text-red-600">*</span> wajib diisi</p>
+        </div>
+        <div class="grid md:grid-cols-2 gap-4">
           <div>
-            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
-            <input type="date" id="inpDate" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition">
+            <label for="inpDate" class="block text-xs font-semibold text-slate-700">Tanggal lembur <span class="text-red-600">*</span></label>
+            <input type="date" id="inpDate" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none transition">
           </div>
           <div>
-            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Kategori <span class="text-red-500">*</span></label>
-            <select id="inpReason" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition">
-              <option value="">— Pilih —</option>
+            <label for="inpReason" class="block text-xs font-semibold text-slate-700">Kategori <span class="text-red-600">*</span></label>
+            <select id="inpReason" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none transition">
+              <option value="">— Pilih kategori —</option>
               <option>Pekerjaan mendesak</option>
               <option>Target proyek</option>
               <option>Pengganti rekan</option>
@@ -298,51 +218,46 @@ tailwind.config = {
             </select>
           </div>
           <div>
-            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Jenis Hari</label>
-            <div id="jenisHari" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600">Pilih tanggal dulu</div>
+            <label class="block text-xs font-semibold text-slate-700">Jenis hari</label>
+            <div id="jenisHari" class="w-full mt-1.5 border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50 text-slate-600">Pilih tanggal terlebih dahulu</div>
           </div>
           <div>
-            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Jam Mulai (auto)</label>
-            <input type="time" id="inpStart" readonly class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600 cursor-not-allowed">
+            <label for="inpStart" class="block text-xs font-semibold text-slate-700">Jam mulai (otomatis)</label>
+            <input type="time" id="inpStart" readonly class="w-full mt-1.5 border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50 text-slate-600 font-mono cursor-not-allowed">
           </div>
           <div class="md:col-span-2">
-            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Durasi (jam) <span class="text-red-500">*</span></label>
-            <input type="number" id="inpDurasi" min="1" max="24" value="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition">
-            <p class="text-[10px] text-slate-400 mt-1">Minimal 1 jam. Lembur &lt; 1 jam tidak dihitung.</p>
+            <label for="inpDurasi" class="block text-xs font-semibold text-slate-700">Rencana durasi (jam) <span class="text-red-600">*</span></label>
+            <input type="number" id="inpDurasi" min="1" max="24" value="2" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none transition">
+            <p class="text-xs text-slate-500 mt-1">Minimal 1 jam. Sesi dengan durasi aktual di bawah 1 jam tidak dihitung.</p>
           </div>
           <div class="md:col-span-2">
-            <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Rencana Pekerjaan <span class="text-red-500">*</span></label>
-            <textarea id="inpDesc" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 focus:outline-none transition" placeholder="Contoh: Menyelesaikan laporan bulanan..."></textarea>
+            <label for="inpDesc" class="block text-xs font-semibold text-slate-700">Rencana pekerjaan <span class="text-red-600">*</span></label>
+            <textarea id="inpDesc" rows="3" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none transition" placeholder="Contoh: Menyelesaikan rekonsiliasi laporan bulanan..."></textarea>
           </div>
         </div>
-        <div class="mt-4 bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 text-xs text-brand-900">
-          <strong>💡 Info jam:</strong> Hari kerja mulai <strong>17:00</strong>. Hari libur (Sabtu/Minggu) mulai <strong>08:00</strong>. Batas pengajuan hari ini jam <strong>18:00</strong>.
-        </div>
-        <button onclick="submitRequest()" id="btnSubmitRequest" class="mt-5 w-full bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold py-4 rounded-2xl shadow-lg shadow-brand-500/30 text-sm transition active:scale-[0.98]">
-          Kirim Pengajuan 
+        <button type="button" onclick="submitRequest()" id="btnSubmitRequest" class="btn btn-primary btn-block mt-5">
+          Kirim Pengajuan
         </button>
       </div>
-      <div class="bg-gradient-to-br from-ink-900 via-brand-900 to-ink-900 rounded-3xl p-5 text-white shadow-xl">
-        <div class="flex items-center gap-2 mb-4">
-          <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-neon-violet to-neon-pink flex items-center justify-center text-sm">ℹ</div>
-          <h3 class="font-bold text-sm">Ketentuan</h3>
-        </div>
-        <ul class="space-y-3 text-xs text-slate-300">
-          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari kerja: mulai <strong class="text-white">17:00</strong></span></li>
-          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Hari libur: mulai <strong class="text-white">08:00</strong></span></li>
-          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Batas pengajuan hari ini: <strong class="text-white">18:00</strong></span></li>
-          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Minimal lembur <strong class="text-white">1 jam</strong></span></li>
-          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>GPS radius <strong class="text-white">100m</strong></span></li>
-          <li class="flex gap-2"><span class="text-violet-400 font-bold">▸</span><span>Approval bertingkat (Supervisor → Manager)</span></li>
-        </ul>
-      </div>
+
+      <aside class="bg-white rounded-2xl border border-slate-200 p-5">
+        <h3 class="font-bold text-sm text-slate-900 pb-3 mb-3 border-b border-slate-100">Ketentuan Lembur</h3>
+        <dl class="kv">
+          <dt>Hari kerja</dt><dd class="font-semibold">Mulai 17:00</dd>
+          <dt>Hari libur</dt><dd class="font-semibold">Mulai 08:00 (Sabtu/Minggu)</dd>
+          <dt>Batas ajukan</dt><dd class="font-semibold">Hari yang sama maks. 18:00</dd>
+          <dt>Durasi min.</dt><dd class="font-semibold">1 jam penuh</dd>
+          <dt>Radius lokasi</dt><dd class="font-semibold">Maks. 100 m dari kantor</dd>
+          <dt>Persetujuan</dt><dd>Bertingkat (Atasan langsung → Manager)</dd>
+        </dl>
+      </aside>
     </div>
   </section>
 
   <section id="tab-emp-riwayat" class="tab-content hidden space-y-4">
     <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">📜 Riwayat Saya</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Semua pengajuan & rekam jejak</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-900 font-display">Riwayat Lembur</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Status persetujuan, durasi aktual, dan verifikasi hasil kerja</p>
     </div>
     <div id="empHistory" class="space-y-3">
       <div class="text-center py-8 text-slate-400 text-sm">Belum ada riwayat</div>
@@ -351,180 +266,179 @@ tailwind.config = {
 
 </main>
 
-<div id="modalGPS" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+<div id="modalGPS" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <div class="flex items-start justify-between mb-4">
       <div>
-        <h3 class="font-extrabold text-slate-800 text-lg">📍 Verifikasi Lokasi</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Cek posisi kamu di area kantor</p>
+        <h3 class="font-extrabold text-slate-900 text-lg">Verifikasi Lokasi</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Pemeriksaan posisi terhadap radius kantor (100 m)</p>
       </div>
-      <button onclick="closeModal('modalGPS')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+      <button type="button" onclick="closeModal('modalGPS')" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
     </div>
-    <div class="py-3"><div class="gps-radar"><div class="gps-pin checking" id="gpsPin"><span class="gps-pin-inner text-2xl" id="gpsPinIcon">📍</span></div></div></div>
-    <div class="text-center mb-4">
-      <p class="font-extrabold text-slate-800 text-lg" id="gpsTitle">Mengambil koordinat...</p>
-      <p class="text-xs text-slate-500 mt-1" id="gpsSubtitle">Mohon tunggu</p>
+    <div class="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200 mb-3">
+      <div class="gps-pin checking shrink-0" id="gpsPin"><span id="gpsPinIcon" data-icon="pin"></span></div>
+      <div class="min-w-0">
+        <p class="font-bold text-slate-900 text-sm" id="gpsTitle">Mengambil koordinat…</p>
+        <p class="text-xs text-slate-500 mt-0.5" id="gpsSubtitle">Mohon tunggu</p>
+      </div>
     </div>
-    <div class="progress-bar mb-4"><div class="progress-fill" id="gpsProgress" style="width: 10%"></div></div>
-    <div class="space-y-2 mb-4">
-      <div class="gps-step pending" id="step1"><span>📍</span> Mengambil koordinat GPS</div>
-      <div class="gps-step pending" id="step2"><span>📏</span> Menghitung jarak</div>
-      <div class="gps-step pending" id="step3"><span>✓</span> Memverifikasi radius</div>
+    <div class="progress-bar mb-3"><div class="progress-fill" id="gpsProgress" style="width: 10%"></div></div>
+    <div class="space-y-1.5 mb-4">
+      <div class="gps-step pending" id="step1">Mengambil koordinat GPS</div>
+      <div class="gps-step pending" id="step2">Menghitung jarak ke kantor</div>
+      <div class="gps-step pending" id="step3">Memverifikasi batas radius</div>
     </div>
     <div id="gpsResult" class="hidden rounded-2xl p-4 mb-4"></div>
     <div class="flex gap-2">
-      <button onclick="closeModal('modalGPS')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50 transition">Tutup</button>
-      <button onclick="runGPSVerification('modal')" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg">Cek Ulang</button>
+      <button type="button" onclick="closeModal('modalGPS')" class="btn btn-secondary flex-1">Tutup</button>
+      <button type="button" onclick="runGPSVerification('modal')" class="btn btn-primary flex-1">Cek Ulang</button>
     </div>
   </div>
 </div>
 
-<div id="modalBukti" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+<div id="modalBukti" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
     <div class="flex items-start justify-between mb-4">
       <div>
-        <h3 class="font-extrabold text-slate-800 text-lg">📎 Bukti Hasil Kerja</h3>
-        <p class="text-xs text-slate-500 mt-0.5">Upload file, bukti kirim file, atau link bukti hasil lembur</p>
+        <h3 class="font-extrabold text-slate-900 text-lg">Bukti Hasil Kerja</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Unggah lampiran atau tautan bukti penyelesaian lembur</p>
       </div>
-      <button onclick="closeModal('modalBukti')" class="text-slate-400 text-2xl leading-none">×</button>
+      <button type="button" onclick="closeModal('modalBukti')" class="text-slate-400 text-2xl leading-none">×</button>
     </div>
 
-    <label class="text-xs font-bold text-slate-600 uppercase">Deskripsi hasil <span class="text-red-500">*</span></label>
-    <textarea id="proofText" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none" placeholder="Contoh: Laporan bulanan selesai, sudah dikirim ke atasan..."></textarea>
+    <label for="proofText" class="block text-xs font-semibold text-slate-700">Deskripsi hasil kerja <span class="text-red-600">*</span></label>
+    <textarea id="proofText" rows="3" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none" placeholder="Contoh: Laporan bulanan selesai dan telah dikirim ke atasan..."></textarea>
 
-    <div class="mt-4 bg-blue-50 border border-blue-200 rounded-2xl p-3 text-xs text-blue-800">
-      <strong>⚠️ Perhatian:</strong> Maksimal ukuran file <strong>1 MB</strong>. Kalau file lebih besar, gunakan opsi kedua (upload link).
-    </div>
-
-    <div class="mt-4">
-      <label class="text-xs font-bold text-slate-600 uppercase">Opsi 1 — Upload File (≤ 1 MB)</label>
-      <input type="file" id="proofFile" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx" class="w-full mt-1.5 text-sm border border-slate-200 rounded-2xl px-3 py-2.5 bg-slate-50">
-      <p class="text-[10px] text-slate-400 mt-1">Format: JPG, PNG, PDF, Word, Excel</p>
+    <div class="mt-4 note tone-info">
+      Ukuran file unggahan maksimal <strong>2 MB</strong>. Untuk file lebih besar, gunakan tautan eksternal di bawah.
     </div>
 
     <div class="mt-4">
-      <label class="text-xs font-bold text-slate-600 uppercase">Opsi 2 — Link External (kalau file > 1 MB)</label>
-      <input type="url" id="proofExternalUrl" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none" placeholder="https://drive.google.com/...">
-      <p class="text-[10px] text-slate-400 mt-1">Google Drive, OneDrive, Dropbox, dll. Pastikan akses "anyone with link".</p>
+      <label for="proofFile" class="block text-xs font-semibold text-slate-700">Opsi 1 — Unggah file (maks. 2 MB)</label>
+      <input type="file" id="proofFile" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx" class="w-full mt-1.5 text-sm border border-slate-300 rounded-xl px-3 py-2 bg-white">
+      <p class="text-xs text-slate-500 mt-1">Format: JPG, PNG, PDF, Word, Excel</p>
     </div>
 
-    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Catatan Tambahan (opsional)</label>
-    <textarea id="proofNotes" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white" placeholder="Contoh: File besar, saya kirim via Drive. Foto bukti ada 3 lembar."></textarea>
+    <div class="mt-4">
+      <label for="proofExternalUrl" class="block text-xs font-semibold text-slate-700">Opsi 2 — Tautan eksternal</label>
+      <input type="url" id="proofExternalUrl" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none" placeholder="https://drive.google.com/...">
+      <p class="text-xs text-slate-500 mt-1">Google Drive, OneDrive, atau Dropbox (pastikan akses dapat dibuka).</p>
+    </div>
 
-    <div id="proofUploadProgress" class="hidden mt-4 bg-blue-50 border border-blue-200 rounded-2xl p-3">
+    <label for="proofNotes" class="block text-xs font-semibold text-slate-700 mt-4">Catatan tambahan (opsional)</label>
+    <textarea id="proofNotes" rows="2" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white" placeholder="Keterangan tambahan mengenai lampiran..."></textarea>
+
+    <div id="proofUploadProgress" class="hidden mt-4 note tone-info">
       <div class="flex items-center gap-2">
-        <span class="animate-spin text-blue-600">◌</span>
-        <span class="text-xs text-blue-700" id="proofUploadText">Mengupload file...</span>
+        <span class="spinner"></span>
+        <span class="text-xs" id="proofUploadText">Mengunggah file…</span>
       </div>
       <div class="progress-bar mt-2">
         <div class="progress-fill" id="proofProgressBar" style="width: 0%"></div>
       </div>
     </div>
 
-    <div id="proofWarning" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-3 mt-4 text-xs text-amber-800">
-      ⚠️ Durasi lembur kamu <strong>kurang dari 1 jam</strong>. Kalau diselesaikan sekarang, lembur tidak akan dihitung.
+    <div id="proofWarning" class="hidden note tone-wait mt-4">
+      Durasi lembur saat ini <strong>kurang dari 1 jam</strong>. Jika diselesaikan sekarang, sesi tidak akan dihitung sebagai jam lembur.
     </div>
 
     <div class="flex gap-2 mt-5">
-      <button onclick="closeModal('modalBukti')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Batal</button>
-      <button onclick="submitProof()" id="btnSubmitProof" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg">Kirim 🚀</button>
+      <button type="button" onclick="closeModal('modalBukti')" class="btn btn-secondary flex-1">Batal</button>
+      <button type="button" onclick="submitProof()" id="btnSubmitProof" class="btn btn-primary flex-1">Kirim Bukti</button>
     </div>
   </div>
 </div>
 
-<div id="modalCancel" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+<div id="modalCancel" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-sm w-full p-6 modal-in">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
-    <div class="w-14 h-14 bg-red-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-      <span class="text-red-600 text-2xl">⚠️</span>
-    </div>
-    <h3 class="font-extrabold text-slate-800 text-lg text-center">Batalkan Lembur?</h3>
-    <p class="text-sm text-slate-500 mt-2 text-center">Atasan akan menerima notifikasi pembatalan</p>
-    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Alasan <span class="text-red-500">*</span></label>
-    <textarea id="cancelReason" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:ring-2 focus:ring-red-500/20 focus:outline-none"></textarea>
+    <h3 class="font-extrabold text-slate-900 text-lg">Batalkan Sesi Lembur?</h3>
+    <p class="text-xs text-slate-500 mt-1">Atasan akan menerima pemberitahuan pembatalan sesi ini.</p>
+    <label for="cancelReason" class="block text-xs font-semibold text-slate-700 mt-4">Alasan pembatalan <span class="text-red-600">*</span></label>
+    <textarea id="cancelReason" rows="2" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-red-600 focus:ring-2 focus:ring-red-600/15 focus:outline-none"></textarea>
     <div class="flex gap-2 mt-5">
-      <button onclick="closeModal('modalCancel')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Lanjut</button>
-      <button onclick="confirmCancel()" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-2xl text-sm font-bold">Ya, Batalkan</button>
+      <button type="button" onclick="closeModal('modalCancel')" class="btn btn-secondary flex-1">Kembali</button>
+      <button type="button" onclick="confirmCancel()" class="btn btn-danger flex-1">Batalkan Sesi</button>
     </div>
   </div>
 </div>
 
-<div id="modalEdit" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+<div id="modalEdit" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
-    <h3 class="font-extrabold text-slate-800 text-lg">✏️ Revisi Pengajuan</h3>
-    <p class="text-xs text-slate-500 mt-1 mb-4">Perbaiki tanggal, jam, atau detail lalu kirim ulang</p>
-    <div id="editNote" class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 mb-4"></div>
-    <label class="text-xs font-bold text-slate-600 uppercase">Tanggal <span class="text-red-500">*</span></label>
-    <input type="date" id="editDate" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+    <h3 class="font-extrabold text-slate-900 text-lg">Revisi Pengajuan</h3>
+    <p class="text-xs text-slate-500 mt-1 mb-4">Perbarui tanggal, jam, atau rencana kerja lalu kirim ulang.</p>
+    <div id="editNote" class="note tone-wait mb-4"></div>
+    <label for="editDate" class="block text-xs font-semibold text-slate-700">Tanggal <span class="text-red-600">*</span></label>
+    <input type="date" id="editDate" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none">
     <div class="grid grid-cols-2 gap-3 mt-3">
       <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Jam Mulai <span class="text-red-500">*</span></label>
-        <input type="time" id="editStart" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+        <label for="editStart" class="block text-xs font-semibold text-slate-700">Jam mulai <span class="text-red-600">*</span></label>
+        <input type="time" id="editStart" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none">
       </div>
       <div>
-        <label class="text-xs font-bold text-slate-600 uppercase">Durasi (jam) <span class="text-red-500">*</span></label>
-        <input type="number" id="editDurasi" min="1" max="24" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+        <label for="editDurasi" class="block text-xs font-semibold text-slate-700">Durasi (jam) <span class="text-red-600">*</span></label>
+        <input type="number" id="editDurasi" min="1" max="24" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none">
       </div>
     </div>
-    <div id="editJenisHari" class="mt-2 text-xs text-slate-500 italic">Info jenis hari akan muncul setelah pilih tanggal</div>
-    <label class="text-xs font-bold text-slate-600 uppercase mt-4 block">Kategori</label>
-    <select id="editReason" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
+    <div id="editJenisHari" class="mt-2 text-xs text-slate-500">Info jenis hari akan muncul setelah memilih tanggal</div>
+    <label for="editReason" class="block text-xs font-semibold text-slate-700 mt-4">Kategori</label>
+    <select id="editReason" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white">
       <option>Pekerjaan mendesak</option>
       <option>Target proyek</option>
       <option>Pengganti rekan</option>
       <option>Closing bulanan</option>
       <option>Lainnya</option>
     </select>
-    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Rencana Pekerjaan <span class="text-red-500">*</span></label>
-    <textarea id="editDesc" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"></textarea>
-    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Bukti / Keterangan</label>
-    <textarea id="editProof" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white"></textarea>
+    <label for="editDesc" class="block text-xs font-semibold text-slate-700 mt-3">Rencana pekerjaan <span class="text-red-600">*</span></label>
+    <textarea id="editDesc" rows="2" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white"></textarea>
+    <label for="editProof" class="block text-xs font-semibold text-slate-700 mt-3">Bukti / keterangan</label>
+    <textarea id="editProof" rows="2" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white"></textarea>
     <div class="flex gap-2 mt-5 pt-4 border-t border-slate-100">
-      <button onclick="closeModal('modalEdit')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Batal</button>
-      <button onclick="submitRevision()" id="btnSubmitRevision" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg active:scale-[0.98] transition">Kirim Ulang</button>
+      <button type="button" onclick="closeModal('modalEdit')" class="btn btn-secondary flex-1">Batal</button>
+      <button type="button" onclick="submitRevision()" id="btnSubmitRevision" class="btn btn-primary flex-1">Kirim Ulang</button>
     </div>
   </div>
 </div>
 
-<div id="modalEditProof" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+<div id="modalEditProof" class="fixed inset-0 bg-slate-900/50 hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in max-h-[90vh] overflow-y-auto">
     <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
-    <h3 class="font-extrabold text-slate-800 text-lg">📎 Revisi Bukti</h3>
-    <p class="text-xs text-slate-500 mt-1 mb-4">Atasan minta revisi bukti</p>
-    <div id="editProofNote" class="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-800 mb-4"></div>
+    <h3 class="font-extrabold text-slate-900 text-lg">Revisi Bukti</h3>
+    <p class="text-xs text-slate-500 mt-1 mb-4">Perbarui bukti hasil kerja sesuai catatan verifikasi atasan.</p>
+    <div id="editProofNote" class="note tone-wait mb-4"></div>
 
-    <label class="text-xs font-bold text-slate-600 uppercase">Deskripsi hasil kerja</label>
-    <textarea id="editProofText" rows="3" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50"></textarea>
+    <label for="editProofText" class="block text-xs font-semibold text-slate-700">Deskripsi hasil kerja</label>
+    <textarea id="editProofText" rows="3" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white"></textarea>
 
-    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Upload File Baru (≤ 1 MB)</label>
-    <input type="file" id="editProofFile" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx" class="w-full mt-1.5 text-sm border border-slate-200 rounded-2xl px-3 py-2 bg-slate-50">
+    <label for="editProofFile" class="block text-xs font-semibold text-slate-700 mt-3">Unggah file baru (maks. 2 MB)</label>
+    <input type="file" id="editProofFile" accept="image/*,application/pdf,.doc,.docx,.xls,.xlsx" class="w-full mt-1.5 text-sm border border-slate-300 rounded-xl px-3 py-2 bg-white">
 
-    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Atau Link External</label>
-    <input type="url" id="editProofExternalUrl" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50" placeholder="https://drive.google.com/...">
+    <label for="editProofExternalUrl" class="block text-xs font-semibold text-slate-700 mt-3">Atau tautan eksternal</label>
+    <input type="url" id="editProofExternalUrl" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white" placeholder="https://drive.google.com/...">
 
-    <label class="text-xs font-bold text-slate-600 uppercase mt-3 block">Catatan</label>
-    <textarea id="editProofNotes" rows="2" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50"></textarea>
+    <label for="editProofNotes" class="block text-xs font-semibold text-slate-700 mt-3">Catatan</label>
+    <textarea id="editProofNotes" rows="2" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white"></textarea>
 
     <div class="flex gap-2 mt-5">
-      <button onclick="closeModal('modalEditProof')" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Batal</button>
-      <button onclick="submitProofRevision()" id="btnSubmitProofRevision" class="flex-1 bg-gradient-to-br from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold">Kirim Ulang</button>
+      <button type="button" onclick="closeModal('modalEditProof')" class="btn btn-secondary flex-1">Batal</button>
+      <button type="button" onclick="submitProofRevision()" id="btnSubmitProofRevision" class="btn btn-primary flex-1">Kirim Ulang</button>
     </div>
   </div>
 </div>
 
 <div id="toast" class="fixed bottom-24 md:bottom-6 right-4 md:right-6 bg-ink-900 text-white px-4 py-3 rounded-2xl text-sm hidden z-[60] shadow-2xl max-w-xs modal-in"></div>
 
-<div id="autoStartNotif" class="fixed top-20 right-4 md:right-6 bg-white border-l-4 border-emerald-500 rounded-2xl shadow-2xl p-4 hidden z-50 notif-slide max-w-sm">
+<div id="autoStartNotif" class="fixed top-20 right-4 md:right-6 bg-white border border-slate-200 border-l-4 border-l-emerald-600 rounded-2xl shadow-xl p-4 hidden z-50 notif-slide max-w-sm">
   <div class="flex items-start gap-3">
-    <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center text-emerald-600 font-bold shrink-0" id="notifIcon">⚡</div>
+    <div class="w-9 h-9 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-700 font-bold shrink-0" id="notifIcon">!</div>
     <div class="flex-1">
-      <p class="font-bold text-slate-800 text-sm" id="notifTitle">Lembur Dimulai</p>
+      <p class="font-bold text-slate-900 text-sm" id="notifTitle">Lembur Dimulai</p>
       <p class="text-xs text-slate-500 mt-0.5" id="notifDesc">Timer berjalan</p>
     </div>
-    <button onclick="document.getElementById('autoStartNotif').classList.add('hidden')" class="text-slate-400">×</button>
+    <button type="button" onclick="document.getElementById('autoStartNotif').classList.add('hidden')" class="text-slate-400">×</button>
   </div>
 </div>
 
@@ -670,7 +584,7 @@ async function autoStop(recordId, lat, lng, distance) {
     stopRadiusMonitor();
     await loadRecords();
     showAutoStopNotif(distance);
-    toast(`⚠️ Lembur auto-stop: keluar radius (${distance}m)`, 'bg-red-600');
+    toast(`Lembur auto-stop: keluar radius (${distance}m)`, 'bg-red-600');
   } catch (err) {
     if (err.message.toLowerCase().includes('tidak aktif')) {
       activeRecord = null;
@@ -684,10 +598,10 @@ async function autoStop(recordId, lat, lng, distance) {
 }
 
 function showAutoStopNotif(distance) {
-  document.getElementById('notifIcon').textContent = '⚠️';
-  document.getElementById('notifIcon').className = 'w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center text-red-600 font-bold shrink-0';
-  document.getElementById('notifTitle').textContent = '⚠️ Lembur Dihentikan';
-  document.getElementById('notifDesc').textContent = `Keluar radius kantor (${distance}m). Hubungi atasan.`;
+  document.getElementById('notifIcon').textContent = '!';
+  document.getElementById('notifIcon').className = 'w-9 h-9 bg-red-100 rounded-lg flex items-center justify-center text-red-700 font-bold shrink-0';
+  document.getElementById('notifTitle').textContent = 'Lembur Dihentikan Otomatis';
+  document.getElementById('notifDesc').textContent = `Posisi keluar dari radius kantor (${distance} m). Hubungi atasan bila diperlukan.`;
   const n = document.getElementById('autoStartNotif');
   n.classList.remove('hidden', 'notif-slide');
   void n.offsetWidth;
@@ -699,14 +613,14 @@ function updateRadiusStatusUI(state, distance) {
   const el = document.getElementById('radiusStatus');
   if (!el) return;
   if (state === 'in') {
-    el.className = 'mt-4 bg-emerald-500/20 rounded-2xl p-3 text-[11px] text-emerald-100 border border-emerald-400/30 flex items-center gap-2';
-    el.innerHTML = `<span class="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></span><span>✓ Dalam radius kantor (${distance}m) · Timer berjalan</span>`;
+    el.className = 'note tone-live flex items-center gap-2';
+    el.innerHTML = `<span class="w-2 h-2 bg-emerald-600 rounded-full"></span><span>Dalam radius kantor (${distance} m) · penghitungan durasi berjalan</span>`;
   } else if (state === 'out') {
-    el.className = 'mt-4 bg-red-500/30 rounded-2xl p-3 text-[11px] text-red-100 border-2 border-red-400/50 flex items-center gap-2 animate-pulse';
-    el.innerHTML = `<span class="w-2 h-2 bg-red-400 rounded-full"></span><span>⚠️ KELUAR radius (${distance}m) · Lembur berhenti!</span>`;
+    el.className = 'note tone-bad flex items-center gap-2';
+    el.innerHTML = `<span class="w-2 h-2 bg-red-600 rounded-full"></span><span>Di luar radius kantor (${distance} m) · sesi lembur dihentikan</span>`;
   } else {
-    el.className = 'mt-4 bg-white/10 rounded-2xl p-3 text-[11px] text-emerald-100 border border-white/20 flex items-center gap-2';
-    el.innerHTML = `<span class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></span><span>Memantau radius kantor...</span>`;
+    el.className = 'note tone-info flex items-center gap-2';
+    el.innerHTML = `<span class="w-2 h-2 bg-amber-500 rounded-full"></span><span>Memantau posisi terhadap radius kantor…</span>`;
   }
 }
 
@@ -720,122 +634,113 @@ async function runGPSVerification(source = 'banner') {
   ['step1','step2','step3'].forEach(id => { document.getElementById(id).className = 'gps-step pending'; });
   document.getElementById('gpsResult').classList.add('hidden');
   setGPSProgress(10);
-  setGPSText('Mengambil koordinat...', 'Menghubungi satelit GPS');
-  setGPSPin('checking', '📍');
+  setGPSText('Mengambil koordinat…', 'Meminta lokasi dari perangkat');
+  setGPSPin('checking', UI.icon('pin'));
 
   setStep('step1', 'active'); setGPSProgress(30);
   const gps = await fetchGPS();
   gpsState.lat = gps.lat; gpsState.lng = gps.lng; gpsState.acc = gps.acc;
-  setStep('step1', 'done'); await delay(400);
+  setStep('step1', 'done'); await delay(300);
 
-  setStep('step2', 'active'); setGPSProgress(60);
-  setGPSText('Menghitung jarak...', 'Mengukur jarak ke kantor');
-  await delay(500);
+  setStep('step2', 'active'); setGPSProgress(65);
+  setGPSText('Menghitung jarak…', 'Mengukur jarak ke titik kantor');
+  await delay(300);
   const distance = haversine(gps.lat, gps.lng, OFFICE.lat, OFFICE.lng);
   gpsState.distance = Math.round(distance);
-  setStep('step2', 'done'); await delay(300);
+  setStep('step2', 'done'); await delay(200);
 
   setStep('step3', 'active'); setGPSProgress(90);
-  setGPSText('Memverifikasi radius...', `Radius ${OFFICE.radius}m`);
-  await delay(400);
+  setGPSText('Memverifikasi radius…', `Batas radius ${OFFICE.radius} m`);
+  await delay(250);
 
   const inRadius = distance <= OFFICE.radius;
   if (inRadius) {
     gpsState.status = 'success'; setStep('step3', 'done'); setGPSProgress(100);
-    setGPSPin('success', '✓');
-    setGPSText('Lokasi Terverifikasi ✓', 'Kamu di area kantor');
+    setGPSPin('success', UI.icon('ok'));
+    setGPSText('Lokasi Terverifikasi', 'Posisi berada di dalam radius kantor');
     showGPSResult(true, distance, gps);
-    toast(`✓ Lokasi OK (${Math.round(distance)}m)`, 'bg-emerald-600');
+    if (source !== 'silent') toast(`Lokasi terverifikasi (${Math.round(distance)} m)`, 'bg-emerald-700');
   } else {
     gpsState.status = 'fail'; setStep('step3', 'fail'); setGPSProgress(100);
-    setGPSPin('fail', '✕');
-    setGPSText('Di Luar Radius', `${Math.round(distance)}m dari kantor`);
+    setGPSPin('fail', UI.icon('x'));
+    setGPSText('Di Luar Radius Kantor', `${Math.round(distance)} m dari titik kantor`);
     showGPSResult(false, distance, gps);
-    toast(`✕ Di luar radius (${Math.round(distance)}m)`, 'bg-red-600');
+    if (source !== 'silent') toast(`Di luar radius kantor (${Math.round(distance)} m)`, 'bg-red-700');
   }
   updateGPSUI();
   return inRadius;
 }
 function setStep(id, state) {
   const el = document.getElementById(id);
-  const t = el.textContent.replace(/^[◌✓✕📍📏]\s*/, '').trim();
+  const t = el.textContent.replace(/^[◌✓✕]\s*/, '').trim();
   el.className = `gps-step ${state}`;
-  if (state === 'active') el.innerHTML = `<span class="animate-spin">◌</span> ${t}`;
-  else if (state === 'done') el.innerHTML = `<span>✓</span> ${t}`;
-  else if (state === 'fail') el.innerHTML = `<span>✕</span> ${t}`;
-  else el.innerHTML = t;
+  if (state === 'active') el.innerHTML = `<span class="spinner"></span><span>${t}</span>`;
+  else if (state === 'done') el.innerHTML = `${UI.icon('ok')}<span>${t}</span>`;
+  else if (state === 'fail') el.innerHTML = `${UI.icon('x')}<span>${t}</span>`;
+  else el.textContent = t;
 }
 function setGPSText(t, s) { document.getElementById('gpsTitle').textContent = t; document.getElementById('gpsSubtitle').textContent = s; }
 function setGPSProgress(p) { document.getElementById('gpsProgress').style.width = p + '%'; }
-function setGPSPin(state, icon) {
+function setGPSPin(state, iconHtml) {
   const pin = document.getElementById('gpsPin');
-  pin.className = `gps-pin ${state}`;
-  document.getElementById('gpsPinIcon').textContent = icon;
-  if (state === 'fail') { pin.classList.add('shake'); setTimeout(()=>pin.classList.remove('shake'), 500); }
+  pin.className = `gps-pin shrink-0 ${state}`;
+  document.getElementById('gpsPinIcon').innerHTML = iconHtml;
 }
 function showGPSResult(success, distance, gps) {
   const el = document.getElementById('gpsResult');
-  const color = success ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 'bg-red-50 border-red-200 text-red-800';
-  el.className = `rounded-2xl p-4 mb-4 border-2 ${color}`;
+  el.className = `note ${success ? 'tone-live' : 'tone-bad'} mb-4`;
   el.classList.remove('hidden');
   el.innerHTML = `
-    <div class="flex items-center gap-2 mb-2">
-      <span class="text-lg">${success ? '✓' : '✕'}</span>
-      <p class="font-bold text-sm">${success ? 'Akses Diizinkan' : 'Akses Ditolak'}</p>
-    </div>
-    <div class="grid grid-cols-2 gap-2 text-xs">
-      <div><p class="opacity-70">Koordinat</p><p class="font-mono font-semibold">${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}</p></div>
-      <div><p class="opacity-70">Jarak</p><p class="font-semibold">${Math.round(distance)}m / ${OFFICE.radius}m</p></div>
-      <div><p class="opacity-70">Akurasi</p><p class="font-semibold">±${Math.round(gps.acc)}m</p></div>
-      <div><p class="opacity-70">Sumber</p><p class="font-semibold">${gps.simulated ? 'Simulasi' : 'GPS Browser'}</p></div>
-    </div>`;
+    <p class="font-bold text-xs mb-2">${success ? 'Akses lokasi memenuhi syarat' : 'Lokasi di luar batas radius kantor'}</p>
+    <dl class="kv text-xs">
+      <dt>Koordinat</dt><dd class="font-mono font-semibold">${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}</dd>
+      <dt>Jarak</dt><dd class="font-mono font-semibold">${Math.round(distance)} m (maks. ${OFFICE.radius} m)</dd>
+      <dt>Akurasi</dt><dd class="font-mono">±${Math.round(gps.acc)} m · ${gps.simulated ? 'Simulasi demo' : 'GPS perangkat'}</dd>
+    </dl>`;
 }
 function updateGPSUI() {
-  const colors = { idle: 'bg-slate-400', checking: 'bg-amber-400', success: 'bg-green-400', fail: 'bg-red-400' };
-  const labels = { idle: 'Cek GPS', checking: 'Cek GPS...', success: 'GPS OK', fail: 'Di luar radius' };
-  document.getElementById('gpsTopDot').className = `w-1.5 h-1.5 ${colors[gpsState.status]} rounded-full ${gpsState.status === 'checking' ? 'animate-pulse' : ''}`;
+  const colors = { idle: 'bg-slate-400', checking: 'bg-amber-500', success: 'bg-emerald-600', fail: 'bg-red-600' };
+  const labels = { idle: 'Cek GPS', checking: 'Memeriksa…', success: 'Di area kantor', fail: 'Luar radius' };
+  document.getElementById('gpsTopDot').className = `w-2 h-2 ${colors[gpsState.status]} rounded-full`;
   document.getElementById('gpsStatus').textContent = labels[gpsState.status];
-  document.getElementById('gpsSideDot').className = `w-1.5 h-1.5 ${colors[gpsState.status]} rounded-full`;
+  document.getElementById('gpsSideDot').className = `w-2 h-2 ${colors[gpsState.status]} rounded-full`;
   if (gpsState.lat) document.getElementById('gpsSideCoord').textContent = `${gpsState.lat.toFixed(4)}, ${gpsState.lng.toFixed(4)}`;
 
-  const banner = document.getElementById('gpsBanner');
-  const styles = { idle: 'bg-slate-50 border-slate-200', checking: 'bg-brand-50 border-brand-300', success: 'bg-emerald-50 border-emerald-300', fail: 'bg-red-50 border-red-300' };
-  banner.className = `rounded-3xl border-2 transition-all p-4 md:p-5 ${styles[gpsState.status]}`;
   const pin = document.getElementById('gpsBannerPin');
-  pin.className = `gps-pin ${gpsState.status === 'idle' ? 'checking' : gpsState.status}`;
-  document.getElementById('gpsBannerIcon').textContent = gpsState.status === 'success' ? '✓' : gpsState.status === 'fail' ? '✕' : '📍';
-  document.getElementById('gpsBannerDot').className = `w-2 h-2 rounded-full ${colors[gpsState.status]} ${gpsState.status === 'checking' ? 'animate-pulse' : ''}`;
+  pin.className = `gps-pin shrink-0 ${gpsState.status === 'idle' ? 'checking' : gpsState.status}`;
+  document.getElementById('gpsBannerIcon').innerHTML = UI.icon(gpsState.status === 'success' ? 'ok' : gpsState.status === 'fail' ? 'x' : 'pin');
+  document.getElementById('gpsBannerDot').className = `w-2 h-2 rounded-full ${colors[gpsState.status]}`;
 
   const btn = document.getElementById('gpsBannerBtn');
   if (gpsState.status === 'idle') {
-    document.getElementById('gpsBannerLabel').textContent = 'Verifikasi Lokasi';
-    document.getElementById('gpsBannerTitle').textContent = 'Cek lokasi kamu';
-    document.getElementById('gpsBannerDesc').textContent = 'Radius 100m dari kantor';
-    btn.textContent = 'Cek Lokasi 📍';
-    btn.className = 'w-full md:w-auto bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-3 rounded-2xl shadow-lg shadow-brand-500/25 transition whitespace-nowrap active:scale-95';
+    document.getElementById('gpsBannerLabel').textContent = 'Lokasi';
+    document.getElementById('gpsBannerTitle').textContent = 'Belum diverifikasi';
+    document.getElementById('gpsBannerDesc').textContent = 'Radius 100 m dari kantor';
+    btn.textContent = 'Cek lokasi';
+    btn.disabled = false;
   } else if (gpsState.status === 'checking') {
-    document.getElementById('gpsBannerLabel').textContent = 'Sedang Memverifikasi';
-    document.getElementById('gpsBannerTitle').textContent = 'Mengambil lokasi GPS...';
+    document.getElementById('gpsBannerLabel').textContent = 'Lokasi';
+    document.getElementById('gpsBannerTitle').textContent = 'Memeriksa posisi GPS…';
     document.getElementById('gpsBannerDesc').textContent = 'Mohon tunggu';
-    btn.textContent = '⏳ Memproses...';
-    btn.className = 'w-full md:w-auto bg-slate-400 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-3 rounded-2xl cursor-wait whitespace-nowrap';
+    btn.textContent = 'Memproses…';
+    btn.disabled = true;
   } else if (gpsState.status === 'success') {
-    document.getElementById('gpsBannerLabel').textContent = 'Lokasi Terverifikasi';
-    document.getElementById('gpsBannerTitle').textContent = '✓ Kamu di area kantor';
-    document.getElementById('gpsBannerDesc').textContent = `Jarak ${gpsState.distance}m · akurasi ±${Math.round(gpsState.acc)}m`;
-    btn.textContent = 'Cek Ulang 🔄';
-    btn.className = 'w-full md:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-3 rounded-2xl shadow-lg shadow-emerald-500/25 transition whitespace-nowrap active:scale-95';
+    document.getElementById('gpsBannerLabel').textContent = 'Lokasi OK';
+    document.getElementById('gpsBannerTitle').textContent = 'Di dalam area kantor';
+    document.getElementById('gpsBannerDesc').textContent = `Radius ${OFFICE.radius} m terpenuhi`;
+    btn.textContent = 'Cek ulang';
+    btn.disabled = false;
   } else if (gpsState.status === 'fail') {
-    document.getElementById('gpsBannerLabel').textContent = 'Di Luar Radius';
-    document.getElementById('gpsBannerTitle').textContent = '✕ Kamu di luar area kantor';
-    document.getElementById('gpsBannerDesc').textContent = `Jarak ${gpsState.distance}m (maks ${OFFICE.radius}m)`;
-    btn.textContent = 'Coba Lagi 🔄';
-    btn.className = 'w-full md:w-auto bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-700 hover:to-pink-700 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-3 rounded-2xl shadow-lg shadow-red-500/25 transition whitespace-nowrap active:scale-95';
+    document.getElementById('gpsBannerLabel').textContent = 'Luar radius';
+    document.getElementById('gpsBannerTitle').textContent = 'Di luar area kantor';
+    document.getElementById('gpsBannerDesc').textContent = `Melebihi batas ${OFFICE.radius} m`;
+    btn.textContent = 'Coba lagi';
+    btn.disabled = false;
   }
   if (gpsState.lat) {
     document.getElementById('gpsBannerCoord').textContent = `${gpsState.lat.toFixed(4)}, ${gpsState.lng.toFixed(4)}`;
-    document.getElementById('gpsBannerDist').textContent = gpsState.distance != null ? `${gpsState.distance}m` : '—';
-    document.getElementById('gpsBannerAcc').textContent = gpsState.acc != null ? `±${Math.round(gpsState.acc)}m` : '—';
+    document.getElementById('gpsBannerDist').textContent = gpsState.distance != null ? `${gpsState.distance} m` : '—';
+    document.getElementById('gpsBannerAcc').textContent = gpsState.acc != null ? `±${Math.round(gpsState.acc)} m` : '—';
   }
 }
 function openGPSModal() {
@@ -848,20 +753,12 @@ function closeModal(id) { document.getElementById(id).classList.add('hidden'); d
 function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
   document.getElementById('tab-' + tab)?.classList.remove('hidden');
-  document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-  document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
-  document.querySelectorAll('.mobile-nav').forEach(e => {
-    e.classList.remove('bg-brand-600', 'text-white');
-    e.querySelector('span:last-child').classList.add('text-slate-600');
-    e.querySelector('span:last-child').classList.remove('text-white');
+  document.querySelectorAll('[data-tab],[data-mobile-tab]').forEach(e => {
+    const on = (e.dataset.tab || e.dataset.mobileTab) === tab;
+    e.classList.toggle('active', on);
+    if (on) e.setAttribute('aria-current', 'page'); else e.removeAttribute('aria-current');
   });
-  const mob = document.querySelector(`[data-mobile-tab="${tab}"]`);
-  if (mob) {
-    mob.classList.add('bg-brand-600', 'text-white');
-    mob.querySelector('span:last-child').classList.add('text-white');
-    mob.querySelector('span:last-child').classList.remove('text-slate-600');
-  }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0 });
 }
 
 function isHoliday(dateStr) {
@@ -876,11 +773,11 @@ function updateStartTime() {
   const startTime = holiday ? '08:00' : '17:00';
   document.getElementById('inpStart').value = startTime;
   document.getElementById('jenisHari').innerHTML = holiday
-    ? '<span class="text-emerald-600 font-semibold">🏖 Hari Libur (08:00)</span>'
-    : '<span class="text-blue-600 font-semibold">💼 Hari Kerja (17:00)</span>';
+    ? '<span class="text-amber-800 font-semibold">Hari Libur · mulai 08:00</span>'
+    : '<span class="text-brand-700 font-semibold">Hari Kerja · mulai 17:00</span>';
   document.getElementById('jenisHari').className = holiday
-    ? 'w-full mt-1.5 border border-emerald-200 rounded-2xl px-3 py-3 text-sm bg-emerald-50'
-    : 'w-full mt-1.5 border border-blue-200 rounded-2xl px-3 py-3 text-sm bg-blue-50';
+    ? 'w-full mt-1.5 border border-amber-200 rounded-xl px-3 py-2.5 text-sm bg-amber-50'
+    : 'w-full mt-1.5 border border-brand-200 rounded-xl px-3 py-2.5 text-sm bg-brand-50';
 }
 
 async function loadStatsSummary() {
@@ -974,7 +871,7 @@ async function submitRequest() {
 
   const originalText = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '⏳ Mengirim...';
+  btn.textContent = 'Mengirim…';
 
   try {
     const result = await api('/api/records', {
@@ -987,33 +884,32 @@ async function submitRequest() {
     document.getElementById('inpDurasi').value = 2;
     document.getElementById('inpStart').value = '';
     document.getElementById('inpDate').valueAsDate = new Date();
-    document.getElementById('jenisHari').textContent = 'Pilih tanggal dulu';
-    document.getElementById('jenisHari').className = 'w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-100 text-slate-600';
+    document.getElementById('jenisHari').textContent = 'Pilih tanggal terlebih dahulu';
+    document.getElementById('jenisHari').className = 'w-full mt-1.5 border border-slate-200 rounded-xl px-3 py-2.5 text-sm bg-slate-50 text-slate-600';
     setTimeout(() => updateStartTime(), 100);
 
-    const emailSent = result.email_sent || 0;
-    toast(emailSent > 0 ? `✅ Pengajuan terkirim!` : '✅ Pengajuan terkirim.', 'bg-emerald-600');
+    toast('Pengajuan lembur terkirim.', 'bg-emerald-700');
 
     await loadRecords();
     switchTab('emp-riwayat');
   } catch (err) {
-    toast('❌ ' + err.message, 'bg-red-600');
+    toast('' + err.message, 'bg-red-600');
   } finally {
     btn.disabled = false;
     btn.textContent = originalText;
   }
 }
 async function manualStart(recId) {
-  toast('Verifikasi GPS...', 'bg-brand-600');
+  toast('Memverifikasi lokasi GPS…', 'bg-brand-600');
   const gps = await fetchGPS();
   const distance = Math.round(haversine(gps.lat, gps.lng, OFFICE.lat, OFFICE.lng));
-  if (distance > OFFICE.radius) return toast(`Di luar radius (${distance}m)`, 'bg-red-600');
+  if (distance > OFFICE.radius) return toast(`Di luar radius kantor (${distance} m)`, 'bg-red-600');
   try {
     await api(`/api/records/${recId}/start`, {
       method: 'POST',
       body: JSON.stringify({ lat: gps.lat, lng: gps.lng, accuracy: gps.acc })
     });
-    toast(`Lembur dimulai ✓ (${distance}m)`, 'bg-emerald-600');
+    toast(`Sesi lembur dimulai (${distance} m dari kantor)`, 'bg-emerald-700');
     await loadRecords();
     switchTab('emp-dashboard');
   } catch (err) { toast(err.message, 'bg-red-600'); }
@@ -1070,9 +966,9 @@ async function submitProof() {
     }
 
     btn.disabled = true;
-    btn.textContent = '⏳ Uploading...';
+    btn.textContent = 'Mengunggah…';
     document.getElementById('proofUploadProgress').classList.remove('hidden');
-    document.getElementById('proofUploadText').textContent = `Upload ${file.name}...`;
+    document.getElementById('proofUploadText').textContent = `Mengunggah ${file.name}…`;
     setProofProgress(10);
 
     try {
@@ -1096,19 +992,18 @@ async function submitProof() {
       fileSize = file.size;
 
       setProofProgress(90);
-      console.log('✅ File uploaded:', fileUrl);
 
     } catch (uploadErr) {
       console.error('Upload error:', uploadErr);
       document.getElementById('proofUploadProgress').classList.add('hidden');
       btn.disabled = false;
-      btn.textContent = 'Kirim 🚀';
+      btn.textContent = 'Kirim Bukti';
       return toast('Gagal upload: ' + uploadErr.message, 'bg-red-600');
     }
   }
 
   try {
-    document.getElementById('proofUploadText').textContent = 'Menyimpan ke database...';
+    document.getElementById('proofUploadText').textContent = 'Menyimpan ke database…';
     setProofProgress(95);
 
     const result = await api(`/api/records/${activeRecord.id}/finish`, {
@@ -1138,13 +1033,13 @@ async function submitProof() {
     setProofProgress(0);
     await loadRecords();
 
-    toast(result.not_counted ? `⚠️ ${result.message}` : '✅ Bukti terkirim. Menunggu verifikasi.', result.not_counted ? 'bg-red-600' : 'bg-emerald-600');
+    toast(result.not_counted ? result.message : 'Bukti terkirim. Menunggu verifikasi atasan.', result.not_counted ? 'bg-red-600' : 'bg-emerald-700');
     switchTab('emp-riwayat');
   } catch (err) {
-    toast('❌ ' + err.message, 'bg-red-600');
+    toast('' + err.message, 'bg-red-600');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Kirim 🚀';
+    btn.textContent = 'Kirim Bukti';
   }
 }
 
@@ -1181,7 +1076,7 @@ async function submitRevision() {
   const btn = document.getElementById('btnSubmitRevision');
   const originalText = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '⏳ Mengirim...';
+  btn.textContent = 'Mengirim…';
 
   try {
     await api(`/api/records/${r.id}/revise`, {
@@ -1190,9 +1085,9 @@ async function submitRevision() {
     });
     closeModal('modalEdit');
     await loadRecords();
-    toast('✅ Pengajuan direvisi & dikirim ulang ke atasan', 'bg-emerald-600');
+    toast('Pengajuan direvisi & dikirim ulang ke atasan', 'bg-emerald-600');
   } catch (err) {
-    toast('❌ ' + err.message, 'bg-red-600');
+    toast('' + err.message, 'bg-red-600');
   } finally {
     btn.disabled = false;
     btn.textContent = originalText;
@@ -1232,7 +1127,7 @@ async function submitProofRevision() {
     }
 
     btn.disabled = true;
-    btn.textContent = '⏳ Uploading...';
+    btn.textContent = 'Mengunggah…';
 
     try {
       const ext = file.name.split('.').pop();
@@ -1277,9 +1172,9 @@ async function submitProofRevision() {
     document.getElementById('editProofExternalUrl').value = '';
     document.getElementById('editProofNotes').value = '';
     await loadRecords();
-    toast('✅ Bukti revisi terkirim', 'bg-emerald-600');
+    toast('Bukti revisi terkirim', 'bg-emerald-600');
   } catch (err) {
-    toast('❌ ' + err.message, 'bg-red-600');
+    toast('' + err.message, 'bg-red-600');
   } finally {
     btn.disabled = false;
     btn.textContent = 'Kirim Ulang';
@@ -1297,22 +1192,7 @@ function startLiveTimer() {
   if (el && activeRecord) el.textContent = fmtDur(Date.now() - new Date(activeRecord.start).getTime());
 }
 
-function statusBadge(s) {
-  const map = {
-    pending: ['bg-amber-100 text-amber-700', '⏳ PENDING'],
-    approved: ['bg-brand-100 text-brand-700', '✅ DISETUJUI'],
-    rejected: ['bg-red-100 text-red-700', '❌ DITOLAK'],
-    revision: ['bg-orange-100 text-orange-700', '✏️ REVISI'],
-    active: ['bg-emerald-100 text-emerald-700', '🔴 AKTIF'],
-    pending_verification: ['bg-orange-100 text-orange-700', '🔍 VERIFIKASI'],
-    proof_revision: ['bg-amber-100 text-amber-700', '📎 REVISI BUKTI'],
-    verify_rejected: ['bg-red-100 text-red-700', '❌ HASIL DITOLAK'],
-    completed: ['bg-teal-100 text-teal-700', '✓ SELESAI'],
-    cancelled: ['bg-slate-200 text-slate-700', '🚫 DIBATALKAN']
-  };
-  const [c, l] = map[s] || ['bg-slate-100 text-slate-600', s?.toUpperCase()];
-  return `<span class="text-[10px] font-bold px-2.5 py-1 rounded-full ${c} whitespace-nowrap">${l}</span>`;
-}
+function statusBadge(s) { return UI.badge(s); }
 
 function renderAll() {
   renderEmpUpcoming();
@@ -1351,26 +1231,28 @@ function renderEmpUpcoming() {
     const diff = dt.getTime() - now;
     const isReady = diff <= 0 && diff >= -60000;
     const isSoon = diff > 0 && diff < 3600000;
+    const canStartNow = diff < 3600000;
     return `
-      <div class="relative ${isReady ? 'ready-badge' : ''} flex items-center gap-3 p-3 md:p-4 rounded-2xl border ${isReady ? 'border-emerald-300 bg-gradient-to-r from-emerald-50 to-white' : 'border-brand-100 bg-gradient-to-r from-brand-50/50 to-white'}">
-        <div class="w-12 h-12 md:w-14 md:h-14 rounded-2xl ${isReady ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-brand-500 to-neon-violet'} text-white flex flex-col items-center justify-center shrink-0">
-          <p class="text-[9px] uppercase font-bold opacity-80">${dt.toLocaleDateString('id-ID', {month:'short'})}</p>
-          <p class="text-base md:text-lg font-extrabold leading-none">${dt.getDate()}</p>
+      <div class="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+        <div class="w-11 h-11 rounded-xl ${isReady ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-slate-100 text-slate-800'} flex flex-col items-center justify-center shrink-0">
+          <p class="text-[11px] uppercase font-bold leading-none">${dt.toLocaleDateString('id-ID', {month:'short'})}</p>
+          <p class="text-base font-extrabold leading-tight tabular-nums">${dt.getDate()}</p>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-slate-800 text-xs md:text-sm truncate">${r.reason} ${r.isHoliday ? '🏖' : '💼'}</p>
-          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">${r.startTime} · ${r.plannedHours} jam</p>
-          <p class="text-[10px] text-slate-400 mt-0.5 truncate">${r.source === 'manager' ? '📌 Ditugaskan' : '📝 Sendiri'}</p>
+          <p class="font-bold text-slate-900 text-sm truncate">${r.reason}${UI.dayTag(r.isHoliday)}</p>
+          <p class="text-xs text-slate-500 mt-0.5"><span class="font-mono">${r.startTime}</span> · ${r.plannedHours} jam · ${r.source === 'manager' ? 'Ditugaskan atasan' : 'Pengajuan sendiri'}</p>
         </div>
-        <div class="shrink-0 flex flex-col items-end gap-1">
+        <div class="shrink-0 flex items-center gap-2">
           ${isReady ? `
-            <span class="text-[9px] bg-emerald-100 text-emerald-700 font-bold px-2 py-1 rounded-full animate-pulse">⚡ READY</span>
-            <button onclick="manualStart(${r.id})" class="bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-[10px] md:text-xs px-2.5 md:px-3 py-1.5 rounded-xl shadow-lg">Mulai</button>
+            <span class="badge tone-live">Waktunya mulai</span>
+            <button type="button" onclick="manualStart(${r.id})" class="btn btn-success btn-sm">Mulai</button>
           ` : isSoon ? `
-            <span class="text-[9px] bg-amber-100 text-amber-700 font-bold px-2 py-1 rounded-full">⏳ ${Math.ceil(diff/60000)}m</span>
-            <button onclick="manualStart(${r.id})" class="bg-gradient-to-r from-brand-600 to-neon-violet text-white font-bold text-[10px] md:text-xs px-2.5 md:px-3 py-1.5 rounded-xl shadow-lg">Mulai</button>
+            <span class="badge tone-wait">${Math.ceil(diff/60000)} mnt lagi</span>
+            <button type="button" onclick="manualStart(${r.id})" class="btn btn-primary btn-sm">Mulai</button>
+          ` : canStartNow ? `
+            <button type="button" onclick="manualStart(${r.id})" class="btn btn-primary btn-sm">Mulai</button>
           ` : `
-            <span class="text-[9px] bg-slate-100 text-slate-600 font-bold px-2 py-1 rounded-full">⚡ SIAP</span>
+            <span class="badge tone-info">Terjadwal</span>
           `}
         </div>
       </div>
@@ -1380,7 +1262,7 @@ function renderEmpUpcoming() {
 
 function renderEmpRecent() {
   const el = document.getElementById('empRecent');
-  const recent = records.slice(0, 3);
+  const recent = records.slice(0, 4);
   if (recent.length === 0) {
     el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Belum ada aktivitas</div>';
     return;
@@ -1399,11 +1281,10 @@ function renderEmpHistory() {
 
 function compactCard(r) {
   return `
-    <div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition card-hover">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-sm">${r.isHoliday ? '🏖' : '💼'}</div>
-      <div class="flex-1 min-w-0">
-        <p class="text-xs md:text-sm font-semibold text-slate-800 truncate">${r.reason}</p>
-        <p class="text-[10px] md:text-xs text-slate-500">${fmtDate(r.date)} · ${r.startTime} · ${r.plannedHours}j</p>
+    <div class="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+      <div class="min-w-0">
+        <p class="text-sm font-semibold text-slate-900 truncate">${r.reason}${UI.dayTag(r.isHoliday)}</p>
+        <p class="text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · <span class="font-mono">${r.startTime}</span> · ${r.plannedHours} jam</p>
       </div>
       ${statusBadge(r.status)}
     </div>`;
@@ -1419,63 +1300,65 @@ function fullCard(r) {
   let approvalInfo = '';
   if (r.status === 'pending' && r.approvalChain?.length > 0) {
     if (r.directApproverId && !r.finalApproverId) {
-      approvalInfo = `<p class="text-emerald-700 bg-emerald-50 rounded-xl p-2.5 mt-2 text-[11px]">✓ Atasan langsung sudah approve, tunggu final approval Manager</p>`;
+      approvalInfo = `<div class="note tone-live mt-3">Atasan langsung telah menyetujui · menunggu persetujuan akhir Manager.</div>`;
     } else if (!r.directApproverId && r.approvalChain.length > 0) {
-      approvalInfo = `<p class="text-blue-700 bg-blue-50 rounded-xl p-2.5 mt-2 text-[11px]">⏳ Menunggu approval bertingkat (${r.approvalChain.length} tingkat)</p>`;
+      approvalInfo = `<div class="note tone-info mt-3">Menunggu persetujuan bertingkat (${r.approvalChain.length} tahap).</div>`;
     }
   }
   if (r.status === 'approved' && r.jumpedIn) {
-    approvalInfo = `<p class="text-amber-700 bg-amber-50 rounded-xl p-2.5 mt-2 text-[11px]">⚡ Disetujui langsung Manager (atasan langsung belum review)</p>`;
+    approvalInfo = `<div class="note tone-wait mt-3">Disetujui langsung oleh Manager (melewati tahap atasan langsung).</div>`;
   }
+
+  const borderTone = canEdit ? 'border-l-4 border-l-orange-500' : canEditProof ? 'border-l-4 border-l-amber-500' : isNotCounted ? 'border-l-4 border-l-slate-400' : '';
   
   return `
-    <div class="bg-white rounded-2xl md:rounded-3xl shadow-sm border ${canEdit ? 'border-orange-200 border-l-4 border-l-orange-400' : canEditProof ? 'border-amber-200 border-l-4 border-l-amber-400' : isNotCounted ? 'border-slate-300 border-l-4 border-l-slate-400' : 'border-slate-100'} p-4 md:p-5 card-hover">
-      <div class="flex items-start justify-between mb-3 flex-wrap gap-2">
+    <article class="bg-white rounded-2xl border border-slate-200 ${borderTone} p-4 md:p-5">
+      <div class="flex items-start justify-between pb-3 mb-3 border-b border-slate-100 flex-wrap gap-2">
         <div class="min-w-0">
-          <p class="font-bold text-slate-800 text-sm md:text-base">${fmtDate(r.date)} · ${r.startTime} ${r.isHoliday ? '🏖' : '💼'}</p>
-          <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">
-            ${r.plannedHours} jam · ${r.source === 'manager' ? '📌 Ditugaskan' : '📝 Sendiri'}${r.autoStarted ? ' · ⚡ Auto' : ''}
+          <p class="font-bold text-slate-900 text-sm md:text-base">${fmtDate(r.date)} · <span class="font-mono">${r.startTime}</span>${UI.dayTag(r.isHoliday)}</p>
+          <p class="text-xs text-slate-500 mt-0.5">
+            Rencana ${r.plannedHours} jam · ${r.source === 'manager' ? 'Ditugaskan atasan' : 'Pengajuan sendiri'}${r.autoStarted ? ' · Mulai otomatis' : ''}
           </p>
         </div>
         ${statusBadge(r.status)}
       </div>
-      <div class="text-[11px] md:text-xs text-slate-600 space-y-1.5">
-        <p>📋 ${r.reason}</p>
-        <p>📝 ${r.desc}</p>
-        ${r.proof ? `<p>📎 ${r.proof}</p>` : ''}
-        ${r.proofUrl ? `
-          <a href="${r.proofUrl}" target="_blank" class="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg mt-1 transition">
-            📥 Lihat File Bukti
-          </a>
-        ` : ''}
-        ${r.proofExternalUrl ? `
-          <a href="${r.proofExternalUrl}" target="_blank" class="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg mt-1 transition">
-            🔗 Buka Link External
-          </a>
-        ` : ''}
-        ${r.proofNotes ? `<p class="text-slate-500 italic mt-1">💬 ${r.proofNotes}</p>` : ''}
-        ${r.actualHours > 0 ? `<p>⏱ Aktual: ${r.actualHours.toFixed(2)} jam</p>` : ''}
-        ${isNotCounted ? `
-          <div class="bg-slate-100 rounded-xl p-2.5 mt-2 border border-slate-200">
-            <p class="text-slate-700 font-bold text-[10px] mb-1">⚪ Lembur Tidak Dihitung</p>
-            <p class="text-slate-600">${r.cancelReason}</p>
-          </div>
-        ` : ''}
-        ${r.cancelReason && !isNotCounted ? `<p class="text-red-600">✕ Dibatalkan: ${r.cancelReason}</p>` : ''}
-        ${approvalInfo}
-        ${r.note ? `<p class="text-amber-700 bg-amber-50 rounded-xl p-2.5 mt-2">💬 <strong>Catatan:</strong> ${r.note}</p>` : ''}
-        ${r.verifyNote && ['proof_revision', 'verify_rejected'].includes(r.status) ? `<p class="text-orange-700 bg-orange-50 rounded-xl p-2.5 mt-2">🔍 <strong>Verifikasi:</strong> ${r.verifyNote}</p>` : ''}
-        ${showRating && r.status === 'completed' ? `
-          <div class="bg-gradient-to-br from-teal-50 to-emerald-50 rounded-xl p-2.5 mt-2">
-            <p class="text-teal-800 font-bold text-[10px] mb-1">✓ Diverifikasi${r.verifiedBy ? ' (level ' + r.verifiedBy + ')' : ''}</p>
-            <p class="text-teal-700 text-sm">${'★'.repeat(r.verifyRating)}${'☆'.repeat(5-r.verifyRating)} ${r.verifyNote ? '· ' + r.verifyNote : ''}</p>
-          </div>
-        ` : ''}
-      </div>
-      ${canEdit ? `<button onclick="openEdit(${r.id})" class="mt-4 w-full bg-gradient-to-r from-brand-600 to-neon-violet text-white text-xs md:text-sm font-bold py-3 rounded-2xl shadow-lg active:scale-[0.98] transition">✏️ Edit & Kirim Ulang</button>` : ''}
-      ${canEditProof ? `<button onclick="openEditProof(${r.id})" class="mt-4 w-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs md:text-sm font-bold py-3 rounded-2xl shadow-lg active:scale-[0.98] transition">📎 Revisi Bukti</button>` : ''}
-      ${canStart ? `<button onclick="manualStart(${r.id})" class="mt-4 w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs md:text-sm font-bold py-3 rounded-2xl shadow-lg active:scale-[0.98] transition">▶ Mulai Sekarang</button>` : ''}
-    </div>`;
+
+      <dl class="kv">
+        <dt>Kategori</dt><dd class="font-medium">${r.reason}</dd>
+        <dt>Rencana</dt><dd>${r.desc}</dd>
+        ${r.actualHours > 0 ? `<dt>Durasi aktual</dt><dd class="font-mono font-semibold">${r.actualHours.toFixed(2)} jam</dd>` : ''}
+        ${r.proof ? `<dt>Hasil kerja</dt><dd>${r.proof}</dd>` : ''}
+        ${r.proofNotes ? `<dt>Catatan bukti</dt><dd class="text-slate-600">${r.proofNotes}</dd>` : ''}
+      </dl>
+
+      ${(r.proofUrl || r.proofExternalUrl) ? `
+        <div class="flex flex-wrap gap-2 mt-3">
+          ${r.proofUrl ? `<a href="${r.proofUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">${UI.icon('file')}<span>Lihat File Bukti</span></a>` : ''}
+          ${r.proofExternalUrl ? `<a href="${r.proofExternalUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">${UI.icon('link')}<span>Buka Tautan Bukti</span></a>` : ''}
+        </div>
+      ` : ''}
+
+      ${isNotCounted ? `
+        <div class="note tone-neutral mt-3">
+          <p class="font-bold text-xs">Sesi Tidak Dihitung</p>
+          <p class="mt-0.5">${r.cancelReason}</p>
+        </div>
+      ` : ''}
+      ${r.cancelReason && !isNotCounted ? `<div class="note tone-bad mt-3"><strong>Dibatalkan:</strong> ${r.cancelReason}</div>` : ''}
+      ${approvalInfo}
+      ${r.note ? `<div class="note tone-wait mt-3"><strong>Catatan atasan:</strong> ${r.note}</div>` : ''}
+      ${r.verifyNote && ['proof_revision', 'verify_rejected'].includes(r.status) ? `<div class="note tone-attn mt-3"><strong>Catatan verifikasi:</strong> ${r.verifyNote}</div>` : ''}
+      ${showRating && r.status === 'completed' ? `
+        <div class="note tone-done mt-3 flex items-center justify-between flex-wrap gap-2">
+          <span><strong>Terverifikasi</strong>${r.verifiedBy ? ' · Level ' + r.verifiedBy : ''}${r.verifyNote ? ' — ' + r.verifyNote : ''}</span>
+          <span class="font-mono text-amber-600 font-bold" aria-label="Penilaian ${r.verifyRating} dari 5">${'★'.repeat(r.verifyRating)}${'☆'.repeat(5-r.verifyRating)}</span>
+        </div>
+      ` : ''}
+
+      ${canEdit ? `<div class="mt-4 pt-3 border-t border-slate-100 flex justify-end"><button type="button" onclick="openEdit(${r.id})" class="btn btn-primary btn-sm">Revisi &amp; Kirim Ulang</button></div>` : ''}
+      ${canEditProof ? `<div class="mt-4 pt-3 border-t border-slate-100 flex justify-end"><button type="button" onclick="openEditProof(${r.id})" class="btn btn-primary btn-sm">Perbarui Bukti</button></div>` : ''}
+      ${canStart ? `<div class="mt-4 pt-3 border-t border-slate-100 flex justify-end"><button type="button" onclick="manualStart(${r.id})" class="btn btn-success btn-sm">Mulai Sesi Lembur</button></div>` : ''}
+    </article>`;
 }
 
 switchTab('emp-dashboard');

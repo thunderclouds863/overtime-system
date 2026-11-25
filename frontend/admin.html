@@ -3,155 +3,89 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0f0f1e">
+<meta name="theme-color" content="#ffffff">
 <title>Admin — Sistem Lembur</title>
 <link rel="icon" type="image/png" href="logo-cimory.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400..800&display=swap" rel="stylesheet">
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-tailwind.config = {
-  theme: {
-    extend: {
-      fontFamily: {
-        sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-        display: ['Space Grotesk', 'system-ui', 'sans-serif']
-      },
-      colors: {
-        brand: {50:'#eef2ff',100:'#e0e7ff',200:'#c7d2fe',300:'#a5b4fc',400:'#818cf8',500:'#6366f1',600:'#4f46e5',700:'#4338ca',800:'#3730a3',900:'#312e81'},
-        ink: {900:'#0f0f1e',800:'#1a1a2e',700:'#25253d',600:'#33334f'},
-        neon: {pink:'#ec4899',violet:'#8b5cf6',cyan:'#06b6d4',lime:'#84cc16'}
-      }
-    }
-  }
-}
-</script>
-<style>
-  * { font-family: 'Plus Jakarta Sans', system-ui, sans-serif; -webkit-tap-highlight-color: transparent; }
-  .font-display { font-family: 'Space Grotesk', system-ui, sans-serif; }
-  body { background: #f7f7fb; }
-  ::-webkit-scrollbar { width: 4px; height: 4px; }
-  ::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 4px; }
-  .nav-item { transition: all 0.2s ease; }
-  .nav-item.active { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: white; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35); }
-  .modal-in { animation: modalIn 0.3s cubic-bezier(.2,.9,.3,1); }
-  @keyframes modalIn { from {opacity:0; transform: scale(0.94) translateY(20px);} to {opacity:1; transform:scale(1) translateY(0);} }
-  .card-hover { transition: all 0.25s; }
-  .card-hover:active { transform: scale(0.99); }
-  .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
-  .stat-grad-1 { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
-  .stat-grad-2 { background: linear-gradient(135deg, #f59e0b, #fb923c); }
-  .stat-grad-3 { background: linear-gradient(135deg, #06b6d4, #3b82f6); }
-  .stat-grad-4 { background: linear-gradient(135deg, #10b981, #059669); }
-  .stat-grad-5 { background: linear-gradient(135deg, #ec4899, #f43f5e); }
-  .stat-grad-6 { background: linear-gradient(135deg, #8b5cf6, #d946ef); }
-  @media (max-width: 767px) { main { padding-bottom: 90px; } }
-</style>
+<script src="assets/theme.js"></script>
+<link rel="stylesheet" href="assets/app.css">
+<script src="assets/ui.js"></script>
 </head>
 <body class="bg-slate-50 min-h-screen text-slate-800">
 
-<header class="fixed top-0 left-0 right-0 h-14 md:h-16 bg-ink-900 text-white z-40 border-b border-slate-800">
-  <div class="h-full px-3 md:px-5 flex items-center justify-between">
-    <div class="flex items-center gap-2 md:gap-3">
-      <img src="logo-cimory.png" alt="Cimory" class="w-9 h-9 md:w-10 md:h-10 object-contain">
-      <div class="hidden sm:block">
-        <p class="text-xs md:text-sm font-bold">Admin Panel</p>
-        <p class="text-[9px] md:text-[10px] text-slate-400">Overtime Management</p>
-      </div>
+<header class="app-header flex items-center justify-between">
+  <div class="app-brand flex items-center gap-3">
+    <img src="logo-cimory.png" alt="Cimory">
+    <span class="divider hidden sm:block"></span>
+    <div class="hidden sm:block">
+      <p class="app-title">Sistem Lembur</p>
+      <p class="app-role">Admin</p>
     </div>
-    <div class="flex items-center gap-2">
-      <div class="flex items-center gap-2 pl-2 md:pl-3 border-l border-slate-800">
-        <div class="text-right hidden md:block">
-          <p class="text-xs font-semibold" id="adminName">Admin</p>
-          <p class="text-[10px] text-amber-400 font-bold">ADMINISTRATOR</p>
-        </div>
-        <div class="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center font-bold text-xs">AD</div>
-      </div>
-      <button onclick="logout()" class="text-[10px] md:text-xs bg-red-600/20 hover:bg-red-600/40 border border-red-500/40 text-red-300 px-2 md:px-3 py-1.5 rounded-full transition">🚪</button>
+  </div>
+  <div class="flex items-center gap-2 md:gap-3">
+    
+    <div class="hidden md:block text-right leading-tight">
+      <p class="text-sm font-semibold text-slate-800" id="adminName">-</p>
+      <p class="text-xs text-slate-500">Administrator</p>
     </div>
+    <div class="avatar" data-initials-of="#adminName" aria-hidden="true">–</div>
+    <button type="button" onclick="logout()" class="btn-quiet inline-flex items-center" aria-label="Keluar"><span data-icon="logout"></span><span class="hidden sm:inline">Keluar</span></button>
   </div>
 </header>
 
-<aside class="hidden md:flex fixed top-16 left-0 bottom-0 w-60 bg-ink-900 text-slate-400 z-30 flex-col border-r border-slate-800">
-  <nav class="flex-1 p-3 space-y-1 overflow-y-auto">
-    <p class="text-[10px] uppercase text-slate-500 px-3 pt-2 pb-1 font-bold tracking-wider">Admin</p>
-    <a onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer active"><span>📊</span> Dashboard</a>
-    <a onclick="switchTab('users')" data-tab="users" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>👥</span> Manajemen User</a>
-    <a onclick="switchTab('records')" data-tab="records" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>📋</span> Semua Lembur</a>
-    <a onclick="switchTab('rekap')" data-tab="rekap" class="nav-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm cursor-pointer"><span>📥</span> Download Rekap</a>
+<aside class="app-sidebar hidden md:flex flex-col">
+  <nav class="flex-1 px-3 pb-3 overflow-y-auto" aria-label="Menu utama">
+    <p class="nav-label">Menu</p>
+    <button type="button" onclick="switchTab('dashboard')" data-tab="dashboard" class="nav-item"><span data-icon="chart"></span><span>Ringkasan</span></button>
+    <button type="button" onclick="switchTab('users')" data-tab="users" class="nav-item"><span data-icon="users"></span><span>Pengguna</span></button>
+    <button type="button" onclick="switchTab('records')" data-tab="records" class="nav-item"><span data-icon="list"></span><span>Semua lembur</span></button>
+    <button type="button" onclick="switchTab('rekap')" data-tab="rekap" class="nav-item"><span data-icon="download"></span><span>Rekap & ekspor</span></button>
   </nav>
-  <div class="p-4 border-t border-slate-800">
-    <p class="text-[10px] text-slate-500">Login sebagai</p>
-    <p class="text-xs text-slate-300 font-semibold" id="adminEmail">-</p>
+  <div class="px-4 py-3 border-t border-slate-200">
+    <p class="text-xs text-slate-500">Masuk sebagai</p>
+    <p class="text-xs text-slate-800 font-semibold truncate mt-0.5" id="adminEmail">-</p>
   </div>
 </aside>
 
-<nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-lg border-t border-slate-200 z-40 safe-bottom">
-  <div class="flex items-center justify-around px-1 py-2">
-    <button onclick="switchTab('dashboard')" data-mobile-tab="dashboard" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[60px]">
-      <span class="text-xl">📊</span><span class="text-[10px] font-semibold text-slate-600">Dash</span>
-    </button>
-    <button onclick="switchTab('users')" data-mobile-tab="users" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[60px]">
-      <span class="text-xl">👥</span><span class="text-[10px] font-semibold text-slate-600">User</span>
-    </button>
-    <button onclick="switchTab('records')" data-mobile-tab="records" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[60px]">
-      <span class="text-xl">📋</span><span class="text-[10px] font-semibold text-slate-600">Record</span>
-    </button>
-    <button onclick="switchTab('rekap')" data-mobile-tab="rekap" class="mobile-nav flex flex-col items-center gap-0.5 py-1.5 px-2 rounded-2xl min-w-[60px]">
-      <span class="text-xl">📥</span><span class="text-[10px] font-semibold text-slate-600">Rekap</span>
-    </button>
+<nav class="mobile-nav-bar md:hidden" aria-label="Menu utama">
+  <div class="flex items-stretch">
+    <button type="button" onclick="switchTab('dashboard')" data-mobile-tab="dashboard" class="mobile-nav flex flex-col items-center gap-1"><span data-icon="chart"></span><span>Ringkasan</span></button>
+    <button type="button" onclick="switchTab('users')" data-mobile-tab="users" class="mobile-nav flex flex-col items-center gap-1"><span data-icon="users"></span><span>Pengguna</span></button>
+    <button type="button" onclick="switchTab('records')" data-mobile-tab="records" class="mobile-nav flex flex-col items-center gap-1"><span data-icon="list"></span><span>Lembur</span></button>
+    <button type="button" onclick="switchTab('rekap')" data-mobile-tab="rekap" class="mobile-nav flex flex-col items-center gap-1"><span data-icon="download"></span><span>Rekap</span></button>
   </div>
 </nav>
 
-<main class="md:ml-60 pt-16 md:pt-20 pb-24 md:pb-8 px-3 md:px-6 max-w-[1500px]">
+<main class="md:ml-60 pt-[76px] md:pt-[88px] pb-24 md:pb-8 px-3 md:px-6 max-w-[1500px]">
 
-  <section id="tab-dashboard" class="tab-content space-y-4">
+  <section id="tab-dashboard" class="tab-content space-y-5">
     <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Dashboard Admin</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Ringkasan sistem monitoring lembur</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-900 font-display">Ringkasan Sistem</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Metrik operasional dan aktivitas pengajuan lembur terbaru</p>
     </div>
 
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-      <div class="stat-grad-1 rounded-2xl p-4 text-white shadow-lg shadow-violet-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Total User</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statUsers">0</p>
-      </div>
-      <div class="stat-grad-2 rounded-2xl p-4 text-white shadow-lg shadow-orange-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Total Record</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statRecords">0</p>
-      </div>
-      <div class="stat-grad-4 rounded-2xl p-4 text-white shadow-lg shadow-emerald-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Aktif</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statActive">0</p>
-      </div>
-      <div class="stat-grad-5 rounded-2xl p-4 text-white shadow-lg shadow-pink-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Pending</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statPending">0</p>
-      </div>
-      <div class="stat-grad-3 rounded-2xl p-4 text-white shadow-lg shadow-cyan-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Verifikasi</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statVerify">0</p>
-      </div>
-      <div class="stat-grad-6 rounded-2xl p-4 text-white shadow-lg shadow-fuchsia-500/25 relative overflow-hidden">
-        <div class="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full"></div>
-        <p class="text-[10px] opacity-90 font-semibold uppercase relative">Jam Bulan Ini</p>
-        <p class="text-2xl md:text-3xl font-extrabold mt-1.5 font-display relative" id="statHours">0</p>
-      </div>
-    </div>
+    <dl class="stats grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+      <div class="stat"><dt><span class="dot" style="--tone-dot:#2b3d93"></span>Total pengguna</dt><dd id="statUsers">0</dd></div>
+      <div class="stat"><dt><span class="dot" style="--tone-dot:#5b6478"></span>Total record</dt><dd id="statRecords">0</dd></div>
+      <div class="stat"><dt><span class="dot" style="--tone-dot:#13a05e"></span>Sedang aktif</dt><dd id="statActive">0</dd></div>
+      <div class="stat"><dt><span class="dot" style="--tone-dot:#e0a000"></span>Menunggu approval</dt><dd id="statPending">0</dd></div>
+      <div class="stat"><dt><span class="dot" style="--tone-dot:#ee6a10"></span>Perlu verifikasi</dt><dd id="statVerify">0</dd></div>
+      <div class="stat"><dt><span class="dot" style="--tone-dot:#3f8a66"></span>Jam bulan ini</dt><dd id="statHours">0</dd></div>
+    </dl>
 
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-5">
-      <h2 class="font-bold text-slate-800 mb-3 text-sm md:text-base">Aktivitas Terbaru</h2>
-      <div id="recentActivity" class="space-y-2">
-        <div class="text-center py-8 text-slate-400 text-sm">Memuat...</div>
+    <div class="bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-bold text-slate-900 text-sm md:text-base">Aktivitas Terbaru</h2>
+        <button type="button" onclick="switchTab('records')" class="text-xs font-semibold text-brand-600 hover:text-brand-800">Semua record</button>
+      </div>
+      <div id="recentActivity" class="row-list">
+        <div class="text-center py-8 text-slate-400 text-sm">Memuat…</div>
       </div>
     </div>
   </section>
@@ -159,25 +93,25 @@ tailwind.config = {
   <section id="tab-users" class="tab-content hidden space-y-4">
     <div class="flex items-center justify-between flex-wrap gap-3">
       <div>
-        <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Manajemen User</h1>
-        <p class="text-xs md:text-sm text-slate-500 mt-0.5">Tambah, edit, kelola akun</p>
+        <h1 class="text-xl md:text-2xl font-extrabold text-slate-900 font-display">Manajemen Pengguna</h1>
+        <p class="text-xs md:text-sm text-slate-500 mt-0.5">Kelola akun, level jabatan, dan struktur atasan langsung</p>
       </div>
-      <button onclick="openUserModal()" class="bg-gradient-to-r from-brand-600 to-neon-violet hover:from-brand-700 hover:to-brand-600 text-white font-bold text-xs md:text-sm px-4 md:px-5 py-2.5 rounded-2xl shadow-lg shadow-brand-500/30 transition active:scale-95">+ Tambah User</button>
+      <button type="button" onclick="openUserModal()" class="btn btn-primary btn-sm">+ Tambah Pengguna</button>
     </div>
 
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
+          <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200">
             <tr>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Nama</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Email</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Role</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Level</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden lg:table-cell">Jabatan</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden lg:table-cell">Atasan</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Status</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Aksi</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold">Nama</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold hidden md:table-cell">Email</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold">Peran</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold">Level</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold hidden lg:table-cell">Jabatan</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold hidden lg:table-cell">Atasan</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold hidden md:table-cell">Status</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold">Aksi</th>
             </tr>
           </thead>
           <tbody id="usersTable" class="divide-y divide-slate-100"></tbody>
@@ -188,52 +122,52 @@ tailwind.config = {
 
   <section id="tab-records" class="tab-content hidden space-y-4">
     <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Semua Record Lembur</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Monitor & cetak bukti lembur</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-900 font-display">Semua Record Lembur</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Telusuri riwayat lembur dan cetak dokumen bukti pelaksanaan</p>
     </div>
 
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-3 md:p-4">
+    <div class="bg-white rounded-2xl border border-slate-200 p-3 md:p-4">
       <div class="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
         <div>
-          <label class="text-[10px] font-bold text-slate-600 uppercase">Status</label>
-          <select id="filterStatus" class="w-full mt-1 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs md:text-sm">
-            <option value="">Semua</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="active">Aktif</option>
-            <option value="pending_verification">Menunggu Verifikasi</option>
+          <label for="filterStatus" class="block text-xs font-semibold text-slate-700">Status</label>
+          <select id="filterStatus" class="w-full mt-1 border border-slate-300 rounded-xl px-3 py-2 text-xs md:text-sm bg-white">
+            <option value="">Semua status</option>
+            <option value="pending">Menunggu approval</option>
+            <option value="approved">Disetujui</option>
+            <option value="active">Sedang berjalan</option>
+            <option value="pending_verification">Menunggu verifikasi</option>
             <option value="completed">Selesai</option>
             <option value="rejected">Ditolak</option>
             <option value="cancelled">Dibatalkan</option>
           </select>
         </div>
         <div>
-          <label class="text-[10px] font-bold text-slate-600 uppercase">Dari</label>
-          <input type="date" id="filterStart" class="w-full mt-1 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs md:text-sm">
+          <label for="filterStart" class="block text-xs font-semibold text-slate-700">Dari tanggal</label>
+          <input type="date" id="filterStart" class="w-full mt-1 border border-slate-300 rounded-xl px-3 py-2 text-xs md:text-sm bg-white">
         </div>
         <div>
-          <label class="text-[10px] font-bold text-slate-600 uppercase">Sampai</label>
-          <input type="date" id="filterEnd" class="w-full mt-1 border border-slate-200 rounded-2xl px-3 py-2.5 text-xs md:text-sm">
+          <label for="filterEnd" class="block text-xs font-semibold text-slate-700">Sampai tanggal</label>
+          <input type="date" id="filterEnd" class="w-full mt-1 border border-slate-300 rounded-xl px-3 py-2 text-xs md:text-sm bg-white">
         </div>
         <div class="flex items-end gap-2 col-span-2 md:col-span-1">
-          <button onclick="loadRecords()" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white font-bold text-xs md:text-sm py-2.5 rounded-2xl transition">Filter</button>
-          <button onclick="resetFilter()" class="flex-1 border border-slate-200 text-slate-600 font-medium text-xs md:text-sm py-2.5 rounded-2xl hover:bg-slate-50 transition">Reset</button>
+          <button type="button" onclick="loadRecords()" class="btn btn-primary flex-1">Terapkan</button>
+          <button type="button" onclick="resetFilter()" class="btn btn-secondary flex-1">Reset</button>
         </div>
       </div>
     </div>
 
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
-          <thead class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider">
+          <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200">
             <tr>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Karyawan</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Level</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Tanggal</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden lg:table-cell">Jam</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold hidden md:table-cell">Durasi</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Status</th>
-              <th class="text-left px-3 md:px-4 py-3 md:py-3.5 font-bold">Aksi</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold">Karyawan</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold hidden md:table-cell">Level</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold">Tanggal</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold hidden lg:table-cell">Jam</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold hidden md:table-cell">Durasi</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold">Status</th>
+              <th class="text-left px-3 md:px-4 py-3 font-bold">Aksi</th>
             </tr>
           </thead>
           <tbody id="recordsTable" class="divide-y divide-slate-100"></tbody>
@@ -244,83 +178,83 @@ tailwind.config = {
 
   <section id="tab-rekap" class="tab-content hidden space-y-4">
     <div>
-      <h1 class="text-xl md:text-2xl font-extrabold text-slate-800 font-display">Download Rekap</h1>
-      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Export ke Excel atau PDF (semua bukti sekaligus)</p>
+      <h1 class="text-xl md:text-2xl font-extrabold text-slate-900 font-display">Rekap &amp; Ekspor</h1>
+      <p class="text-xs md:text-sm text-slate-500 mt-0.5">Unduh laporan lembur dalam format Excel atau bundel PDF bukti pelaksanaan</p>
     </div>
 
-    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-4 md:p-6 max-w-2xl">
-      <div class="bg-gradient-to-br from-brand-50 to-violet-50 border border-brand-100 rounded-2xl p-3.5 md:p-4 mb-5">
-        <p class="text-xs text-brand-900"><strong>Info:</strong> Excel berisi data lengkap + hyperlink cetak. PDF berisi bukti lembur lengkap dengan GPS, approval, dan penilaian.</p>
+    <div class="bg-white rounded-2xl border border-slate-200 p-5 md:p-6 max-w-2xl">
+      <div class="note tone-info mb-5">
+        File Excel memuat seluruh kolom data disertai tautan langsung untuk membuka cetak bukti tiap record. Bundel PDF menggabungkan lembar bukti resmi seluruh record terpilih.
       </div>
 
-      <div class="grid md:grid-cols-2 gap-3 md:gap-4">
+      <div class="grid md:grid-cols-2 gap-4">
         <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Dari Tanggal</label>
-          <input type="date" id="rekapStart" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
+          <label for="rekapStart" class="block text-xs font-semibold text-slate-700">Dari tanggal</label>
+          <input type="date" id="rekapStart" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white">
         </div>
         <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Sampai Tanggal</label>
-          <input type="date" id="rekapEnd" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
+          <label for="rekapEnd" class="block text-xs font-semibold text-slate-700">Sampai tanggal</label>
+          <input type="date" id="rekapEnd" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white">
         </div>
         <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Status</label>
-          <select id="rekapStatus" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-            <option value="">Semua Status</option>
-            <option value="completed">Selesai (Approved)</option>
-            <option value="pending_verification">Menunggu Verifikasi</option>
-            <option value="approved">Approved</option>
-            <option value="active">Aktif</option>
+          <label for="rekapStatus" class="block text-xs font-semibold text-slate-700">Status</label>
+          <select id="rekapStatus" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white">
+            <option value="">Semua status</option>
+            <option value="completed">Selesai</option>
+            <option value="pending_verification">Menunggu verifikasi</option>
+            <option value="approved">Disetujui</option>
+            <option value="active">Sedang berjalan</option>
           </select>
         </div>
         <div>
-          <label class="text-[10px] md:text-xs font-bold text-slate-600 uppercase">Karyawan</label>
-          <select id="rekapEmployee" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
-            <option value="">Semua Karyawan</option>
+          <label for="rekapEmployee" class="block text-xs font-semibold text-slate-700">Karyawan</label>
+          <select id="rekapEmployee" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white">
+            <option value="">Semua karyawan</option>
           </select>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 mt-6">
-        <button onclick="downloadRekap()" id="btnDownloadExcel" class="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-emerald-500/25 active:scale-[0.98]">📥 Download Excel</button>
-        <button onclick="downloadRekapPDF()" id="btnDownloadRekapPDF" class="bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-red-500/25 active:scale-[0.98]">📄 Download PDF Semua</button>
-        <button onclick="previewRekap()" class="md:col-span-2 border border-brand-200 text-brand-700 hover:bg-brand-50 font-bold py-3.5 rounded-2xl transition active:scale-[0.98]">👁 Preview Data</button>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 mt-6">
+        <button type="button" onclick="previewRekap()" class="btn btn-secondary">Pratinjau Data</button>
+        <button type="button" onclick="downloadRekap()" id="btnDownloadExcel" class="btn btn-success">Unduh Excel (.xlsx)</button>
+        <button type="button" onclick="downloadRekapPDF()" id="btnDownloadRekapPDF" class="btn btn-primary">Unduh Bundel PDF</button>
       </div>
 
       <div id="rekapPreview" class="mt-5 hidden">
-        <p class="text-xs font-bold text-slate-600 uppercase mb-2">Preview (<span id="previewCount">0</span> record)</p>
-        <div class="bg-slate-50 rounded-2xl p-4 text-xs text-slate-700 max-h-60 overflow-y-auto" id="previewContent"></div>
+        <p class="text-xs font-semibold text-slate-600 mb-2">Pratinjau (<span id="previewCount">0</span> record)</p>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 max-h-60 overflow-y-auto" id="previewContent"></div>
       </div>
     </div>
   </section>
 
 </main>
 
-<div id="userModal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden z-50 overflow-y-auto">
+<div id="userModal" class="fixed inset-0 bg-slate-900/50 hidden z-50 overflow-y-auto">
   <div class="min-h-full flex items-end md:items-center justify-center p-0 md:p-4 py-0 md:py-8">
     <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-lg w-full p-6 modal-in">
       <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
       <div class="flex items-center justify-between mb-4">
-        <h3 class="font-extrabold text-slate-800 text-lg" id="userModalTitle">Tambah User</h3>
-        <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+        <h3 class="font-extrabold text-slate-900 text-lg" id="userModalTitle">Tambah Pengguna</h3>
+        <button type="button" onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
       </div>
       <input type="hidden" id="userId">
       <div class="space-y-3">
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Nama Lengkap *</label>
-          <input type="text" id="userFullName" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          <label for="userFullName" class="block text-xs font-semibold text-slate-700">Nama lengkap <span class="text-red-600">*</span></label>
+          <input type="text" id="userFullName" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Email *</label>
-          <input type="email" id="userEmail" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none" placeholder="nama@cimory.com">
+          <label for="userEmail" class="block text-xs font-semibold text-slate-700">Email kantor <span class="text-red-600">*</span></label>
+          <input type="email" id="userEmail" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none" placeholder="nama@cimory.com">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Password *</label>
-          <input type="password" id="userPassword" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-brand-500/20 focus:outline-none" placeholder="Minimal 6 karakter">
+          <label for="userPassword" class="block text-xs font-semibold text-slate-700">Kata sandi <span class="text-red-600">*</span></label>
+          <input type="password" id="userPassword" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white focus:border-brand-600 focus:ring-2 focus:ring-brand-600/15 focus:outline-none" placeholder="Minimal 6 karakter">
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="text-xs font-bold text-slate-600 uppercase">Role *</label>
-            <select id="userRole" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
+            <label for="userRole" class="block text-xs font-semibold text-slate-700">Peran <span class="text-red-600">*</span></label>
+            <select id="userRole" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white">
               <option value="employee">Employee</option>
               <option value="manager">Manager</option>
               <option value="admin">Admin</option>
@@ -328,8 +262,8 @@ tailwind.config = {
             </select>
           </div>
           <div>
-            <label class="text-xs font-bold text-slate-600 uppercase">Level *</label>
-            <select id="userLevel" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white">
+            <label for="userLevel" class="block text-xs font-semibold text-slate-700">Level <span class="text-red-600">*</span></label>
+            <select id="userLevel" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white">
               <option value="">— Pilih level —</option>
               <optgroup label="Level 1 — Worker">
                 <option value="1a">1a</option>
@@ -360,42 +294,40 @@ tailwind.config = {
           </div>
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Jabatan</label>
-          <input type="text" id="userJabatan" class="w-full mt-1.5 border border-slate-200 rounded-2xl px-3 py-3 text-sm bg-slate-50 focus:bg-white" placeholder="Contoh: Staff Keuangan">
+          <label for="userJabatan" class="block text-xs font-semibold text-slate-700">Jabatan</label>
+          <input type="text" id="userJabatan" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white" placeholder="Contoh: Staff Keuangan">
         </div>
         <div>
-          <label class="text-xs font-bold text-slate-600 uppercase">Atasan Langsung</label>
-          <div id="approverList" class="mt-1.5 border border-slate-200 rounded-2xl p-2 max-h-40 overflow-y-auto space-y-1 bg-slate-50">
-            <p class="text-xs text-slate-400 text-center py-2">Memuat atasan...</p>
+          <label class="block text-xs font-semibold text-slate-700">Atasan langsung</label>
+          <div id="approverList" class="mt-1.5 border border-slate-300 rounded-xl p-2 max-h-40 overflow-y-auto space-y-1 bg-slate-50">
+            <p class="text-xs text-slate-400 text-center py-2">Memuat daftar atasan…</p>
           </div>
-          <p class="text-[10px] text-slate-400 mt-1">Centang atasan langsung (untuk approval bertingkat)</p>
+          <p class="text-xs text-slate-500 mt-1">Pilih satu atau lebih atasan untuk alur persetujuan bertingkat.</p>
         </div>
       </div>
       <div class="flex gap-2 mt-5 pt-4 border-t border-slate-100">
-        <button onclick="closeUserModal()" class="flex-1 border border-slate-200 py-3 rounded-2xl text-sm font-medium hover:bg-slate-50">Batal</button>
-        <button onclick="saveUser()" class="flex-1 bg-gradient-to-r from-brand-600 to-neon-violet text-white py-3 rounded-2xl text-sm font-bold shadow-lg active:scale-[0.98] transition">Simpan</button>
+        <button type="button" onclick="closeUserModal()" class="btn btn-secondary flex-1">Batal</button>
+        <button type="button" onclick="saveUser()" class="btn btn-primary flex-1">Simpan Pengguna</button>
       </div>
     </div>
   </div>
 </div>
 
-<div id="modalBukti" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center z-50 p-0 md:p-4 overflow-y-auto">
+<div id="modalBukti" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center z-50 p-0 md:p-4 overflow-y-auto">
   <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-2xl w-full modal-in my-0 md:my-8">
-    <div class="flex items-center justify-between p-4 md:p-5 border-b border-slate-100 sticky top-0 bg-white z-10 rounded-t-3xl">
+    <div class="flex items-center justify-between p-4 md:p-5 border-b border-slate-200 sticky top-0 bg-white z-10 rounded-t-3xl">
       <div>
-        <h3 class="font-extrabold text-slate-800 text-base md:text-lg">🖨 Bukti Lembur</h3>
-        <p class="text-[10px] md:text-xs text-slate-500 mt-0.5">Preview sebelum download PDF</p>
+        <h3 class="font-extrabold text-slate-900 text-base md:text-lg">Lembar Bukti Lembur</h3>
+        <p class="text-xs text-slate-500 mt-0.5">Pratinjau dokumen sebelum mengunduh PDF</p>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="downloadBuktiPDF()" id="btnDownloadPDF" class="bg-gradient-to-r from-brand-600 to-neon-violet text-white font-bold text-xs md:text-sm px-3 md:px-4 py-2.5 rounded-xl shadow-lg transition active:scale-95">
-          📥 Download PDF
-        </button>
-        <button onclick="closeBuktiModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none w-10 h-10 flex items-center justify-center">×</button>
+        <button type="button" onclick="downloadBuktiPDF()" id="btnDownloadPDF" class="btn btn-primary btn-sm">Unduh PDF</button>
+        <button type="button" onclick="closeBuktiModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none w-10 h-10 flex items-center justify-center">×</button>
       </div>
     </div>
     <div class="p-4 md:p-5 max-h-[75vh] overflow-y-auto bg-slate-100 rounded-b-3xl">
-      <div id="buktiContent" class="bg-white p-6 md:p-8 max-w-[700px] mx-auto shadow-lg" style="font-family:'Segoe UI',sans-serif">
-        <div class="text-center py-8 text-slate-400 text-sm">Memuat...</div>
+      <div id="buktiContent" class="bg-white p-6 md:p-8 max-w-[700px] mx-auto border border-slate-200" style="font-family:'Segoe UI',sans-serif">
+        <div class="text-center py-8 text-slate-400 text-sm">Memuat…</div>
       </div>
     </div>
   </div>
@@ -406,7 +338,7 @@ tailwind.config = {
 <script>
 // Instance demo (frontend disajikan backend di onrender.com) → pakai origin yang sama
 const API_URL = location.hostname.endsWith('.onrender.com') ? location.origin : 'https://overtime-backend-wd4c.onrender.com';
-const APP_URL = 'https://overtime-system.desi-arr863.workers.dev';
+const APP_URL = location.hostname.endsWith('.onrender.com') ? location.origin : 'https://overtime-system.desi-arr863.workers.dev';
 const token = localStorage.getItem('token');
 const user = JSON.parse(localStorage.getItem('user') || 'null');
 
@@ -455,20 +387,12 @@ async function api(path, opts = {}) {
 function switchTab(tab) {
   document.querySelectorAll('.tab-content').forEach(e => e.classList.add('hidden'));
   document.getElementById('tab-' + tab)?.classList.remove('hidden');
-  document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
-  document.querySelector(`[data-tab="${tab}"]`)?.classList.add('active');
-  document.querySelectorAll('.mobile-nav').forEach(e => {
-    e.classList.remove('bg-brand-600', 'text-white');
-    e.querySelector('span:last-child').classList.add('text-slate-600');
-    e.querySelector('span:last-child').classList.remove('text-white');
+  document.querySelectorAll('[data-tab],[data-mobile-tab]').forEach(e => {
+    const on = (e.dataset.tab || e.dataset.mobileTab) === tab;
+    e.classList.toggle('active', on);
+    if (on) e.setAttribute('aria-current', 'page'); else e.removeAttribute('aria-current');
   });
-  const mob = document.querySelector(`[data-mobile-tab="${tab}"]`);
-  if (mob) {
-    mob.classList.add('bg-brand-600', 'text-white');
-    mob.querySelector('span:last-child').classList.add('text-white');
-    mob.querySelector('span:last-child').classList.remove('text-slate-600');
-  }
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0 });
 
   if (tab === 'dashboard') loadStats();
   if (tab === 'users') { loadApprovers(); loadUsers(); }
@@ -493,25 +417,18 @@ async function loadStats() {
       return;
     }
     el.innerHTML = records.slice(0, 10).map(r => `
-      <div class="flex items-center gap-3 p-3 rounded-2xl border border-slate-100 hover:bg-slate-50 transition card-hover">
-        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-sm"></div>
-        <div class="flex-1 min-w-0">
-          <p class="text-xs md:text-sm font-semibold text-slate-800 truncate">${r.employee_name} — ${r.reason}</p>
-          <p class="text-[10px] md:text-xs text-slate-500">${new Date(r.date).toLocaleDateString('id-ID')} · ${r.start_time} · ${statusLabel(r.status)}</p>
+      <div class="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-slate-900 truncate">${r.employee_name} <span class="font-normal text-slate-500">— ${r.reason}</span>${UI.dayTag(r.is_holiday)}</p>
+          <p class="text-xs text-slate-500 mt-0.5">${new Date(r.date).toLocaleDateString('id-ID')} · <span class="font-mono">${r.start_time}</span></p>
         </div>
+        ${UI.badge(r.status)}
       </div>
     `).join('');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
-function statusLabel(s) {
-  const map = {
-    pending: '⏳ PENDING', approved: '✅ DISETUJUI', rejected: '❌ DITOLAK', revision: '✏️ REVISI',
-    active: '🔴 AKTIF', cancelled: '🚫 DIBATALKAN', pending_verification: '🔍 VERIFIKASI',
-    proof_revision: '📎 REVISI BUKTI', verify_rejected: '❌ HASIL DITOLAK', completed: '✓ SELESAI'
-  };
-  return map[s] || s;
-}
+function statusLabel(s) { return UI.statusText(s); }
 
 async function loadApprovers() {
   const el = document.getElementById('approverList');
@@ -548,32 +465,27 @@ async function loadUsers() {
       <tr class="hover:bg-slate-50 transition">
         <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">
           ${u.full_name}
-          <p class="text-[10px] text-slate-400 md:hidden font-normal">${u.email}</p>
+          <p class="text-[11px] text-slate-400 md:hidden font-normal">${u.email}</p>
         </td>
         <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden md:table-cell">${u.email}</td>
         <td class="px-3 md:px-4 py-3">
-          <span class="text-[10px] font-bold px-2 py-1 rounded-full ${
-            u.role === 'admin' ? 'bg-amber-100 text-amber-700' :
-            u.role === 'manager' ? 'bg-brand-100 text-brand-700' :
-            u.role === 'reviewer' ? 'bg-cyan-100 text-cyan-700' :
-            'bg-slate-100 text-slate-600'
-          }">${u.role.toUpperCase()}</span>
+          <span class="tag">${u.role.toUpperCase()}</span>
         </td>
         <td class="px-3 md:px-4 py-3">
-          <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-purple-100 text-purple-700">${u.level || '-'}</span>
+          <span class="tag font-mono">${u.level || '-'}</span>
         </td>
         <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">${u.jabatan || '-'}</td>
         <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">
           ${(u.approvers || []).map(a => a.full_name).join(', ') || '-'}
         </td>
         <td class="px-3 md:px-4 py-3 hidden md:table-cell">
-          <span class="text-[10px] font-bold px-2 py-1 rounded-full ${u.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">
-            ${u.is_active ? 'AKTIF' : 'NONAKTIF'}
+          <span class="badge ${u.is_active ? 'tone-live' : 'tone-bad'}">
+            ${u.is_active ? 'Aktif' : 'Nonaktif'}
           </span>
         </td>
-        <td class="px-3 md:px-4 py-3">
-          <button onclick="editUser(${u.id})" class="text-brand-600 hover:text-brand-800 text-xs font-bold mr-2">Edit</button>
-          <button onclick="deleteUser(${u.id})" class="text-red-600 hover:text-red-800 text-xs font-bold">Hapus</button>
+        <td class="px-3 md:px-4 py-3 whitespace-nowrap">
+          <button type="button" onclick="editUser(${u.id})" class="text-brand-600 hover:text-brand-800 text-xs font-bold mr-2.5">Edit</button>
+          <button type="button" onclick="deleteUser(${u.id})" class="text-red-600 hover:text-red-800 text-xs font-bold">Hapus</button>
         </td>
       </tr>
     `).join('');
@@ -627,14 +539,14 @@ async function saveUser() {
       const payload = { full_name, role, jabatan, level, approver_ids };
       if (password) payload.password = password;
       await api(`/api/admin/users/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
-      toast('User diupdate ✓', 'bg-emerald-600');
+      toast('User diupdate', 'bg-emerald-600');
     } else {
       if (!email || !password) return toast('Email & password wajib', 'bg-red-600');
       await api('/api/admin/users', {
         method: 'POST',
         body: JSON.stringify({ email, password, full_name, role, jabatan, level, approver_ids })
       });
-      toast('User ditambahkan ✓', 'bg-emerald-600');
+      toast('User ditambahkan', 'bg-emerald-600');
     }
     closeUserModal();
     loadUsers();
@@ -684,20 +596,20 @@ async function loadRecords() {
       <tr class="hover:bg-slate-50 transition">
         <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">
           ${r.employee_name}
-          <p class="text-[10px] text-slate-400 md:hidden font-normal">Level ${r.employee_level || '-'}</p>
+          <p class="text-[11px] text-slate-400 md:hidden font-normal">Level ${r.employee_level || '-'}</p>
         </td>
         <td class="px-3 md:px-4 py-3 text-xs hidden md:table-cell">
-          <span class="bg-purple-100 text-purple-700 font-bold px-2 py-0.5 rounded-full">${r.employee_level || '-'}</span>
+          <span class="tag font-mono">${r.employee_level || '-'}</span>
         </td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm">${new Date(r.date).toLocaleDateString('id-ID')}</td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs hidden lg:table-cell">${r.start_time}${r.actual_end ? ' — ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm hidden md:table-cell">${duration}</td>
+        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm">${new Date(r.date).toLocaleDateString('id-ID')} ${UI.dayTag(r.is_holiday)}</td>
+        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs font-mono hidden lg:table-cell">${r.start_time}${r.actual_end ? ' – ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
+        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm font-mono hidden md:table-cell">${duration}</td>
         <td class="px-3 md:px-4 py-3">
-          <span class="text-[10px] font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-700">${statusLabel(r.status)}</span>
+          ${UI.badge(r.status)}
         </td>
         <td class="px-3 md:px-4 py-3">
           ${canPrint ? `
-            <button onclick="openBukti(${r.id})" class="text-brand-600 hover:text-brand-800 text-xs font-bold whitespace-nowrap">🖨 Cetak</button>
+            <button type="button" onclick="openBukti(${r.id})" class="text-brand-600 hover:text-brand-800 text-xs font-bold whitespace-nowrap">Cetak</button>
           ` : '<span class="text-xs text-slate-300">—</span>'}
         </td>
       </tr>
@@ -732,7 +644,7 @@ function buildBuktiHTML(r, pageLabel = '') {
   const verifyHash = Math.abs(hash).toString(16).toUpperCase().padStart(8, '0');
 
   return `
-    <div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #6366f1;padding-bottom:16px;margin-bottom:24px">
+    <div style="display:flex;align-items:center;gap:16px;border-bottom:3px solid #2b3d93;padding-bottom:16px;margin-bottom:24px">
       <img src="logo-cimory.png" alt="Cimory" style="width:60px;height:60px;object-fit:contain;flex-shrink:0" crossorigin="anonymous">
       <div style="flex:1">
         <h1 style="margin:0;font-size:20px;color:#0f172a;font-weight:800">BUKTI PELAKSANAAN LEMBUR</h1>
@@ -740,13 +652,13 @@ function buildBuktiHTML(r, pageLabel = '') {
       </div>
       <div style="text-align:right;font-size:10px;color:#94a3b8">
         <p style="margin:0">No. Bukti</p>
-        <p style="margin:2px 0 0;font-weight:700;color:#6366f1;font-size:14px">#OT-${String(r.id).padStart(5,'0')}</p>
+        <p style="margin:2px 0 0;font-weight:700;color:#2b3d93;font-size:14px">#OT-${String(r.id).padStart(5,'0')}</p>
         ${pageLabel ? `<p style="margin:4px 0 0;font-size:9px">${pageLabel}</p>` : ''}
       </div>
     </div>
 
     <div style="margin-bottom:20px">
-      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Informasi Karyawan</h2>
+      <h2 style="margin:0 0 12px;font-size:13px;color:#2b3d93;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Informasi Karyawan</h2>
       <table style="width:100%;border-collapse:collapse;font-size:13px">
         <tr><td style="padding:8px 0;color:#64748b;width:140px">Nama</td><td style="padding:8px 0;font-weight:600;color:#0f172a">${r.employee_name}</td></tr>
         <tr><td style="padding:8px 0;color:#64748b">Email</td><td style="padding:8px 0;color:#0f172a">${r.employee_email || '-'}</td></tr>
@@ -756,36 +668,36 @@ function buildBuktiHTML(r, pageLabel = '') {
     </div>
 
     <div style="margin-bottom:20px">
-      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Detail Lembur</h2>
+      <h2 style="margin:0 0 12px;font-size:13px;color:#2b3d93;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Detail Lembur</h2>
       <table style="width:100%;border-collapse:collapse;font-size:13px;background:#f8fafc;border-radius:8px;padding:12px">
         <tr><td style="padding:8px 12px;color:#64748b;width:140px">Tanggal</td><td style="padding:8px 12px;font-weight:600;color:#0f172a">${new Date(r.date).toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'})} ${r.is_holiday ? '(Hari Libur)' : '(Hari Kerja)'}</td></tr>
         <tr><td style="padding:8px 12px;color:#64748b">Jam Rencana</td><td style="padding:8px 12px;color:#0f172a">${r.start_time} · ${r.planned_hours || 0} jam</td></tr>
         <tr><td style="padding:8px 12px;color:#64748b">Waktu Aktual</td><td style="padding:8px 12px;color:#0f172a">${actualStart} — ${actualEnd}</td></tr>
-        <tr><td style="padding:8px 12px;color:#64748b">Durasi Aktual</td><td style="padding:8px 12px;font-weight:700;color:#10b981">${r.actual_hours ? parseFloat(r.actual_hours).toFixed(2) + ' jam' : '-'}</td></tr>
+        <tr><td style="padding:8px 12px;color:#64748b">Durasi Aktual</td><td style="padding:8px 12px;font-weight:700;color:#0b6239">${r.actual_hours ? parseFloat(r.actual_hours).toFixed(2) + ' jam' : '-'}</td></tr>
         <tr><td style="padding:8px 12px;color:#64748b">Kategori</td><td style="padding:8px 12px;color:#0f172a">${r.reason}</td></tr>
         <tr><td style="padding:8px 12px;color:#64748b">Sumber</td><td style="padding:8px 12px;color:#0f172a">${r.source === 'manager' ? 'Ditugaskan Atasan' : 'Pengajuan Karyawan'}</td></tr>
       </table>
     </div>
 
     <div style="margin-bottom:20px">
-      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Rencana Pekerjaan</h2>
+      <h2 style="margin:0 0 12px;font-size:13px;color:#2b3d93;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Rencana Pekerjaan</h2>
       <div style="background:#f8fafc;padding:12px;border-radius:8px;font-size:13px;color:#0f172a;line-height:1.6">${r.description || '-'}</div>
     </div>
 
     <div style="margin-bottom:20px">
-      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Bukti Hasil Kerja</h2>
-      <div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px;border-radius:8px;font-size:13px;color:#065f46;line-height:1.6">
+      <h2 style="margin:0 0 12px;font-size:13px;color:#2b3d93;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Bukti Hasil Kerja</h2>
+      <div style="background:#f2fbf6;border:1px solid #b7e4cc;padding:12px;border-radius:8px;font-size:13px;color:#0b6239;line-height:1.6">
         ${r.proof_text || '(Belum ada bukti yang diupload)'}
-        ${r.proof_file_name ? `<p style="margin:8px 0 0;font-size:11px;color:#059669">📎 ${r.proof_file_name}</p>` : ''}
-        ${r.proof_uploaded_at ? `<p style="margin:4px 0 0;font-size:10px;color:#94a3b8">Diunggah: ${new Date(r.proof_uploaded_at).toLocaleString('id-ID')}</p>` : ''}
+        ${r.proof_file_name ? `<p style="margin:8px 0 0;font-size:11px;color:#0b6239">Lampiran: ${r.proof_file_name}</p>` : ''}
+        ${r.proof_uploaded_at ? `<p style="margin:4px 0 0;font-size:10px;color:#64748b">Diunggah: ${new Date(r.proof_uploaded_at).toLocaleString('id-ID')}</p>` : ''}
       </div>
     </div>
 
     <div style="margin-bottom:20px">
-      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Persetujuan Atasan</h2>
+      <h2 style="margin:0 0 12px;font-size:13px;color:#2b3d93;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Persetujuan Atasan</h2>
       <div style="border:1px solid #e2e8f0;padding:16px;border-radius:8px;font-size:13px">
         <table style="width:100%;border-collapse:collapse">
-          <tr><td style="padding:6px 0;color:#64748b;width:140px">Status</td><td style="padding:6px 0;font-weight:700;color:${r.status === 'completed' ? '#10b981' : r.status === 'rejected' ? '#dc2626' : '#f59e0b'}">${statusText}</td></tr>
+          <tr><td style="padding:6px 0;color:#64748b;width:140px">Status</td><td style="padding:6px 0;font-weight:700;color:${r.status === 'completed' ? '#0b6239' : r.status === 'rejected' ? '#c81e25' : '#933a00'}">${statusText}</td></tr>
           ${r.approved_at ? `<tr><td style="padding:6px 0;color:#64748b">Disetujui Pada</td><td style="padding:6px 0;color:#0f172a">${approvedDate}</td></tr>` : ''}
           ${r.approval_note ? `<tr><td style="padding:6px 0;color:#64748b;vertical-align:top">Catatan</td><td style="padding:6px 0;color:#0f172a;font-style:italic">"${r.approval_note}"</td></tr>` : ''}
         </table>
@@ -794,9 +706,9 @@ function buildBuktiHTML(r, pageLabel = '') {
 
     ${r.verify_rating ? `
     <div style="margin-bottom:20px">
-      <h2 style="margin:0 0 12px;font-size:13px;color:#6366f1;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Penilaian Hasil Kerja</h2>
+      <h2 style="margin:0 0 12px;font-size:13px;color:#2b3d93;text-transform:uppercase;letter-spacing:0.5px;font-weight:700">Penilaian Hasil Kerja</h2>
       <div style="border:1px solid #e2e8f0;padding:16px;border-radius:8px;font-size:13px;text-align:center;background:#fefce8">
-        <p style="margin:0;font-size:32px;letter-spacing:6px;color:#f59e0b">${verifyStars}</p>
+        <p style="margin:0;font-size:32px;letter-spacing:6px;color:#d97706">${verifyStars}</p>
         <p style="margin:8px 0 0;font-weight:700;color:#0f172a">Rating: ${r.verify_rating}/5</p>
         ${r.verify_note ? `<p style="margin:8px 0 0;font-style:italic;color:#475569">"${r.verify_note}"</p>` : ''}
         ${r.verified_at ? `<p style="margin:8px 0 0;font-size:11px;color:#94a3b8">Diverifikasi: ${verifiedDate}${r.verified_by_level ? ' · Level ' + r.verified_by_level : ''}</p>` : ''}
@@ -811,7 +723,7 @@ function buildBuktiHTML(r, pageLabel = '') {
       </div>
       <div style="text-align:right">
         <p style="margin:0">Hash Verifikasi</p>
-        <p style="margin:4px 0 0;font-family:monospace;font-weight:700;color:#6366f1;font-size:12px">${verifyHash}</p>
+        <p style="margin:4px 0 0;font-family:monospace;font-weight:700;color:#2b3d93;font-size:12px">${verifyHash}</p>
       </div>
     </div>
   `;
@@ -851,7 +763,7 @@ async function downloadBuktiPDF() {
   const btn = document.getElementById('btnDownloadPDF');
   const originalText = btn.textContent;
   btn.disabled = true;
-  btn.textContent = '⏳ Membuat PDF...';
+  btn.textContent = 'Membuat PDF…';
 
   try {
     const element = document.getElementById('buktiContent');
@@ -893,10 +805,10 @@ async function downloadBuktiPDF() {
     element.style.maxWidth = originalMaxWidth;
     element.style.padding = originalPadding;
 
-    toast('✅ PDF berhasil di-download', 'bg-emerald-600');
+    toast('PDF berhasil di-download', 'bg-emerald-600');
   } catch (err) {
     console.error('PDF error:', err);
-    toast('❌ Gagal buat PDF: ' + err.message, 'bg-red-600');
+    toast('Gagal buat PDF: ' + err.message, 'bg-red-600');
   } finally {
     btn.disabled = false;
     btn.textContent = originalText;
@@ -940,7 +852,7 @@ async function previewRekap() {
     }
     document.getElementById('previewContent').innerHTML = `
       <table class="w-full">
-        <thead class="text-slate-500 text-[10px] uppercase">
+        <thead class="text-slate-500 text-[11px] uppercase">
           <tr>
             <th class="text-left py-1">ID</th>
             <th class="text-left py-1">Nama</th>
@@ -952,11 +864,11 @@ async function previewRekap() {
         <tbody>
           ${data.slice(0, 20).map(r => `
             <tr class="border-t border-slate-200">
-              <td class="py-1.5 font-mono text-[10px]">#OT-${String(r.id).padStart(5,'0')}</td>
+              <td class="py-1.5 font-mono text-[11px]">#OT-${String(r.id).padStart(5,'0')}</td>
               <td class="py-1.5">${r.employee_name}</td>
               <td class="py-1.5">${new Date(r.date).toLocaleDateString('id-ID')}</td>
               <td class="py-1.5">${statusLabel(r.status)}</td>
-              <td class="py-1.5 text-brand-600">🔗 Cetak</td>
+              <td class="py-1.5 text-brand-600 font-semibold">Cetak</td>
             </tr>
           `).join('')}
         </tbody>
@@ -1007,7 +919,7 @@ async function downloadRekap() {
       const cellRef = XLSX.utils.encode_cell({ r: rowIdx, c: extraCol });
       const url = `${APP_URL}/admin.html?print=${r.id}`;
       ws[cellRef] = {
-        v: `🖨 Klik untuk cetak #${r.id}`,
+        v: `Cetak bukti #${r.id}`,
         t: 's',
         l: { Target: url, Tooltip: 'Buka sistem & cetak PDF bukti lembur' }
       };
@@ -1026,7 +938,7 @@ async function downloadRekap() {
     const start = document.getElementById('rekapStart').value || 'awal';
     const end = document.getElementById('rekapEnd').value || 'akhir';
     XLSX.writeFile(wb, `Rekap-Lembur_${start}_${end}.xlsx`);
-    toast(`✓ Downloaded: ${data.length} record dengan link cetak`, 'bg-emerald-600');
+    toast(`Downloaded: ${data.length} record dengan link cetak`, 'bg-emerald-600');
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
@@ -1046,7 +958,7 @@ async function downloadRekapPDF() {
     }
 
     btn.disabled = true;
-    btn.textContent = `⏳ Menyiapkan...`;
+    btn.textContent = `Menyiapkan…`;
 
     // Pastikan jsPDF & html2canvas tersedia
     if (!window.html2canvas) {
@@ -1072,7 +984,7 @@ async function downloadRekapPDF() {
 
     for (let i = 0; i < data.length; i++) {
       const r = data[i];
-      btn.textContent = `⏳ Render ${i + 1}/${data.length}...`;
+      btn.textContent = `Merender ${i + 1}/${data.length}…`;
 
       const page = document.createElement('div');
       page.style.width = '210mm';
@@ -1112,10 +1024,10 @@ async function downloadRekapPDF() {
     const end = document.getElementById('rekapEnd').value || 'akhir';
     pdf.save(`Bukti-Lembur_Semua_${start}_${end}.pdf`);
 
-    toast(`✅ PDF berhasil: ${data.length} halaman`, 'bg-emerald-600');
+    toast(`PDF berhasil: ${data.length} halaman`, 'bg-emerald-600');
   } catch (err) {
     console.error('Bulk PDF error:', err);
-    toast('❌ Gagal: ' + err.message, 'bg-red-600');
+    toast('Gagal: ' + err.message, 'bg-red-600');
   } finally {
     btn.disabled = false;
     btn.textContent = originalText;
@@ -1129,7 +1041,7 @@ async function checkPrintParam() {
   const params = new URLSearchParams(window.location.search);
   const printId = params.get('print');
   if (printId) {
-    console.log(`🖨 Auto-open bukti untuk record ID: ${printId}`);
+    console.log(`Auto-open bukti untuk record ID: ${printId}`);
     window.history.replaceState({}, '', window.location.pathname);
     switchTab('records');
     await new Promise(r => setTimeout(r, 500));
