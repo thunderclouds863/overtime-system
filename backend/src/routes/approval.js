@@ -1,15 +1,18 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { query } from '../db.js';
-import { requireAuth, requireManager } from '../auth.js';
+import { requireAuth, requireManager, getJwtSecret, levelNum } from '../auth.js';
 import { sendEmail, templates } from '../mailer.js';
 
 const router = Router();
 
-function levelNum(level) {
-  if (!level) return 0;
-  const m = String(level).match(/^(\d+)/);
-  return m ? parseInt(m[1]) : 0;
+function escapeHtml(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 async function notifyUser(userId, templateName, data) {
@@ -63,7 +66,7 @@ function renderEmailActionPage(type, message) {
     </div>
     <div class="body">
       <p class="message">${message}</p>
-      <a href="https://overtime-system.desi-arr863.workers.dev/manager.html" class="btn">Buka Sistem →</a>
+      <a href="${escapeHtml((process.env.APP_URL || process.env.FRONTEND_URL || 'https://overtime-system.desi-arr863.workers.dev').replace(/\/$/, ''))}/manager.html" class="btn">Buka Sistem →</a>
     </div>
     <div class="footer">Sistem Monitoring Lembur Cimory</div>
   </div>
@@ -77,9 +80,9 @@ router.get('/email-action', async (req, res) => {
 
   let payload;
   try {
-    payload = jwt.verify(token, process.env.JWT_SECRET);
+    payload = jwt.verify(token, getJwtSecret());
   } catch (err) {
-    return res.status(400).send(renderEmailActionPage('error', 'Token tidak valid atau sudah kedaluwarsa (maks 24 jam)'));
+    return res.status(400).send(renderEmailActionPage('error', 'Token tidak valid atau sudah kedaluwarsa'));
   }
 
   const { recordId, action, approverId } = payload;
@@ -94,12 +97,14 @@ router.get('/email-action', async (req, res) => {
 
     if (!record) return res.send(renderEmailActionPage('error', 'Record tidak ditemukan'));
     if (record.status !== 'pending') {
-      return res.send(renderEmailActionPage('info', `Pengajuan ${record.employee_name} sudah diproses sebelumnya (status: ${record.status})`));
+      return res.send(renderEmailActionPage('info', `Pengajuan ${escapeHtml(record.employee_name)} sudah diproses sebelumnya (status: ${escapeHtml(record.status)})`));
     }
 
     const approverResult = await query('SELECT full_name, level FROM users WHERE id = $1', [approverId]);
     const approver = approverResult.rows[0];
     const approverName = approver?.full_name || 'Atasan';
+    const safeEmpName = escapeHtml(record.employee_name);
+    const safeApproverName = escapeHtml(approverName);
     const approverLevel = levelNum(approver?.level);
 
     if (action === 'reject') {
@@ -113,7 +118,7 @@ router.get('/email-action', async (req, res) => {
         note: `Ditolak oleh ${approverName}`, rejectedBy: approverName,
         reason: record.reason, desc: record.description  
       });
-      return res.send(renderEmailActionPage('rejected', `Pengajuan <strong>${record.employee_name}</strong> ditolak. Karyawan sudah dapat notifikasi.`));
+      return res.send(renderEmailActionPage('rejected', `Pengajuan <strong>${safeEmpName}</strong> ditolak. Karyawan sudah dapat notifikasi.`));
     }
 
     if (action === 'revision') {
@@ -126,7 +131,7 @@ router.get('/email-action', async (req, res) => {
         note: `Revisi diminta oleh ${approverName}`, requestedBy: approverName,
         reason: record.reason, desc: record.description  // ← TAMBAH
       });
-      return res.send(renderEmailActionPage('forwarded', `Permintaan revisi terkirim ke <strong>${record.employee_name}</strong>.`));
+      return res.send(renderEmailActionPage('forwarded', `Permintaan revisi terkirim ke <strong>${safeEmpName}</strong>.`));
     }
 
     if (action === 'approve-direct') {
@@ -155,15 +160,14 @@ router.get('/email-action', async (req, res) => {
       const finalApprover = allApproversResult.rows.find(a => levelNum(a.level) >= 4);
 
       if (finalApprover?.email && finalApprover.id !== approverId) {
-        const JWT_SECRET = process.env.JWT_SECRET;
         const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
         const approveToken = jwt.sign(
           { recordId, action: 'approve-final', approverId: finalApprover.id },
-          JWT_SECRET, { expiresIn: '24h' }
+          getJwtSecret(), { expiresIn: '24h' }
         );
         const rejectToken = jwt.sign(
           { recordId, action: 'reject', approverId: finalApprover.id },
-          JWT_SECRET, { expiresIn: '24h' }
+          getJwtSecret(), { expiresIn: '24h' }
         );
 
         await sendEmail({
@@ -182,12 +186,12 @@ router.get('/email-action', async (req, res) => {
         });
       }
 
-      return res.send(renderEmailActionPage('success', `Atasan langsung <strong>${approverName}</strong> approve. Sekarang menunggu final approval dari Manager.`));
+      return res.send(renderEmailActionPage('success', `Atasan langsung <strong>${safeApproverName}</strong> approve. Sekarang menunggu final approval dari Manager.`));
     }
 
     if (action === 'approve-final') {
       if (approverLevel < 4) {
-        return res.send(renderEmailActionPage('error', `Hanya level 4+ (Manager) yang bisa final approve. Level kamu: ${approver?.level || '-'}`));
+        return res.send(renderEmailActionPage('error', `Hanya level 4+ (Manager) yang bisa final approve. Level kamu: ${escapeHtml(approver?.level || '-')}`));
       }
 
       const isDirectAndFinal = record.is_direct_and_final === true;
@@ -239,14 +243,14 @@ router.get('/email-action', async (req, res) => {
         }
       }
 
-      return res.send(renderEmailActionPage('success', `Pengajuan <strong>${record.employee_name}</strong> disetujui final.${jumpedIn ? ' <br><small>(Jump in — atasan langsung belum review)</small>' : ''}`));
+      return res.send(renderEmailActionPage('success', `Pengajuan <strong>${safeEmpName}</strong> disetujui final.${jumpedIn ? ' <br><small>(Jump in — atasan langsung belum review)</small>' : ''}`));
     }
 
     return res.send(renderEmailActionPage('error', 'Aksi tidak dikenali'));
 
   } catch (err) {
     console.error('email-action error:', err.message);
-    return res.status(500).send(renderEmailActionPage('error', 'Gagal: ' + err.message));
+    return res.status(500).send(renderEmailActionPage('error', 'Gagal: ' + escapeHtml(err.message)));
   }
 });
 
@@ -285,15 +289,14 @@ router.post('/:id/approve-direct', requireAuth, requireManager, async (req, res)
     const finalApprover = allApproversResult.rows.find(a => levelNum(a.level) >= 4);
 
     if (finalApprover?.email && finalApprover.id !== user.id) {
-      const JWT_SECRET = process.env.JWT_SECRET;
       const BACKEND_URL = process.env.BACKEND_URL || 'https://overtime-backend-wd4c.onrender.com';
       const approveToken = jwt.sign(
         { recordId: id, action: 'approve-final', approverId: finalApprover.id },
-        JWT_SECRET, { expiresIn: '24h' }
+        getJwtSecret(), { expiresIn: '24h' }
       );
       const rejectToken = jwt.sign(
         { recordId: id, action: 'reject', approverId: finalApprover.id },
-        JWT_SECRET, { expiresIn: '24h' }
+        getJwtSecret(), { expiresIn: '24h' }
       );
       await sendEmail({
         to: finalApprover.email,
@@ -437,6 +440,9 @@ router.post('/:id/request-revision', requireAuth, requireManager, async (req, re
 
 router.post('/:id/reopen', requireAuth, requireManager, async (req, res) => {
   const { id } = req.params;
+  if (levelNum(req.user?.level) < 3 && req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Level minimal 3 untuk membuka kembali pengajuan' });
+  }
   try {
     const result = await query(
       `UPDATE overtime_records SET status = 'pending', approval_progress = 0,
