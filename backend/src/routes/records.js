@@ -122,6 +122,70 @@ function buildEmailActionToken(payload) {
   return jwt.sign(payload, getJwtSecret());
 }
 
+// Reconcile active sessions:
+// 1) Auto-stop at planned end time (actual_start + planned_duration) if employee did not extend.
+// 2) Auto-finish before day rollover (WIB) if browser was closed and employee never confirmed before midnight.
+export async function reconcileActiveSessions() {
+  try {
+    const wib = getNowWIBParts();
+    const activeRes = await query(
+      `SELECT id, employee_id, employee_name, TO_CHAR(date, 'YYYY-MM-DD') AS date_str, actual_start, planned_duration, last_heartbeat_at
+       FROM overtime_records
+       WHERE status = 'active' AND actual_start IS NOT NULL`
+    );
+
+    const autoEnded = [];
+    for (const r of activeRes.rows) {
+      const startMs = new Date(r.actual_start).getTime();
+      const plannedHours = parseDurationToHours(r.planned_duration) || 1;
+      const plannedEndMs = startMs + plannedHours * 3600000;
+      const recDateStr = r.date_str;
+      const nowMs = Date.now();
+
+      let endAt = null;
+      let reason = null;
+
+      if (recDateStr < wib.dateStr) {
+        // Day rolled over past midnight WIB without employee confirming continuation
+        const endOfDayMs = new Date(`${recDateStr}T23:59:00${TIMEZONE_OFFSET}`).getTime();
+        const capMs = Math.min(plannedEndMs, endOfDayMs, nowMs);
+        endAt = new Date(Math.max(capMs, startMs + 60000));
+        reason = 'Otomatis diselesaikan sebelum pergantian hari (sesi tidak dikonfirmasi ulang)';
+      } else if (nowMs >= plannedEndMs) {
+        // Reached planned end without extension
+        endAt = new Date(plannedEndMs);
+        reason = 'Otomatis selesai sesuai jam rencana (tanpa perpanjangan)';
+      }
+
+      if (endAt && reason) {
+        const upd = await query(
+          `UPDATE overtime_records
+           SET status = 'pending_verification',
+               actual_end = $1,
+               actual_duration = GREATEST($1::timestamptz - actual_start, INTERVAL '1 second'),
+               auto_ended_reason = $2,
+               updated_at = NOW()
+           WHERE id = $3 AND status = 'active'
+           RETURNING id, employee_name`,
+          [endAt.toISOString(), reason, r.id]
+        );
+        if (upd.rows.length > 0) {
+          await query(
+            `INSERT INTO activity_logs (record_id, actor_id, actor_name, action, details)
+             VALUES ($1, NULL, 'SYSTEM', 'auto_ended', $2)`,
+            [r.id, JSON.stringify({ reason, actual_end: endAt.toISOString() })]
+          ).catch(() => {});
+          autoEnded.push({ id: r.id, employee: r.employee_name, reason });
+        }
+      }
+    }
+    return autoEnded;
+  } catch (err) {
+    console.warn('reconcileActiveSessions error:', err.message);
+    return [];
+  }
+}
+
 async function notifyUser(userId, templateName, data) {
   try {
     const result = await query('SELECT email FROM users WHERE id = $1', [userId]);
@@ -579,6 +643,7 @@ router.post('/', requireAuth, async (req, res) => {
 // GET / — List records
 // ============================================
 router.get('/', requireAuth, async (req, res) => {
+  await reconcileActiveSessions();
   const user = req.user;
   const { status, limit = 100 } = req.query;
   const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 1000);
@@ -672,14 +737,15 @@ router.post('/:id/start', requireAuth, async (req, res) => {
     const result = await query(
       `UPDATE overtime_records
        SET status = 'active', actual_start = COALESCE(actual_start, NOW()),
+           last_heartbeat_at = NOW(),
            gps_lat = $1, gps_lng = $2, gps_accuracy = $3, gps_distance = $4,
            auto_started = FALSE, updated_at = NOW()
        WHERE id = $5 AND (employee_id = $6 OR $7 IN ('manager', 'admin'))
-         AND status = 'approved'
+         AND status IN ('approved', 'pending')
        RETURNING *`,
       [Number(lat), Number(lng), accuracy || null, distance, id, user.id, user.role]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan / belum disetujui' });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan / tidak bisa dimulai' });
 
     const record = result.rows[0];
     const durationHours = parseDurationToHours(record.planned_duration);
@@ -760,7 +826,146 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/finish — Selesai lembur + upload bukti
+// POST /:id/heartbeat — Konfirmasi sesi lembur masih berjalan
+// ============================================
+router.post('/:id/heartbeat', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const user = req.user;
+  try {
+    const result = await query(
+      `UPDATE overtime_records
+       SET last_heartbeat_at = NOW(), updated_at = NOW()
+       WHERE id = $1 AND (employee_id = $2 OR $3 IN ('manager', 'admin')) AND status = 'active'
+       RETURNING id, last_heartbeat_at`,
+      [id, user.id, user.role]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Sesi lembur tidak aktif' });
+    res.json({ success: true, last_heartbeat_at: result.rows[0].last_heartbeat_at });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// POST /:id/extend — Perpanjang durasi lembur aktif
+// ============================================
+router.post('/:id/extend', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const additionalHours = parseInt(req.body?.additional_hours, 10);
+  const reason = String(req.body?.reason || '').trim();
+  const user = req.user;
+
+  if (!additionalHours || additionalHours < 1 || additionalHours > 8) {
+    return res.status(400).json({ error: 'Perpanjangan harus antara 1 sampai 8 jam' });
+  }
+
+  try {
+    const result = await query(
+      `UPDATE overtime_records
+       SET planned_duration = planned_duration + ($1 || ' hours')::interval,
+           extension_count = COALESCE(extension_count, 0) + 1,
+           last_heartbeat_at = NOW(),
+           updated_at = NOW()
+       WHERE id = $2 AND (employee_id = $3 OR $4 IN ('manager', 'admin')) AND status = 'active'
+       RETURNING *,
+         ROUND(COALESCE(EXTRACT(EPOCH FROM planned_duration), 0) / 3600.0, 2) as planned_hours`,
+      [additionalHours, id, user.id, user.role]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Sesi lembur aktif tidak ditemukan' });
+    }
+    const record = result.rows[0];
+    await query(
+      `INSERT INTO activity_logs (record_id, actor_id, actor_name, action, details)
+       VALUES ($1, $2, $3, 'extended', $4)`,
+      [record.id, user.id, user.name, JSON.stringify({ additional_hours: additionalHours, reason: reason || null })]
+    ).catch(() => {});
+
+    await notifyAllManagers('overtimeExtended', {
+      employeeName: record.employee_name,
+      date: record.date,
+      addedHours: additionalHours,
+      totalHours: record.planned_hours,
+      reason: reason || 'Perpanjangan waktu lembur'
+    });
+
+    res.json(record);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// POST /:id/upload-proof — Upload / update bukti kapan saja
+// ============================================
+router.post('/:id/upload-proof', requireAuth, async (req, res) => {
+  const { id } = req.params;
+  const {
+    proof_text,
+    proof_file_name,
+    proof_file_url,
+    proof_file_size,
+    proof_notes,
+    proof_external_url
+  } = req.body;
+  const user = req.user;
+
+  if (!proof_text || !String(proof_text).trim()) {
+    return res.status(400).json({ error: 'Deskripsi hasil kerja wajib diisi' });
+  }
+  if (!isValidHttpUrl(proof_file_url) || !isValidHttpUrl(proof_external_url)) {
+    return res.status(400).json({ error: 'Tautan bukti harus menggunakan http:// atau https://' });
+  }
+
+  try {
+    const result = await query(
+      `UPDATE overtime_records
+       SET proof_text = $1,
+           proof_file_name = COALESCE($2, proof_file_name),
+           proof_file_url = COALESCE($3, proof_file_url),
+           proof_file_size = COALESCE($4, proof_file_size),
+           proof_notes = $5,
+           proof_external_url = COALESCE($6, proof_external_url),
+           proof_uploaded_at = NOW(),
+           status = 'pending_verification',
+           proof_revision_count = CASE WHEN status = 'proof_revision' THEN proof_revision_count + 1 ELSE proof_revision_count END,
+           updated_at = NOW()
+       WHERE id = $7 AND (employee_id = $8 OR $9 IN ('manager', 'admin'))
+         AND status IN ('pending_verification', 'proof_revision')
+       RETURNING *,
+         ROUND(COALESCE(EXTRACT(EPOCH FROM actual_duration), 0) / 3600.0, 2) as actual_hours`,
+      [
+        String(proof_text).trim(),
+        proof_file_name || null,
+        proof_file_url || null,
+        proof_file_size || null,
+        proof_notes || null,
+        proof_external_url || null,
+        id, user.id, user.role
+      ]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Record tidak ditemukan atau tidak dalam tahap verifikasi bukti' });
+    }
+    const record = result.rows[0];
+    const submittedAt = new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' });
+    await notifyAllManagers('proofSubmitted', {
+      employeeName: record.employee_name,
+      duration: record.actual_hours ? `${parseFloat(record.actual_hours).toFixed(2)} jam` : '-',
+      proof: record.proof_text
+    });
+    await notifyUser(record.employee_id, 'proofPendingFyi', {
+      duration: record.actual_hours ? `${parseFloat(record.actual_hours).toFixed(2)} jam` : '-',
+      submittedAt
+    });
+    res.json(record);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// POST /:id/finish — Selesai lembur (bukti opsional, bisa diunggah kapan saja)
 // ============================================
 router.post('/:id/finish', requireAuth, async (req, res) => {
   const { id } = req.params;
@@ -774,7 +979,6 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
   } = req.body;
   const user = req.user;
 
-  if (!proof_text) return res.status(400).json({ error: 'Deskripsi bukti wajib' });
   if (!isValidHttpUrl(proof_file_url) || !isValidHttpUrl(proof_external_url)) {
     return res.status(400).json({ error: 'Tautan bukti harus menggunakan http:// atau https://' });
   }
@@ -842,15 +1046,15 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
        WHERE id = $7 AND (employee_id = $8 OR $9 IN ('manager', 'admin'))
          AND status = 'active'
        RETURNING *`,
-      [
-        proof_text,
-        proof_file_name || null,
-        proof_file_url || null,
-        proof_file_size || null,
-        proof_notes || null,
-        proof_external_url || null,
-        id, user.id, user.role
-      ]
+        [
+          proof_text || null,
+          proof_file_name || null,
+          proof_file_url || null,
+          proof_file_size || null,
+          proof_notes || null,
+          proof_external_url || null,
+          id, user.id, user.role
+        ]
     );
 
     if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan' });
@@ -1083,15 +1287,15 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
        WHERE id = $7 AND (employee_id = $8 OR $9 IN ('manager', 'admin'))
          AND status = 'proof_revision'
        RETURNING *`,
-      [
-        proof_text,
-        proof_file_name || null,
-        proof_file_url || null,
-        proof_file_size || null,
-        proof_notes || null,
-        proof_external_url || null,
-        id, user.id, user.role
-      ]
+        [
+          proof_text || null,
+          proof_file_name || null,
+          proof_file_url || null,
+          proof_file_size || null,
+          proof_notes || null,
+          proof_external_url || null,
+          id, user.id, user.role
+        ]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
 

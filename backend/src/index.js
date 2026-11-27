@@ -5,7 +5,7 @@ dotenv.config();
 
 import authRouter from './routes/auth.js';
 import adminRouter from './routes/admin.js';
-import recordsRouter from './routes/records.js';
+import recordsRouter, { reconcileActiveSessions } from './routes/records.js';
 import approvalRouter from './routes/approval.js';
 import schedulerRouter from './routes/scheduler.js';
 import fs from 'fs';
@@ -95,6 +95,14 @@ async function start() {
     await pool.query(sql);
     console.log('🧪 DEMO_MODE: schema & akun demo siap');
   }
+  await pool.query(`
+    ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS last_heartbeat_at TIMESTAMPTZ;
+    ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS extension_count INTEGER DEFAULT 0;
+    ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS auto_ended_reason TEXT;
+  `).catch(err => console.warn('Schema sync note:', err.message));
+
+  setInterval(() => { reconcileActiveSessions(); }, 60000);
+
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
   });

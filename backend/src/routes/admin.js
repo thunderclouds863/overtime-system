@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { query } from '../db.js';
-import { hashPassword, requireAuth, requireAdmin, requireReviewer } from '../auth.js';
+import { hashPassword, requireAuth, requireAdmin, requireReviewer, levelNum } from '../auth.js';
+import { sendEmail, templates } from '../mailer.js';
 
 const router = Router();
 
@@ -228,6 +229,128 @@ router.get('/reviewers', requireAuth, requireAdmin, async (req, res) => {
       `SELECT id, email, full_name FROM users WHERE role = 'reviewer' AND is_active = true ORDER BY full_name`
     );
     res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
+// POST /records/:id/remind — Kirim reminder ke approver/verifikator
+// ============================================
+router.post('/records/:id/remind', requireAuth, requireAdmin, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const recRes = await query(
+      `SELECT r.*,
+        ROUND(COALESCE(EXTRACT(EPOCH FROM r.planned_duration), 0) / 3600.0, 2) as planned_hours,
+        ROUND(COALESCE(EXTRACT(EPOCH FROM r.actual_duration), 0) / 3600.0, 2) as actual_hours
+       FROM overtime_records r WHERE r.id = $1`,
+      [id]
+    );
+    const record = recRes.rows[0];
+    if (!record) return res.status(404).json({ error: 'Record tidak ditemukan' });
+
+    const needsApproval = record.status === 'pending' || (record.status === 'active' && !record.final_approver_id);
+    const needsVerify = record.status === 'pending_verification';
+
+    if (!needsApproval && !needsVerify) {
+      return res.status(400).json({ error: 'Reminder hanya tersedia untuk status menunggu approval atau menunggu verifikasi' });
+    }
+
+    let targets = [];
+    const chain = record.approval_chain || [];
+
+    if (needsApproval) {
+      if (chain.length > 0) {
+        const approversRes = await query(
+          'SELECT id, email, full_name, level FROM users WHERE id = ANY($1) AND is_active = true',
+          [chain]
+        );
+        const ordered = chain.map(cid => approversRes.rows.find(u => u.id === cid)).filter(Boolean);
+        if (!record.direct_approver_id) {
+          targets = ordered;
+        } else {
+          targets = ordered.filter(u => levelNum(u.level) >= 4);
+        }
+      }
+      if (targets.length === 0) {
+        const fallback = await query(
+          "SELECT id, email, full_name, level FROM users WHERE role = 'manager' AND is_active = true"
+        );
+        targets = fallback.rows;
+      }
+    } else if (needsVerify) {
+      if (record.final_approver_id) {
+        const finalRes = await query(
+          'SELECT id, email, full_name, level FROM users WHERE id = $1 AND is_active = true',
+          [record.final_approver_id]
+        );
+        targets = finalRes.rows;
+      }
+      if (targets.length === 0 && chain.length > 0) {
+        const chainRes = await query(
+          'SELECT id, email, full_name, level FROM users WHERE id = ANY($1) AND is_active = true',
+          [chain]
+        );
+        targets = chainRes.rows.filter(u => levelNum(u.level) >= 4);
+      }
+      if (targets.length === 0) {
+        const fallback = await query(
+          "SELECT id, email, full_name, level FROM users WHERE role = 'manager' AND is_active = true"
+        );
+        targets = fallback.rows;
+      }
+    }
+
+    let emailSent = 0;
+    const recipientNames = [];
+    for (const t of targets) {
+      if (!t.email) continue;
+      recipientNames.push(`${t.full_name} (${t.email})`);
+      const tpl = needsApproval
+        ? templates.reminderApproval({
+            employeeName: record.employee_name,
+            date: record.date,
+            startTime: record.start_time,
+            duration: record.planned_hours || 0,
+            reason: record.reason,
+            desc: record.description,
+            statusNote: record.status === 'active' ? 'Lembur sedang berjalan (belum di-approve)' : 'Menunggu persetujuan'
+          })
+        : templates.reminderVerification({
+            employeeName: record.employee_name,
+            date: record.date,
+            duration: record.actual_hours ? `${parseFloat(record.actual_hours).toFixed(2)} jam` : '-',
+            proof: record.proof_text || '(Bukti belum diunggah karyawan)'
+          });
+      const r = await sendEmail({ to: t.email, ...tpl });
+      if (r.success) emailSent++;
+    }
+
+    await query(
+      `INSERT INTO activity_logs (record_id, actor_id, actor_name, action, details)
+       VALUES ($1, $2, $3, 'admin_reminder', $4)`,
+      [
+        record.id,
+        req.user.id,
+        req.user.name || 'Admin',
+        JSON.stringify({
+          type: needsApproval ? 'approval' : 'verification',
+          recipients: recipientNames,
+          email_sent: emailSent
+        })
+      ]
+    );
+
+    res.json({
+      success: true,
+      target_type: needsApproval ? 'approval' : 'verification',
+      recipients: recipientNames,
+      email_sent: emailSent,
+      message: recipientNames.length > 0
+        ? `Reminder dikirim ke ${recipientNames.map(n => n.split(' (')[0]).join(', ')}`
+        : 'Tidak ada approver aktif yang ditemukan'
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

@@ -44,7 +44,7 @@
         <span class="w-2 h-2 bg-slate-400 rounded-full" id="gpsTopDot"></span>
         <span id="gpsStatus" class="hidden sm:inline">Cek GPS</span>
       </button>
-    <div class="hidden md:block text-right leading-tight">
+    <div class="hidden lg:block text-right leading-tight">
       <p class="text-sm font-semibold text-slate-800" id="userName">-</p>
       <p class="text-xs text-slate-500" id="userLevelLabel">-</p>
     </div>
@@ -122,9 +122,15 @@
         <span>Memantau posisi terhadap radius kantor…</span>
       </div>
 
+      <div id="resumePrompt" class="hidden note tone-wait mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <span class="text-xs">Sesi ini masih tercatat aktif. Konfirmasi jika Anda masih melanjutkan lembur sebelum pergantian hari agar tidak diselesaikan otomatis.</span>
+        <button type="button" onclick="confirmContinueOvertime()" class="btn btn-primary btn-sm shrink-0">Lanjutkan Lembur</button>
+      </div>
+
       <div class="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-slate-100">
-        <button type="button" onclick="cancelOvertime()" class="btn btn-secondary sm:w-auto">Batalkan sesi</button>
-        <button type="button" onclick="endOvertime()" class="btn btn-success flex-1">Selesaikan &amp; kirim bukti</button>
+        <button type="button" onclick="cancelOvertime()" class="btn btn-secondary sm:w-auto">Batalkan</button>
+        <button type="button" onclick="openExtendModal()" class="btn btn-secondary sm:w-auto">Perpanjang Waktu</button>
+        <button type="button" onclick="endOvertime()" class="btn btn-success flex-1">Selesaikan Lembur</button>
       </div>
     </div>
 
@@ -179,7 +185,7 @@
       <div class="lg:col-span-3 bg-white rounded-2xl border border-slate-200 p-4 md:p-5">
         <div class="flex items-start justify-between gap-2 mb-3">
           <div class="min-w-0">
-            <h2 class="font-bold text-slate-900 text-sm md:text-base">Jadwal Lembur Disetujui</h2>
+            <h2 class="font-bold text-slate-900 text-sm md:text-base">Jadwal Lembur Mendatang</h2>
             <p class="text-xs text-slate-500">Siap dimulai saat waktu lembur tiba dan berada di radius kantor</p>
           </div>
           <span class="tag shrink-0" id="upcomingCount">0 jadwal</span>
@@ -376,9 +382,37 @@
       Durasi lembur saat ini <strong>kurang dari 1 jam</strong>. Jika diselesaikan sekarang, sesi tidak akan dihitung sebagai jam lembur.
     </div>
 
-    <div class="flex gap-2 mt-5">
-      <button type="button" onclick="closeModal('modalBukti')" class="btn btn-secondary flex-1">Batal</button>
-      <button type="button" onclick="submitProof()" id="btnSubmitProof" class="btn btn-primary flex-1">Kirim Bukti</button>
+    <div class="flex flex-col sm:flex-row gap-2 mt-5">
+      <button type="button" onclick="closeModal('modalBukti')" class="btn btn-secondary">Batal</button>
+      <button type="button" onclick="finishWithoutProof()" class="btn btn-secondary">Selesai, Unggah Nanti</button>
+      <button type="button" onclick="submitProof()" id="btnSubmitProof" class="btn btn-primary flex-1">Selesai &amp; Kirim Bukti</button>
+    </div>
+  </div>
+</div>
+
+<div id="modalExtend" class="fixed inset-0 bg-slate-900/50 modal-overlay hidden items-end md:items-center justify-center z-50 p-0 md:p-4">
+  <div class="bg-white rounded-t-3xl md:rounded-3xl shadow-2xl max-w-md w-full p-6 modal-in">
+    <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4 md:hidden"></div>
+    <div class="flex items-start justify-between gap-2 mb-3">
+      <div>
+        <h3 class="font-extrabold text-slate-900 text-lg" id="extendModalTitle">Perpanjang Waktu Lembur</h3>
+        <p class="text-xs text-slate-500 mt-0.5" id="extendModalDesc">Jika tidak diperpanjang, sesi akan berhenti otomatis sesuai jam rencana.</p>
+      </div>
+      <button type="button" onclick="dismissExtendModal()" class="text-slate-400 hover:text-slate-600 text-2xl leading-none">×</button>
+    </div>
+    <div id="extendCountdownBox" class="hidden note tone-wait mb-4 text-xs font-medium"></div>
+    <label for="extendHours" class="block text-xs font-semibold text-slate-700">Tambahan durasi (jam)</label>
+    <select id="extendHours" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white">
+      <option value="1">+1 jam</option>
+      <option value="2">+2 jam</option>
+      <option value="3">+3 jam</option>
+      <option value="4">+4 jam</option>
+    </select>
+    <label for="extendReason" class="block text-xs font-semibold text-slate-700 mt-3">Alasan perpanjangan (opsional)</label>
+    <textarea id="extendReason" rows="2" class="w-full mt-1.5 border border-slate-300 rounded-xl px-3 py-2.5 text-sm bg-white" placeholder="Contoh: Pekerjaan rekonsiliasi masih membutuhkan waktu tambahan..."></textarea>
+    <div class="flex flex-col-reverse sm:flex-row gap-2 mt-5">
+      <button type="button" onclick="dismissExtendModal()" class="btn btn-secondary flex-1">Selesai di Jam Rencana</button>
+      <button type="button" onclick="submitExtension()" id="btnSubmitExtend" class="btn btn-primary flex-1">Ajukan Perpanjangan</button>
     </div>
   </div>
 </div>
@@ -510,6 +544,8 @@ let records = [];
 let activeRecord = null;
 let activeTimer = null;
 let radiusMonitor = null;
+let heartbeatTimer = null;
+let remindedDeadlineKey = null;
 let editTargetId = null;
 let editProofTargetId = null;
 let cancelTargetId = null;
@@ -555,7 +591,7 @@ async function api(path, opts = {}) {
 
 document.getElementById('userName').textContent = currentUser.full_name;
 document.getElementById('welcomeName').textContent = currentUser.full_name;
-document.getElementById('userLevelLabel').textContent = currentUser.level || 'Karyawan';
+document.getElementById('userLevelLabel').textContent = currentUser.jabatan || 'Karyawan';
 document.getElementById('userAvatar').textContent = currentUser.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
 document.getElementById('todayDate').textContent = new Date().toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
 
@@ -880,7 +916,10 @@ async function loadRecords() {
       verifiedBy: r.verified_by_level,
       verifyRevisionCount: r.proof_revision_count,
       revisionCount: r.revision_count,
-      cancelReason: r.cancel_reason
+      cancelReason: r.cancel_reason,
+      lastHeartbeatAt: r.last_heartbeat_at,
+      extensionCount: r.extension_count || 0,
+      autoEndedReason: r.auto_ended_reason
     }));
 
     const active = records.find(r => r.status === 'active');
@@ -889,6 +928,7 @@ async function loadRecords() {
         activeRecord = active;
         startLiveTimer();
         startRadiusMonitor();
+        startHeartbeatMonitor();
       } else {
         activeRecord = active;
       }
@@ -897,6 +937,7 @@ async function loadRecords() {
         activeRecord = null;
         if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
         stopRadiusMonitor();
+        stopHeartbeatMonitor();
       }
     }
 
@@ -1156,7 +1197,14 @@ function openEditProof(id) {
   const r = records.find(x => x.id === id);
   if (!r) return;
   editProofTargetId = id;
-  document.getElementById('editProofNote').innerHTML = `<strong>Catatan atasan:</strong> ${UI.escapeHtml(r.verifyNote || '-')}`;
+  const noteEl = document.getElementById('editProofNote');
+  if (r.verifyNote) {
+    noteEl.innerHTML = `<strong>Catatan atasan:</strong> ${UI.escapeHtml(r.verifyNote)}`;
+    noteEl.classList.remove('hidden');
+  } else {
+    noteEl.innerHTML = 'Unggah atau lengkapi bukti hasil kerja lembur Anda.';
+    noteEl.classList.remove('hidden');
+  }
   document.getElementById('editProofText').value = r.proof || '';
   document.getElementById('editProofExternalUrl').value = r.proofExternalUrl || '';
   document.getElementById('editProofNotes').value = r.proofNotes || '';
@@ -1213,7 +1261,7 @@ async function submitProofRevision() {
   }
 
   try {
-    await api(`/api/records/${r.id}/revise-proof`, {
+    await api(`/api/records/${r.id}/upload-proof`, {
       method: 'POST',
       body: JSON.stringify({ 
         proof_text: text,
@@ -1230,7 +1278,7 @@ async function submitProofRevision() {
     document.getElementById('editProofExternalUrl').value = '';
     document.getElementById('editProofNotes').value = '';
     await loadRecords();
-    toast('Bukti revisi terkirim', 'bg-emerald-600');
+    toast('Bukti hasil kerja berhasil disimpan', 'bg-emerald-600');
   } catch (err) {
     toast('' + err.message, 'bg-red-600');
   } finally {
@@ -1239,15 +1287,114 @@ async function submitProofRevision() {
   }
 }
 
+function startHeartbeatMonitor() {
+  if (heartbeatTimer) clearInterval(heartbeatTimer);
+  heartbeatTimer = setInterval(async () => {
+    if (!activeRecord || activeRecord.status !== 'active') { stopHeartbeatMonitor(); return; }
+    try { await api(`/api/records/${activeRecord.id}/heartbeat`, { method: 'POST' }); } catch {}
+  }, 60000);
+}
+function stopHeartbeatMonitor() {
+  if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+}
+async function confirmContinueOvertime() {
+  if (!activeRecord) return;
+  try {
+    await api(`/api/records/${activeRecord.id}/heartbeat`, { method: 'POST' });
+    activeRecord.lastHeartbeatAt = new Date().toISOString();
+    document.getElementById('resumePrompt').classList.add('hidden');
+    toast('Sesi lembur dilanjutkan', 'bg-emerald-700');
+  } catch (err) { toast(err.message, 'bg-red-600'); }
+}
+
+function openExtendModal(isReminder = false, remainingMins = 0, endTimeLabel = '') {
+  if (!activeRecord) return;
+  const titleEl = document.getElementById('extendModalTitle');
+  const box = document.getElementById('extendCountdownBox');
+  if (isReminder) {
+    titleEl.textContent = '15 Menit Sebelum Selesai';
+    box.textContent = `Sisa waktu rencana sekitar ${remainingMins} menit (berakhir pukul ${endTimeLabel}). Jika tidak diperpanjang, sesi otomatis selesai pada jam tersebut.`;
+    box.classList.remove('hidden');
+  } else {
+    titleEl.textContent = 'Perpanjang Waktu Lembur';
+    box.classList.add('hidden');
+  }
+  document.getElementById('extendReason').value = '';
+  document.getElementById('modalExtend').classList.remove('hidden');
+  document.getElementById('modalExtend').classList.add('flex');
+}
+function dismissExtendModal() {
+  closeModal('modalExtend');
+}
+async function submitExtension() {
+  if (!activeRecord) return;
+  const additional_hours = parseInt(document.getElementById('extendHours').value, 10);
+  const reason = document.getElementById('extendReason').value.trim();
+  const btn = document.getElementById('btnSubmitExtend');
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan…';
+  try {
+    await api(`/api/records/${activeRecord.id}/extend`, {
+      method: 'POST',
+      body: JSON.stringify({ additional_hours, reason })
+    });
+    remindedDeadlineKey = null;
+    closeModal('modalExtend');
+    await loadRecords();
+    toast(`Durasi lembur diperpanjang +${additional_hours} jam`, 'bg-emerald-700');
+  } catch (err) {
+    toast(err.message, 'bg-red-600');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Ajukan Perpanjangan';
+  }
+}
+
+async function finishWithoutProof() {
+  if (!activeRecord) return;
+  try {
+    const result = await api(`/api/records/${activeRecord.id}/finish`, {
+      method: 'POST',
+      body: JSON.stringify({})
+    });
+    activeRecord = null;
+    if (activeTimer) { clearInterval(activeTimer); activeTimer = null; }
+    stopRadiusMonitor();
+    stopHeartbeatMonitor();
+    closeModal('modalBukti');
+    await loadRecords();
+    toast(result.not_counted ? result.message : 'Sesi selesai. Anda dapat mengunggah bukti kapan saja di menu Riwayat.', result.not_counted ? 'bg-red-600' : 'bg-emerald-700');
+    switchTab('emp-riwayat');
+  } catch (err) {
+    toast(err.message, 'bg-red-600');
+  }
+}
+
 function startLiveTimer() {
   if (activeTimer) clearInterval(activeTimer);
-  activeTimer = setInterval(() => {
+  const tick = () => {
     if (!activeRecord) { clearInterval(activeTimer); activeTimer = null; return; }
+    const nowMs = Date.now();
+    const startMs = new Date(activeRecord.start).getTime();
     const el = document.getElementById('activeDuration');
-    if (el) el.textContent = fmtDur(Date.now() - new Date(activeRecord.start).getTime());
-  }, 1000);
-  const el = document.getElementById('activeDuration');
-  if (el && activeRecord) el.textContent = fmtDur(Date.now() - new Date(activeRecord.start).getTime());
+    if (el) el.textContent = fmtDur(Math.max(0, nowMs - startMs));
+
+    const plannedEndMs = startMs + (activeRecord.plannedDuration || 3600000);
+    const remainingMs = plannedEndMs - nowMs;
+    const deadlineKey = `${activeRecord.id}:${plannedEndMs}`;
+
+    if (remainingMs <= 15 * 60 * 1000 && remainingMs > 0 && remindedDeadlineKey !== deadlineKey) {
+      remindedDeadlineKey = deadlineKey;
+      openExtendModal(true, Math.max(1, Math.ceil(remainingMs / 60000)), fmtTime(plannedEndMs));
+    } else if (remainingMs <= 0 && remindedDeadlineKey !== deadlineKey + ':ended') {
+      remindedDeadlineKey = deadlineKey + ':ended';
+      loadRecords().then(() => {
+        toast('Waktu lembur rencana selesai otomatis. Unggah bukti kapan saja di Riwayat.', 'bg-brand-600');
+      });
+    }
+  };
+  activeTimer = setInterval(tick, 1000);
+  tick();
 }
 
 function statusBadge(s) { return UI.badge(s); }
@@ -1264,12 +1411,18 @@ function renderActiveCard() {
   if (activeRecord && activeRecord.status === 'active') {
     card.classList.remove('hidden');
     document.getElementById('activeStart').textContent = fmtTime(activeRecord.start);
-    document.getElementById('activePlan').textContent = `Rencana ${activeRecord.startTime} · ${activeRecord.plannedHours}j`;
+    const plannedEndMs = new Date(activeRecord.start).getTime() + (activeRecord.plannedDuration || 3600000);
+    document.getElementById('activePlan').textContent = `Target selesai ${fmtTime(plannedEndMs)} · ${activeRecord.plannedHours}j${activeRecord.extensionCount ? ` (+${activeRecord.extensionCount}x perpanjang)` : ''}`;
     document.getElementById('activeLocation').textContent = activeRecord.location ? `${activeRecord.location.distance}m` : '-';
-    document.getElementById('activeSource').textContent = activeRecord.source === 'manager' ? 'Ditugaskan' : 'Sendiri';
+    document.getElementById('activeSource').textContent = activeRecord.finalApproverId ? (activeRecord.source === 'manager' ? 'Ditugaskan' : 'Disetujui') : 'Menunggu approval';
     const autoTag = document.getElementById('activeAutoTag');
     if (activeRecord.autoStarted) autoTag.classList.remove('hidden');
     else autoTag.classList.add('hidden');
+
+    const resumeEl = document.getElementById('resumePrompt');
+    const lastHb = activeRecord.lastHeartbeatAt ? new Date(activeRecord.lastHeartbeatAt).getTime() : new Date(activeRecord.start).getTime();
+    if (Date.now() - lastHb > 2 * 60 * 1000) resumeEl.classList.remove('hidden');
+    else resumeEl.classList.add('hidden');
   } else {
     card.classList.add('hidden');
   }
@@ -1278,10 +1431,10 @@ function renderActiveCard() {
 function renderEmpUpcoming() {
   const el = document.getElementById('upcomingList');
   const now = Date.now();
-  const up = records.filter(r => r.status === 'approved');
+  const up = records.filter(r => r.status === 'approved' || r.status === 'pending');
   document.getElementById('upcomingCount').textContent = up.length + ' jadwal';
   if (up.length === 0) {
-    el.innerHTML = UI.emptyState('calendar', 'Belum ada jadwal lembur disetujui', 'Pengajuan yang disetujui Manager akan muncul di sini.');
+    el.innerHTML = UI.emptyState('calendar', 'Belum ada jadwal lembur aktif', 'Pengajuan lembur Anda yang siap dimulai akan muncul di sini.');
     return;
   }
   el.innerHTML = up.map(r => {
@@ -1297,8 +1450,12 @@ function renderEmpUpcoming() {
           <p class="text-base font-extrabold leading-tight tabular-nums">${dt.getDate()}</p>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-slate-900 text-sm truncate">${UI.escapeHtml(r.reason)}${UI.dayTag(r.isHoliday)}</p>
-          <p class="text-xs text-slate-500 mt-0.5"><span class="font-mono">${UI.escapeHtml(r.startTime)}</span> · ${r.plannedHours} jam · ${r.source === 'manager' ? 'Ditugaskan atasan' : 'Pengajuan sendiri'}</p>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <p class="font-bold text-slate-900 text-sm leading-snug">${UI.escapeHtml(r.reason)}</p>
+            ${UI.dayTag(r.isHoliday)}
+            ${r.status === 'pending' ? '<span class="tag !ml-0">Belum di-approve</span>' : ''}
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5"><span class="font-mono">${UI.escapeHtml(String(r.startTime || '').slice(0, 5))}</span> · ${r.plannedHours} jam · ${r.source === 'manager' ? 'Ditugaskan atasan' : 'Pengajuan sendiri'}</p>
         </div>
         <div class="w-full sm:w-auto shrink-0 flex items-center justify-end gap-2">
           ${isReady ? `
@@ -1310,7 +1467,7 @@ function renderEmpUpcoming() {
           ` : canStartNow ? `
             <button type="button" onclick="manualStart(${r.id})" class="btn btn-primary btn-sm">Mulai</button>
           ` : `
-            <span class="badge tone-info">Terjadwal</span>
+            ${r.status === 'pending' ? '<span class="badge tone-wait">Menunggu approval</span>' : '<span class="badge tone-info">Terjadwal</span>'}
           `}
         </div>
       </div>
@@ -1357,9 +1514,9 @@ function compactCard(r) {
 
 function fullCard(r) {
   const canEdit = ['revision', 'rejected'].includes(r.status);
-  const canEditProof = r.status === 'proof_revision';
+  const canEditProof = r.status === 'proof_revision' || r.status === 'pending_verification';
   const canCancelScheduled = ['pending', 'approved'].includes(r.status);
-  const canStart = r.status === 'approved' && (new Date(r.plannedStart) - Date.now()) < 3600000;
+  const canStart = ['approved', 'pending'].includes(r.status) && (new Date(r.plannedStart) - Date.now()) < 3600000;
   const showRating = r.verifyRating != null;
   const isNotCounted = r.status === 'cancelled' && r.cancelReason && r.cancelReason.includes('kurang dari');
   const safeFileUrl = UI.safeUrl(r.proofUrl);
@@ -1416,6 +1573,7 @@ function fullCard(r) {
       ` : ''}
       ${r.cancelReason && !isNotCounted ? `<div class="note tone-bad mt-3"><strong>Dibatalkan:</strong> ${UI.escapeHtml(r.cancelReason)}</div>` : ''}
       ${approvalInfo}
+      ${r.autoEndedReason ? `<div class="note tone-info mt-3"><strong>Info sesi:</strong> ${UI.escapeHtml(r.autoEndedReason)}</div>` : ''}
       ${r.note ? `<div class="note tone-wait mt-3"><strong>Catatan atasan:</strong> ${UI.escapeHtml(r.note)}</div>` : ''}
       ${r.verifyNote && ['proof_revision', 'verify_rejected'].includes(r.status) ? `<div class="note tone-attn mt-3"><strong>Catatan verifikasi:</strong> ${UI.escapeHtml(r.verifyNote)}</div>` : ''}
       ${showRating && r.status === 'completed' ? `
@@ -1429,7 +1587,7 @@ function fullCard(r) {
         <div class="mt-4 pt-3 border-t border-slate-100 flex flex-wrap justify-end gap-2">
           ${canCancelScheduled ? `<button type="button" onclick="cancelRecord(${r.id})" class="btn btn-secondary btn-sm text-red-700 border-red-200 hover:bg-red-50">Batalkan</button>` : ''}
           ${canEdit ? `<button type="button" onclick="openEdit(${r.id})" class="btn btn-primary btn-sm">Revisi &amp; Kirim Ulang</button>` : ''}
-          ${canEditProof ? `<button type="button" onclick="openEditProof(${r.id})" class="btn btn-primary btn-sm">Perbarui Bukti</button>` : ''}
+          ${canEditProof ? `<button type="button" onclick="openEditProof(${r.id})" class="btn btn-primary btn-sm">${r.proof ? 'Perbarui Bukti' : 'Unggah Bukti'}</button>` : ''}
           ${canStart ? `<button type="button" onclick="manualStart(${r.id})" class="btn btn-success btn-sm">Mulai Sesi Lembur</button>` : ''}
         </div>
       ` : ''}

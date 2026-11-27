@@ -96,7 +96,10 @@ router.get('/email-action', async (req, res) => {
     const record = recordResult.rows[0];
 
     if (!record) return res.send(renderEmailActionPage('error', 'Record tidak ditemukan'));
-    if (record.status !== 'pending') {
+    const canLateApprove = ['pending', 'active', 'pending_verification'].includes(record.status);
+    if ((action === 'approve-direct' && (!canLateApprove || record.direct_approver_id)) ||
+        (action === 'approve-final' && (!canLateApprove || record.final_approver_id)) ||
+        (['reject', 'revision'].includes(action) && record.status !== 'pending')) {
       return res.send(renderEmailActionPage('info', `Pengajuan ${escapeHtml(record.employee_name)} sudah diproses sebelumnya (status: ${escapeHtml(record.status)})`));
     }
 
@@ -199,7 +202,7 @@ router.get('/email-action', async (req, res) => {
       
       await query(
         `UPDATE overtime_records 
-         SET status = 'approved', 
+         SET status = CASE WHEN status = 'pending' THEN 'approved' ELSE status END, 
              final_approver_id = $1, final_approval_at = NOW(),
              approved_by = $1, approved_at = NOW(),
              jumped_in = $2,
@@ -268,11 +271,11 @@ router.post('/:id/approve-direct', requireAuth, requireManager, async (req, res)
     const result = await query(
       `UPDATE overtime_records 
        SET direct_approver_id = $1, direct_approval_at = NOW(), direct_approval_note = $2, updated_at = NOW()
-       WHERE id = $3 AND status = 'pending'
+       WHERE id = $3 AND status IN ('pending', 'active', 'pending_verification') AND direct_approver_id IS NULL
        RETURNING *`,
       [user.id, note || null, id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan / bukan pending' });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan atau sudah di-approve atasan langsung' });
 
     const record = result.rows[0];
     
@@ -334,14 +337,20 @@ router.post('/:id/approve-final', requireAuth, requireManager, async (req, res) 
     const recordResult = await query('SELECT * FROM overtime_records WHERE id = $1', [id]);
     const record = recordResult.rows[0];
     if (!record) return res.status(404).json({ error: 'Tidak ditemukan' });
-    if (record.status !== 'pending') return res.status(400).json({ error: 'Bukan pending' });
+    if (!['pending', 'active', 'pending_verification'].includes(record.status)) {
+      return res.status(400).json({ error: `Status ${record.status} tidak dapat di-approve` });
+    }
+    if (record.final_approver_id) {
+      return res.status(400).json({ error: 'Pengajuan sudah mendapat persetujuan akhir' });
+    }
 
     const isDirectAndFinal = record.is_direct_and_final === true;
     const jumpedIn = !record.direct_approver_id && !isDirectAndFinal;
 
     await query(
       `UPDATE overtime_records 
-       SET status = 'approved', final_approver_id = $1, final_approval_at = NOW(),
+       SET status = CASE WHEN status = 'pending' THEN 'approved' ELSE status END,
+           final_approver_id = $1, final_approval_at = NOW(),
            approved_by = $1, approved_at = NOW(), jumped_in = $2,
            approval_note = $3, updated_at = NOW()
        WHERE id = $4`,
