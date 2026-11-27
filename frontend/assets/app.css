@@ -76,7 +76,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
 .login-card::before {
   content: "";
   position: absolute; inset: 0 0 auto 0; height: 3px;
-  background: linear-gradient(90deg, var(--brand) 0%, #3d52a8 74%, #c81e25 100%);
+  background: var(--brand);
 }
 
 /* ---------- Unified form controls ---------- */
@@ -292,6 +292,11 @@ main .bg-white.rounded-2xl {
 .stepper-node.active .stepper-dot { background: var(--brand); box-shadow: 0 0 0 3px rgba(43, 61, 147, 0.16); }
 .stepper-node.warn { color: #9f161c; }
 .stepper-node.warn .stepper-dot { background: #d71f26; }
+@media (max-width: 420px) {
+  .stepper { gap: 4px; padding: 7px 8px; }
+  .stepper-node { gap: 4px; font-size: 10.5px; }
+  .stepper-line { min-width: 6px; }
+}
 
 /* Search bar icon prefix */
 .search-wrap { position: relative; }
@@ -370,6 +375,13 @@ main .bg-white.rounded-2xl {
 
 /* Rows inside list panels */
 .row-list > * + * { border-top: 1px solid #edf0f4; }
+
+/* Mobile touch target & modal viewport safety */
+@media (max-width: 767px) {
+  .btn-sm { min-height: 36px; }
+  .tbl-action { min-height: 36px; padding: 6px 10px; }
+  .modal-overlay > div { max-height: 90dvh; overflow-y: auto; }
+}
 
 /* ---------- Motion ---------- */
 .modal-in { animation: modalIn .18s ease-out; }

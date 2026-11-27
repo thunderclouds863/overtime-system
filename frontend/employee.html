@@ -44,7 +44,7 @@
         <span class="w-2 h-2 bg-slate-400 rounded-full" id="gpsTopDot"></span>
         <span id="gpsStatus" class="hidden sm:inline">Cek GPS</span>
       </button>
-    <div class="hidden md:block text-right leading-tight">
+    <div class="hidden lg:block text-right leading-tight">
       <p class="text-sm font-semibold text-slate-800" id="userName">-</p>
       <p class="text-xs text-slate-500" id="userLevelLabel">-</p>
     </div>
@@ -1450,8 +1450,12 @@ function renderEmpUpcoming() {
           <p class="text-base font-extrabold leading-tight tabular-nums">${dt.getDate()}</p>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="font-bold text-slate-900 text-sm truncate">${UI.escapeHtml(r.reason)}${UI.dayTag(r.isHoliday)}${r.status === 'pending' ? '<span class="tag">Belum di-approve</span>' : ''}</p>
-          <p class="text-xs text-slate-500 mt-0.5"><span class="font-mono">${UI.escapeHtml(r.startTime)}</span> · ${r.plannedHours} jam · ${r.source === 'manager' ? 'Ditugaskan atasan' : 'Pengajuan sendiri'}</p>
+          <div class="flex flex-wrap items-center gap-1.5">
+            <p class="font-bold text-slate-900 text-sm leading-snug">${UI.escapeHtml(r.reason)}</p>
+            ${UI.dayTag(r.isHoliday)}
+            ${r.status === 'pending' ? '<span class="tag !ml-0">Belum di-approve</span>' : ''}
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5"><span class="font-mono">${UI.escapeHtml(String(r.startTime || '').slice(0, 5))}</span> · ${r.plannedHours} jam · ${r.source === 'manager' ? 'Ditugaskan atasan' : 'Pengajuan sendiri'}</p>
         </div>
         <div class="w-full sm:w-auto shrink-0 flex items-center justify-end gap-2">
           ${isReady ? `

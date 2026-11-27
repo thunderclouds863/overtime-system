@@ -118,7 +118,8 @@
     </div>
 
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      <div class="overflow-x-auto">
+      <div id="usersMobileList" class="md:hidden divide-y divide-slate-100"></div>
+      <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200">
             <tr>
@@ -174,24 +175,9 @@
       </div>
     </div>
 
-    <div class="bg-white rounded-2xl border border-slate-200 p-3.5 md:p-4">
-      <div class="grid sm:grid-cols-3 gap-2.5">
-        <div class="search-wrap sm:col-span-2">
-          <span data-icon="search"></span>
-          <input type="search" id="userSearch" oninput="renderUsersTable()" placeholder="Cari nama, email, atau jabatan pengguna…" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs md:text-sm bg-white">
-        </div>
-        <select id="userRoleFilter" onchange="renderUsersTable()" aria-label="Filter peran pengguna" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs md:text-sm bg-white">
-          <option value="">Semua peran</option>
-          <option value="employee">Employee</option>
-          <option value="manager">Manager / Atasan</option>
-          <option value="reviewer">Reviewer</option>
-          <option value="admin">Admin</option>
-        </select>
-      </div>
-    </div>
-
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      <div class="overflow-x-auto">
+      <div id="recordsMobileList" class="md:hidden divide-y divide-slate-100"></div>
+      <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200">
             <tr>
@@ -457,12 +443,13 @@ async function loadStats() {
       return;
     }
     el.innerHTML = records.slice(0, 10).map(r => `
-      <div class="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
-        <div class="min-w-0">
-          <p class="text-sm font-semibold text-slate-900 truncate">${UI.escapeHtml(r.employee_name)} <span class="font-normal text-slate-500">— ${UI.escapeHtml(r.reason)}</span>${UI.dayTag(r.is_holiday)}</p>
-          <p class="text-xs text-slate-500 mt-0.5">${new Date(r.date).toLocaleDateString('id-ID')} · <span class="font-mono">${UI.escapeHtml(r.start_time)}</span></p>
+      <div class="py-3 first:pt-0 last:pb-0">
+        <div class="flex items-start justify-between gap-2">
+          <p class="text-sm font-semibold text-slate-900 leading-snug">${UI.escapeHtml(r.employee_name)}${UI.dayTag(r.is_holiday)}</p>
+          <div class="shrink-0">${UI.badge(r.status)}</div>
         </div>
-        ${UI.badge(r.status)}
+        <p class="text-xs text-slate-600 mt-0.5 leading-snug">${UI.escapeHtml(r.reason || '-')}</p>
+        <p class="text-xs text-slate-400 mt-1">${new Date(r.date).toLocaleDateString('id-ID')} · <span class="font-mono">${UI.escapeHtml(String(r.start_time || '').slice(0, 5))}</span></p>
       </div>
     `).join('');
   } catch (err) { toast(err.message, 'bg-red-600'); }
@@ -502,6 +489,7 @@ async function loadUsers() {
 
 function renderUsersTable() {
   const el = document.getElementById('usersTable');
+  const mob = document.getElementById('usersMobileList');
   const q = (document.getElementById('userSearch')?.value || '').trim().toLowerCase();
   const roleFilter = document.getElementById('userRoleFilter')?.value || '';
   const users = allUsersCache.filter(u => {
@@ -514,7 +502,9 @@ function renderUsersTable() {
     return true;
   });
   if (users.length === 0) {
-    el.innerHTML = `<tr><td colspan="8">${UI.emptyState('users', allUsersCache.length ? 'Tidak ada pengguna yang cocok' : 'Belum ada pengguna', allUsersCache.length ? 'Ubah kata kunci pencarian atau filter peran.' : 'Tambahkan pengguna baru menggunakan tombol di atas.')}</td></tr>`;
+    const empty = UI.emptyState('users', allUsersCache.length ? 'Tidak ada pengguna yang cocok' : 'Belum ada pengguna', allUsersCache.length ? 'Ubah kata kunci pencarian atau filter peran.' : 'Tambahkan pengguna baru menggunakan tombol di atas.');
+    el.innerHTML = `<tr><td colspan="8">${empty}</td></tr>`;
+    if (mob) mob.innerHTML = empty;
     return;
   }
   el.innerHTML = users.map(u => `
@@ -545,6 +535,29 @@ function renderUsersTable() {
       </td>
     </tr>
   `).join('');
+  if (mob) {
+    mob.innerHTML = users.map(u => `
+      <div class="p-4 space-y-2.5">
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <p class="font-semibold text-sm text-slate-900 leading-snug">${UI.escapeHtml(u.full_name)}</p>
+            <p class="text-xs text-slate-500 truncate mt-0.5">${UI.escapeHtml(u.email)}</p>
+          </div>
+          <span class="badge shrink-0 ${u.is_active ? 'tone-live' : 'tone-bad'}">${u.is_active ? 'Aktif' : 'Nonaktif'}</span>
+        </div>
+        <div class="flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
+          <span class="tag !ml-0">${UI.escapeHtml(u.role.toUpperCase())}</span>
+          <span class="tag !ml-0 font-mono">Lv.${UI.escapeHtml(u.level || '-')}</span>
+          ${u.jabatan ? `<span class="text-slate-500">${UI.escapeHtml(u.jabatan)}</span>` : ''}
+        </div>
+        ${(u.approvers || []).length ? `<p class="text-xs text-slate-500">Atasan: <span class="text-slate-700 font-medium">${UI.escapeHtml(u.approvers.map(a => a.full_name).join(', '))}</span></p>` : ''}
+        <div class="flex gap-2 pt-1">
+          <button type="button" onclick="editUser(${u.id})" class="btn btn-secondary btn-sm flex-1">Edit</button>
+          <button type="button" onclick="deleteUser(${u.id})" class="btn btn-secondary btn-sm text-red-700 border-red-200 hover:bg-red-50">Hapus</button>
+        </div>
+      </div>
+    `).join('');
+  }
 }
 
 function openUserModal(editData = null) {
@@ -649,8 +662,11 @@ async function loadRecords() {
   try {
     const records = await api('/api/admin/records?' + params.toString());
     const el = document.getElementById('recordsTable');
+    const mob = document.getElementById('recordsMobileList');
     if (records.length === 0) {
-      el.innerHTML = `<tr><td colspan="7">${UI.emptyState('list', 'Belum ada data record', 'Coba ubah filter status atau rentang tanggal.')}</td></tr>`;
+      const empty = UI.emptyState('list', 'Belum ada data record', 'Coba ubah filter status atau rentang tanggal.');
+      el.innerHTML = `<tr><td colspan="7">${empty}</td></tr>`;
+      if (mob) mob.innerHTML = empty;
       return;
     }
     el.innerHTML = records.map(r => {
@@ -668,7 +684,7 @@ async function loadRecords() {
           <span class="tag font-mono">${UI.escapeHtml(r.employee_level || '-')}</span>
         </td>
         <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm whitespace-nowrap">${new Date(r.date).toLocaleDateString('id-ID')} ${UI.dayTag(r.is_holiday)}<p class="text-[11px] text-slate-400 font-mono lg:hidden mt-0.5">${duration}</p></td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs font-mono hidden xl:table-cell">${UI.escapeHtml(r.start_time)}${r.actual_end ? ' – ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
+        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs font-mono hidden xl:table-cell">${UI.escapeHtml(String(r.start_time || '').slice(0, 5))}${r.actual_end ? ' – ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
         <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm font-mono hidden lg:table-cell">${duration}</td>
         <td class="px-3 md:px-4 py-3">
           ${UI.badge(r.status)}
@@ -679,6 +695,32 @@ async function loadRecords() {
         </td>
       </tr>
     `}).join('');
+    if (mob) {
+      mob.innerHTML = records.map(r => {
+        const duration = r.actual_hours ? `${parseFloat(r.actual_hours).toFixed(1)}j` :
+                         (r.planned_hours ? `${r.planned_hours}j` : '-');
+        const canPrint = ['completed', 'verify_rejected', 'pending_verification'].includes(r.status);
+        const canRemind = r.status === 'pending' || r.status === 'pending_verification' || (r.status === 'active' && !r.final_approver_id);
+        return `
+          <div class="p-4 space-y-2">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <p class="font-semibold text-sm text-slate-900 leading-snug">${UI.escapeHtml(r.employee_name)}${UI.dayTag(r.is_holiday)}</p>
+                <p class="text-xs text-slate-600 mt-0.5 leading-snug">${UI.escapeHtml(r.reason || '-')}</p>
+              </div>
+              <div class="shrink-0">${UI.badge(r.status)}</div>
+            </div>
+            <p class="text-xs text-slate-500">${new Date(r.date).toLocaleDateString('id-ID')} · <span class="font-mono">${UI.escapeHtml(String(r.start_time || '').slice(0, 5))}</span> · <span class="font-mono">${duration}</span></p>
+            ${(canRemind || canPrint) ? `
+              <div class="flex flex-wrap gap-2 pt-1">
+                ${canRemind ? `<button type="button" onclick="sendReminder(${r.id}, this)" class="btn btn-secondary btn-sm flex-1 text-amber-800 border-amber-200 bg-amber-50/60">Reminder</button>` : ''}
+                ${canPrint ? `<button type="button" onclick="openBukti(${r.id})" class="btn btn-secondary btn-sm flex-1 text-brand-700 border-brand-200">Cetak Bukti</button>` : ''}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
