@@ -249,19 +249,19 @@ function fmtFileSize(bytes) { if (!bytes) return ''; if (bytes < 1024) return by
 
 document.getElementById('userName').textContent = currentUser.full_name;
 document.getElementById('mgrEmail').textContent = currentUser.email;
-document.getElementById('mgrLevel').textContent = `Level: ${currentUser.level || '-'}`;
-document.getElementById('userLevelLabel').textContent = currentUser.level || 'ATASAN';
+document.getElementById('mgrLevel').textContent = currentUser.jabatan || 'Atasan';
+document.getElementById('userLevelLabel').textContent = currentUser.jabatan || 'Atasan';
 document.getElementById('userAvatar').textContent = currentUser.full_name.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
 
 async function ensureUserLevel() {
-  if (currentUser.level) return;
+  if (currentUser.level && currentUser.jabatan) return;
   try {
     const me = await api('/api/auth/me');
     currentUser.level = me.level;
     currentUser.jabatan = me.jabatan;
     localStorage.setItem('user', JSON.stringify(currentUser));
-    document.getElementById('userLevelLabel').textContent = me.level || 'ATASAN';
-    document.getElementById('mgrLevel').textContent = `Level: ${me.level || '-'}`;
+    document.getElementById('userLevelLabel').textContent = me.jabatan || 'Atasan';
+    document.getElementById('mgrLevel').textContent = me.jabatan || 'Atasan';
   } catch (err) { console.warn('Gagal ambil level:', err); }
 }
 
@@ -350,8 +350,12 @@ async function submitAssignment() {
 
 function renderAll() { renderStats(); renderRecent(); renderApprovalList(); renderVerifyList(); renderMonitorTable(); renderNavBadges(); }
 
+function needsLateOrPendingApproval(r) {
+  return r.status === 'pending' || (['active', 'pending_verification'].includes(r.status) && !r.finalApproverId);
+}
+
 function renderNavBadges() {
-  const pending = records.filter(r => r.status === 'pending').length;
+  const pending = records.filter(needsLateOrPendingApproval).length;
   const verify = records.filter(r => r.status === 'pending_verification').length;
   const bA = document.getElementById('navBadgeApproval');
   const bV = document.getElementById('navBadgeVerify');
@@ -363,7 +367,7 @@ function renderNavBadges() {
 
 function renderStats() {
   const active = records.filter(r => r.status === 'active').length;
-  const pending = records.filter(r => r.status === 'pending').length;
+  const pending = records.filter(needsLateOrPendingApproval).length;
   const verify = records.filter(r => r.status === 'pending_verification').length;
   const revision = records.filter(r => ['revision','rejected','proof_revision','verify_rejected'].includes(r.status)).length;
   const hours = records.filter(r => r.status === 'completed').reduce((s, r) => s + (r.duration || 0), 0) / 3600000;
@@ -396,17 +400,20 @@ function statusBadge(s) { return UI.badge(s); }
 
 function renderApprovalList() {
   const el = document.getElementById('approvalList');
-  const need = records.filter(r => ['pending','rejected','revision'].includes(r.status));
+  const need = records.filter(r => needsLateOrPendingApproval(r) || ['rejected','revision'].includes(r.status));
   if (need.length === 0) { el.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200">${UI.emptyState('inbox', 'Antrean review kosong', 'Semua pengajuan lembur tim sudah diproses.')}</div>`; return; }
   el.innerHTML = need.map(r => {
     const chainLen = r.approvalChain.length;
     const hasDirect = !!r.directApproverId;
     const hasFinal = !!r.finalApproverId;
     const isDirectAndFinal = r.isDirectAndFinal === true;
+    const canReview = needsLateOrPendingApproval(r);
     
     let approvalStatus = '';
-    if (r.status === 'pending') {
-      if (isDirectAndFinal) {
+    if (canReview) {
+      if (r.status !== 'pending') {
+        approvalStatus = `<div class="note tone-wait mt-3">Lembur sudah ${r.status === 'active' ? 'berjalan' : 'selesai'} · persetujuan susulan tetap dapat diberikan.</div>`;
+      } else if (isDirectAndFinal) {
         approvalStatus = `<div class="note tone-info mt-3">Anda atasan langsung sekaligus pemberi persetujuan akhir (1 tahap).</div>`;
       } else if (hasDirect && !hasFinal) {
         approvalStatus = `<div class="note tone-live mt-3">Atasan langsung telah menyetujui · menunggu persetujuan akhir Anda.</div>`;
@@ -415,7 +422,7 @@ function renderApprovalList() {
       }
     }
     return `
-    <article class="bg-white rounded-2xl border border-slate-200 ${r.status === 'pending' ? 'border-l-4 border-l-amber-500' : ''} p-4 md:p-5">
+    <article class="bg-white rounded-2xl border border-slate-200 ${canReview ? 'border-l-4 border-l-amber-500' : ''} p-4 md:p-5">
       <div class="flex items-start justify-between pb-3 mb-3 border-b border-slate-100 flex-wrap gap-2">
         <div class="min-w-0">
           <p class="font-bold text-slate-900 text-sm md:text-base">${UI.escapeHtml(r.employee)} <span class="tag">Level ${UI.escapeHtml(r.employeeLevel)}</span>${UI.dayTag(r.isHoliday)}</p>
@@ -431,7 +438,7 @@ function renderApprovalList() {
       ${UI.approvalStepper(r)}
       ${approvalStatus}
       <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end">
-        ${r.status === 'pending'
+        ${canReview
           ? `<button type="button" onclick="openReview(${r.id})" class="btn btn-primary btn-sm">Tinjau &amp; Putuskan</button>`
           : `<button type="button" onclick="reopenRecord(${r.id})" class="btn btn-secondary btn-sm">Buka Kembali Pengajuan</button>`}
       </div>
@@ -678,11 +685,11 @@ function renderMonitorTable() {
       <td class="px-3 md:px-4 py-3 text-slate-600 text-xs font-mono hidden xl:table-cell">${UI.escapeHtml(r.startTime)}${r.end ? ' – ' + fmtTime(r.end) : ''}</td>
       <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm font-mono hidden lg:table-cell">${r.duration ? fmtDurShort(r.duration) : (r.plannedHours + 'j')}</td>
       <td class="px-3 md:px-4 py-3">${statusBadge(r.status)}</td>
-      <td class="px-3 md:px-4 py-3">
-        ${r.status === 'pending' ? `<button type="button" onclick="openReview(${r.id})" class="tbl-action text-brand-600 hover:text-brand-800">Tinjau</button>` : ''}
+      <td class="px-3 md:px-4 py-3 whitespace-nowrap">
+        ${needsLateOrPendingApproval(r) ? `<button type="button" onclick="openReview(${r.id})" class="tbl-action text-brand-600 hover:text-brand-800">Tinjau</button>` : ''}
         ${r.status === 'pending_verification' ? `<button type="button" onclick="openVerify(${r.id})" class="tbl-action tbl-action-amber text-amber-800 hover:text-amber-900">Verifikasi</button>` : ''}
         ${['rejected','revision'].includes(r.status) ? `<button type="button" onclick="reopenRecord(${r.id})" class="tbl-action tbl-action-neutral text-slate-600 hover:text-slate-900">Buka</button>` : ''}
-        ${['approved','completed','cancelled','active','proof_revision','verify_rejected'].includes(r.status) ? '<span class="text-xs text-slate-300">—</span>' : ''}
+        ${(!needsLateOrPendingApproval(r) && !['pending_verification','rejected','revision'].includes(r.status)) ? '<span class="text-xs text-slate-300">—</span>' : ''}
       </td>
     </tr>
   `).join('');

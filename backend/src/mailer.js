@@ -626,5 +626,55 @@ export const templates = {
       ], `Tautan berlaku ${d.expiresMinutes || 30} menit dan hanya dapat digunakan satu kali.`)}
       ${fyiBox('Jika Anda tidak merasa meminta reset kata sandi, abaikan email ini. Kata sandi Anda tidak akan berubah.', '#f8fafc', '#cbd5e1', '#475569')}
     `, 'KEAMANAN')
+  }),
+
+  reminderApproval: (d) => ({
+    subject: `[Lembur] Pengingat Approval — ${d.employeeName}`,
+    html: wrap('Pengingat Persetujuan Lembur', '#d97706', `
+      <p style="margin:0 0 16px;color:#0f172a">Admin mengirimkan pengingat untuk meninjau pengajuan lembur berikut:</p>
+      ${dataTable(`
+        ${row('Karyawan', d.employeeName)}
+        ${row('Tanggal', d.date)}
+        ${row('Jam Mulai', d.startTime)}
+        ${row('Durasi', d.duration + ' jam')}
+        ${row('Status', d.statusNote || 'Menunggu persetujuan')}
+      `)}
+      ${reasonBox(d.reason, d.desc)}
+      ${btnGroup([
+        { text: 'Tinjau di Sistem', url: APP_URL + '/manager.html', color: '#2b3d93' }
+      ])}
+    `, 'REMINDER')
+  }),
+
+  reminderVerification: (d) => ({
+    subject: `[Lembur] Pengingat Verifikasi Hasil — ${d.employeeName}`,
+    html: wrap('Pengingat Verifikasi Hasil Kerja', '#ea580c', `
+      <p style="margin:0 0 16px;color:#0f172a">Admin mengirimkan pengingat untuk memverifikasi hasil lembur berikut:</p>
+      ${dataTable(`
+        ${row('Karyawan', d.employeeName)}
+        ${row('Tanggal', d.date)}
+        ${row('Durasi Aktual', d.duration || '-')}
+      `)}
+      ${d.proof ? `<div style="background:#ecfdf5;border:1px solid #a7f3d0;padding:12px;border-radius:12px;margin:16px 0"><p style="margin:0;color:#065f46;font-size:13px">${d.proof}</p></div>` : ''}
+      ${btnGroup([
+        { text: 'Verifikasi Sekarang', url: APP_URL + '/manager.html', color: '#ea580c' }
+      ])}
+    `, 'REMINDER')
+  }),
+
+  overtimeExtended: (d) => ({
+    subject: `[Lembur] Perpanjangan Waktu — ${d.employeeName} (+${d.addedHours} jam)`,
+    html: wrap('Perpanjangan Durasi Lembur', '#2b3d93', `
+      <p style="margin:0 0 16px;color:#0f172a"><strong>${d.employeeName}</strong> mengajukan perpanjangan durasi sesi lembur yang sedang berjalan:</p>
+      ${dataTable(`
+        ${row('Tanggal', d.date)}
+        ${row('Tambahan', '+' + d.addedHours + ' jam')}
+        ${row('Total Rencana', d.totalHours + ' jam')}
+        ${row('Alasan', d.reason || '-')}
+      `)}
+      ${btnGroup([
+        { text: 'Pantau di Sistem', url: APP_URL + '/manager.html', color: '#2b3d93' }
+      ])}
+    `, 'INFO')
   })
 };
