@@ -114,6 +114,9 @@ ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS proof_file_url TEXT;
 ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS proof_file_size INTEGER;
 ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS proof_notes TEXT;
 ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS proof_external_url TEXT;
+ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS last_heartbeat_at TIMESTAMPTZ;
+ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS extension_count INTEGER DEFAULT 0;
+ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS auto_ended_reason TEXT;
 
 -- ===== Akun demo (password semua: demo123) =====
 INSERT INTO users (email, password_hash, full_name, role, jabatan, level) VALUES

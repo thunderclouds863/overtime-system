@@ -657,6 +657,7 @@ async function loadRecords() {
       const duration = r.actual_hours ? `${parseFloat(r.actual_hours).toFixed(1)}j` :
                        (r.planned_hours ? `${r.planned_hours}j (rencana)` : '-');
       const canPrint = ['completed', 'verify_rejected', 'pending_verification'].includes(r.status);
+      const canRemind = r.status === 'pending' || r.status === 'pending_verification' || (r.status === 'active' && !r.final_approver_id);
       return `
       <tr class="hover:bg-slate-50 transition">
         <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">
@@ -672,14 +673,25 @@ async function loadRecords() {
         <td class="px-3 md:px-4 py-3">
           ${UI.badge(r.status)}
         </td>
-        <td class="px-3 md:px-4 py-3">
-          ${canPrint ? `
-            <button type="button" onclick="openBukti(${r.id})" class="tbl-action text-brand-600 hover:text-brand-800">Cetak</button>
-          ` : '<span class="text-xs text-slate-300">—</span>'}
+        <td class="px-3 md:px-4 py-3 whitespace-nowrap">
+          ${canRemind ? `<button type="button" onclick="sendReminder(${r.id}, this)" class="tbl-action tbl-action-amber text-amber-800 hover:text-amber-900 mr-1">Reminder</button>` : ''}
+          ${canPrint ? `<button type="button" onclick="openBukti(${r.id})" class="tbl-action text-brand-600 hover:text-brand-800">Cetak</button>` : (!canRemind ? '<span class="text-xs text-slate-300">—</span>' : '')}
         </td>
       </tr>
     `}).join('');
   } catch (err) { toast(err.message, 'bg-red-600'); }
+}
+
+async function sendReminder(recordId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = 'Mengirim…'; }
+  try {
+    const res = await api(`/api/admin/records/${recordId}/remind`, { method: 'POST' });
+    toast(res.message || 'Reminder berhasil dikirim', 'bg-emerald-700');
+  } catch (err) {
+    toast(err.message, 'bg-red-600');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Reminder'; }
+  }
 }
 
 function resetFilter() {

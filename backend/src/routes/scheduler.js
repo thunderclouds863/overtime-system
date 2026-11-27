@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { query } from '../db.js';
+import { reconcileActiveSessions } from './records.js';
 
 const router = Router();
 
@@ -43,7 +44,14 @@ router.post('/check', async (req, res) => {
       }
     }
 
-    res.json({ message: `${results.length} record diproses`, timestamp: now.toISOString(), records: results });
+    const autoEnded = await reconcileActiveSessions();
+
+    res.json({
+      message: `${results.length} mulai otomatis, ${autoEnded.length} selesai otomatis`,
+      timestamp: now.toISOString(),
+      records: results,
+      auto_ended: autoEnded
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
