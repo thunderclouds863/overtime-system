@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { query } from '../db.js';
-import { requireAuth, requireManager } from '../auth.js';
+import { requireAuth, requireManager, getJwtSecret, levelNum } from '../auth.js';
 import { sendEmail, templates } from '../mailer.js';
 
 const router = Router();
@@ -33,12 +33,6 @@ function getDefaultStartTime(dateStr) {
   if (day === 0 || day === 6) return START_TIME_HOLIDAY;
   if (day === 5) return START_TIME_FRIDAY;
   return START_TIME_WEEKDAY;
-}
-
-function levelNum(level) {
-  if (!level) return 0;
-  const m = String(level).match(/^(\d+)/);
-  return m ? parseInt(m[1]) : 0;
 }
 
 function parseDurationToHours(duration) {
@@ -85,20 +79,47 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+function isValidHttpUrl(str) {
+  if (!str) return true;
+  try {
+    const u = new URL(String(str));
+    return u.protocol === 'http:' || u.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 // Build Date object dengan timezone WIB eksplisit
 function buildWIBDate(dateStr, timeStr) {
   return new Date(`${dateStr}T${timeStr}:00${TIMEZONE_OFFSET}`);
 }
 
-// Helper: jam sekarang dalam WIB (HH:MM)
-function getNowWIBTime() {
+function getNowWIBParts() {
   const now = new Date();
-  const nowWIB = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jakarta' }));
-  return `${String(nowWIB.getHours()).padStart(2, '0')}:${String(nowWIB.getMinutes()).padStart(2, '0')}`;
+  const fmt = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Jakarta',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  });
+  const parts = Object.fromEntries(fmt.formatToParts(now).map(p => [p.type, p.value]));
+  return {
+    now,
+    dateStr: `${parts.year}-${parts.month}-${parts.day}`,
+    hour: parseInt(parts.hour, 10) % 24,
+    timeStr: `${String(parseInt(parts.hour, 10) % 24).padStart(2, '0')}:${parts.minute}`
+  };
+}
+
+function getNowWIBTime() {
+  return getNowWIBParts().timeStr;
 }
 
 function buildEmailActionToken(payload) {
-  return jwt.sign(payload, process.env.JWT_SECRET);
+  return jwt.sign(payload, getJwtSecret());
 }
 
 async function notifyUser(userId, templateName, data) {
@@ -271,11 +292,10 @@ router.post('/', requireAuth, async (req, res) => {
   }
 
   const holiday = isHoliday(date);
-  const now = new Date();
-  const todayStr = now.toISOString().slice(0, 10);
-  const isToday = date === todayStr;
+  const wib = getNowWIBParts();
+  const isToday = date === wib.dateStr;
 
-  if (isToday && now.getHours() >= SUBMIT_DEADLINE_HOUR) {
+  if (isToday && wib.hour >= SUBMIT_DEADLINE_HOUR) {
     return res.status(400).json({
       error: `Batas pengajuan untuk hari ini sudah lewat (maks jam ${SUBMIT_DEADLINE_HOUR}:00).`
     });
@@ -284,11 +304,10 @@ router.post('/', requireAuth, async (req, res) => {
   let finalStartTime = start_time || getDefaultStartTime(date);
   let plannedStart = buildWIBDate(date, finalStartTime);
 
-  if (isToday && plannedStart < now) {
-    const nowTime = getNowWIBTime();
-    finalStartTime = nowTime;
-    plannedStart = buildWIBDate(date, nowTime);
-    console.log(`⚠️ Jam mulai sudah lewat, auto-adjust ke ${nowTime} WIB`);
+  if (isToday && plannedStart < wib.now) {
+    finalStartTime = wib.timeStr;
+    plannedStart = buildWIBDate(date, wib.timeStr);
+    console.log(`⚠️ Jam mulai sudah lewat, auto-adjust ke ${wib.timeStr} WIB`);
   }
 
   const targetId = isManager && employee_id ? employee_id : user.id;
@@ -562,6 +581,7 @@ router.post('/', requireAuth, async (req, res) => {
 router.get('/', requireAuth, async (req, res) => {
   const user = req.user;
   const { status, limit = 100 } = req.query;
+  const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 100, 1), 1000);
 
   let sql = '';
   const params = [];
@@ -569,10 +589,13 @@ router.get('/', requireAuth, async (req, res) => {
 
   if (user.role === 'admin' || user.role === 'reviewer') {
     sql = `
-      SELECT *,
-        ROUND(COALESCE(EXTRACT(EPOCH FROM planned_duration), 0) / 3600.0, 2) as planned_hours,
-        ROUND(COALESCE(EXTRACT(EPOCH FROM actual_duration), 0) / 3600.0, 2) as actual_hours
-      FROM overtime_records
+      SELECT r.*,
+        u.level as employee_level,
+        u.jabatan,
+        ROUND(COALESCE(EXTRACT(EPOCH FROM r.planned_duration), 0) / 3600.0, 2) as planned_hours,
+        ROUND(COALESCE(EXTRACT(EPOCH FROM r.actual_duration), 0) / 3600.0, 2) as actual_hours
+      FROM overtime_records r
+      LEFT JOIN users u ON u.id = r.employee_id
     `;
   } else if (user.role === 'manager' || levelNum(user.level) >= 3) {
     sql = `
@@ -583,21 +606,27 @@ router.get('/', requireAuth, async (req, res) => {
         INNER JOIN subordinates s ON s.id = ANY(u.approver_ids)
         WHERE u.is_active = true
       )
-      SELECT *,
-        ROUND(COALESCE(EXTRACT(EPOCH FROM planned_duration), 0) / 3600.0, 2) as planned_hours,
-        ROUND(COALESCE(EXTRACT(EPOCH FROM actual_duration), 0) / 3600.0, 2) as actual_hours
-      FROM overtime_records
-      WHERE (employee_id = $1 OR employee_id IN (SELECT id FROM subordinates))
+      SELECT r.*,
+        u.level as employee_level,
+        u.jabatan,
+        ROUND(COALESCE(EXTRACT(EPOCH FROM r.planned_duration), 0) / 3600.0, 2) as planned_hours,
+        ROUND(COALESCE(EXTRACT(EPOCH FROM r.actual_duration), 0) / 3600.0, 2) as actual_hours
+      FROM overtime_records r
+      LEFT JOIN users u ON u.id = r.employee_id
+      WHERE (r.employee_id = $1 OR r.employee_id IN (SELECT id FROM subordinates))
     `;
     params.push(user.id);
     idx = 2;
   } else {
     sql = `
-      SELECT *,
-        ROUND(COALESCE(EXTRACT(EPOCH FROM planned_duration), 0) / 3600.0, 2) as planned_hours,
-        ROUND(COALESCE(EXTRACT(EPOCH FROM actual_duration), 0) / 3600.0, 2) as actual_hours
-      FROM overtime_records
-      WHERE employee_id = $1
+      SELECT r.*,
+        u.level as employee_level,
+        u.jabatan,
+        ROUND(COALESCE(EXTRACT(EPOCH FROM r.planned_duration), 0) / 3600.0, 2) as planned_hours,
+        ROUND(COALESCE(EXTRACT(EPOCH FROM r.actual_duration), 0) / 3600.0, 2) as actual_hours
+      FROM overtime_records r
+      LEFT JOIN users u ON u.id = r.employee_id
+      WHERE r.employee_id = $1
     `;
     params.push(user.id);
     idx = 2;
@@ -605,12 +634,12 @@ router.get('/', requireAuth, async (req, res) => {
 
   if (status) {
     sql += params.length ? ' AND' : ' WHERE';
-    sql += ` status = $${idx++}`;
+    sql += ` r.status = $${idx++}`;
     params.push(status);
   }
 
-  sql += ` ORDER BY created_at DESC LIMIT $${idx}`;
-  params.push(parseInt(limit));
+  sql += ` ORDER BY r.created_at DESC LIMIT $${idx}`;
+  params.push(safeLimit);
 
   try {
     const result = await query(sql, params);
@@ -630,9 +659,11 @@ router.post('/:id/start', requireAuth, async (req, res) => {
   const { lat, lng, accuracy } = req.body;
   const user = req.user;
 
-  if (!lat || !lng) return res.status(400).json({ error: 'Koordinat GPS wajib' });
+  if (lat == null || lng == null || isNaN(Number(lat)) || isNaN(Number(lng))) {
+    return res.status(400).json({ error: 'Koordinat GPS wajib' });
+  }
 
-  const distance = Math.round(haversine(lat, lng, OFFICE.lat, OFFICE.lng));
+  const distance = Math.round(haversine(Number(lat), Number(lng), OFFICE.lat, OFFICE.lng));
   if (distance > OFFICE.radius) {
     return res.status(400).json({ error: `Di luar radius kantor (${distance}m > ${OFFICE.radius}m)` });
   }
@@ -644,11 +675,11 @@ router.post('/:id/start', requireAuth, async (req, res) => {
            gps_lat = $1, gps_lng = $2, gps_accuracy = $3, gps_distance = $4,
            auto_started = FALSE, updated_at = NOW()
        WHERE id = $5 AND (employee_id = $6 OR $7 IN ('manager', 'admin'))
-         AND status IN ('approved', 'pending', 'active')
+         AND status = 'approved'
        RETURNING *`,
-      [lat, lng, accuracy, distance, id, user.id, user.role]
+      [Number(lat), Number(lng), accuracy || null, distance, id, user.id, user.role]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan / tidak bisa dimulai' });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Record tidak ditemukan / belum disetujui' });
 
     const record = result.rows[0];
     const durationHours = parseDurationToHours(record.planned_duration);
@@ -674,9 +705,11 @@ router.post('/:id/auto-stop', requireAuth, async (req, res) => {
   const { lat, lng, reason } = req.body;
   const user = req.user;
 
-  if (!lat || !lng) return res.status(400).json({ error: 'Koordinat GPS wajib' });
+  if (lat == null || lng == null || isNaN(Number(lat)) || isNaN(Number(lng))) {
+    return res.status(400).json({ error: 'Koordinat GPS wajib' });
+  }
 
-  const distance = Math.round(haversine(lat, lng, OFFICE.lat, OFFICE.lng));
+  const distance = Math.round(haversine(Number(lat), Number(lng), OFFICE.lat, OFFICE.lng));
 
   try {
     const checkResult = await query(
@@ -742,6 +775,9 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
   const user = req.user;
 
   if (!proof_text) return res.status(400).json({ error: 'Deskripsi bukti wajib' });
+  if (!isValidHttpUrl(proof_file_url) || !isValidHttpUrl(proof_external_url)) {
+    return res.status(400).json({ error: 'Tautan bukti harus menggunakan http:// atau https://' });
+  }
 
   try {
     const recordCheck = await query(
@@ -838,26 +874,26 @@ router.post('/:id/finish', requireAuth, async (req, res) => {
 });
 
 // ============================================
-// POST /:id/cancel — Batalkan lembur manual
+// POST /:id/cancel — Batalkan lembur manual (pending / approved / active)
 // ============================================
 router.post('/:id/cancel', requireAuth, async (req, res) => {
   const { id } = req.params;
   const { reason } = req.body;
   const user = req.user;
-  if (!reason) return res.status(400).json({ error: 'Alasan wajib' });
+  if (!reason || !String(reason).trim()) return res.status(400).json({ error: 'Alasan wajib' });
   try {
     const result = await query(
       `UPDATE overtime_records
        SET status = 'cancelled', cancel_reason = $1, cancelled_at = NOW(),
-           actual_end = NOW(),
-           actual_duration = GREATEST(NOW() - actual_start, INTERVAL '1 second'),
+           actual_end = CASE WHEN actual_start IS NOT NULL THEN NOW() ELSE NULL END,
+           actual_duration = CASE WHEN actual_start IS NOT NULL THEN GREATEST(NOW() - actual_start, INTERVAL '1 second') ELSE NULL END,
            updated_at = NOW()
        WHERE id = $2 AND (employee_id = $3 OR $4 IN ('manager', 'admin'))
-         AND status = 'active'
+         AND status IN ('pending', 'approved', 'active')
        RETURNING *`,
-      [reason, id, user.id, user.role]
+      [String(reason).trim(), id, user.id, user.role]
     );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan' });
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Tidak ditemukan atau status tidak dapat dibatalkan' });
     res.json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -888,22 +924,20 @@ router.post('/:id/revise', requireAuth, async (req, res) => {
 
     const finalDate = date || record.date;
     const holiday = isHoliday(finalDate);
-    const now = new Date();
-    const todayStr = now.toISOString().slice(0, 10);
-    const isToday = finalDate === todayStr;
+    const wib = getNowWIBParts();
+    const isToday = finalDate === wib.dateStr;
 
-    if (isToday && now.getHours() >= SUBMIT_DEADLINE_HOUR) {
+    if (isToday && wib.hour >= SUBMIT_DEADLINE_HOUR) {
       return res.status(400).json({ error: `Batas pengajuan sudah lewat (maks ${SUBMIT_DEADLINE_HOUR}:00)` });
     }
 
     let finalStartTime = start_time || getDefaultStartTime(finalDate);
     let plannedStart = buildWIBDate(finalDate, finalStartTime);
 
-    if (isToday && plannedStart < now) {
-      const nowTime = getNowWIBTime();
-      finalStartTime = nowTime;
-      plannedStart = buildWIBDate(finalDate, nowTime);
-      console.log(`⚠️ [REVISE] Jam mulai sudah lewat, auto-adjust ke ${nowTime} WIB`);
+    if (isToday && plannedStart < wib.now) {
+      finalStartTime = wib.timeStr;
+      plannedStart = buildWIBDate(finalDate, wib.timeStr);
+      console.log(`⚠️ [REVISE] Jam mulai sudah lewat, auto-adjust ke ${wib.timeStr} WIB`);
     }
 
     let finalDuration = duration_hours ? parseInt(duration_hours) : null;
@@ -1029,6 +1063,9 @@ router.post('/:id/revise-proof', requireAuth, async (req, res) => {
   } = req.body;
   const user = req.user;
   if (!proof_text) return res.status(400).json({ error: 'Deskripsi wajib' });
+  if (!isValidHttpUrl(proof_file_url) || !isValidHttpUrl(proof_external_url)) {
+    return res.status(400).json({ error: 'Tautan bukti harus menggunakan http:// atau https://' });
+  }
 
   try {
     const result = await query(
@@ -1083,14 +1120,17 @@ router.get('/stats/summary', requireAuth, async (req, res) => {
   try {
     let sql = `
       SELECT
-        COALESCE(SUM(EXTRACT(EPOCH FROM actual_duration))/3600, 0) as total_hours,
+        COALESCE(SUM(EXTRACT(EPOCH FROM actual_duration)) FILTER (
+          WHERE status IN ('completed', 'pending_verification')
+            AND actual_duration IS NOT NULL
+            AND date_trunc('month', date) = date_trunc('month', (NOW() AT TIME ZONE 'Asia/Jakarta')::date)
+        ) / 3600, 0) as total_hours,
         COUNT(*) FILTER (WHERE status = 'completed') as completed_count,
         COUNT(*) FILTER (WHERE status = 'pending_verification') as pending_verify_count,
         COUNT(*) FILTER (WHERE status = 'pending') as pending_count,
         COUNT(*) FILTER (WHERE status IN ('revision', 'rejected')) as revision_count
       FROM overtime_records
-      WHERE date_trunc('month', date) = date_trunc('month', CURRENT_DATE)
-        AND actual_duration IS NOT NULL
+      WHERE 1=1
     `;
     const params = [];
     if (!['manager', 'admin', 'reviewer'].includes(user.role)) {

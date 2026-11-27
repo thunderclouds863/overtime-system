@@ -614,5 +614,17 @@ export const templates = {
       `)}
       ${d.reason ? reasonBox(d.reason, d.desc) : ''}
     `, 'FYI')
+  }),
+
+  passwordReset: (d) => ({
+    subject: '[Lembur] Reset kata sandi akun Sistem Lembur',
+    html: wrap('Reset Kata Sandi', '#2b3d93', `
+      <p style="margin:0 0 16px;color:#0f172a">Halo <strong>${String(d.fullName || 'Pengguna').replace(/[<>&"']/g, '')}</strong>,</p>
+      <p style="margin:0 0 16px;color:#0f172a">Kami menerima permintaan untuk mengatur ulang kata sandi akun Sistem Monitoring Lembur Anda. Klik tombol di bawah untuk membuat kata sandi baru:</p>
+      ${btnGroup([
+        { text: 'Atur Ulang Kata Sandi', url: d.resetUrl, color: '#2b3d93' }
+      ], `Tautan berlaku ${d.expiresMinutes || 30} menit dan hanya dapat digunakan satu kali.`)}
+      ${fyiBox('Jika Anda tidak merasa meminta reset kata sandi, abaikan email ini. Kata sandi Anda tidak akan berubah.', '#f8fafc', '#cbd5e1', '#475569')}
+    `, 'KEAMANAN')
   })
 };
