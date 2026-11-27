@@ -13,61 +13,28 @@
 <link rel="stylesheet" href="assets/app.css">
 <script src="assets/ui.js"></script>
 </head>
-<body class="login-canvas min-h-screen flex flex-col justify-between p-4 sm:p-6 md:p-10 overflow-x-hidden">
+<body class="login-canvas min-h-screen flex flex-col justify-between p-4 sm:p-6 overflow-x-hidden">
 
-<!-- Architectural mountain & shift-arc backdrop artwork (anchored to upper corner, non-colliding) -->
-<svg aria-hidden="true" viewBox="0 0 640 360" fill="none"
-  class="pointer-events-none select-none fixed top-0 right-0 w-[340px] sm:w-[480px] lg:w-[620px] opacity-60 -z-0">
-  <circle cx="510" cy="70" r="170" stroke="#2b3d93" stroke-opacity="0.08" stroke-width="1.25" stroke-dasharray="6 6"/>
-  <circle cx="510" cy="70" r="118" stroke="#2b3d93" stroke-opacity="0.11" stroke-width="1"/>
-  <path d="M220 280 L365 118 L438 192 L508 98 L640 245" stroke="#2b3d93" stroke-opacity="0.13" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M295 280 L412 158 L465 212 L542 128 L640 220" stroke="#c81e25" stroke-opacity="0.11" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- Subtle alpine mountain contour linework (Cimory identity, non-colliding) -->
+<svg aria-hidden="true" viewBox="0 0 1440 320" fill="none" preserveAspectRatio="none"
+  class="pointer-events-none select-none fixed inset-x-0 bottom-0 w-full h-[200px] sm:h-[260px] opacity-75 z-0">
+  <path d="M0 290 L190 170 L320 230 L490 118 L660 225 L860 140 L1035 215 L1220 96 L1440 230"
+    stroke="#2b3d93" stroke-opacity="0.09" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M0 310 L240 205 L380 258 L545 162 L725 252 L920 178 L1100 246 L1285 142 L1440 255"
+    stroke="#c81e25" stroke-opacity="0.07" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
 
-<div class="relative z-10 flex-1 flex items-center justify-center py-4 md:py-8">
-  <main class="login-shell">
-    <!-- Left asymmetric editorial zone (open canvas, brand lockup + operational arc) -->
-    <section class="login-editorial">
-      <div class="flex items-center gap-3.5">
-        <img src="logo-cimory.png" alt="Cimory" class="h-11 sm:h-12 w-auto object-contain shrink-0">
-        <div class="border-l border-slate-300/90 pl-3.5 min-w-0">
-          <p class="text-sm sm:text-base font-bold text-slate-900 leading-tight font-display">Sistem Monitoring Lembur</p>
-          <p class="text-xs text-slate-500 mt-0.5">PT Cisarua Mountain Dairy · Portal Internal</p>
-        </div>
+<div class="relative z-10 flex-1 flex items-center justify-center py-6 sm:py-10">
+  <main class="w-full max-w-[408px]">
+    <div class="flex items-center gap-3.5 mb-6">
+      <img src="logo-cimory.png" alt="Cimory" class="h-11 w-auto object-contain shrink-0">
+      <div class="border-l border-slate-300/90 pl-3.5 min-w-0">
+        <h1 class="text-base font-bold text-slate-900 leading-tight font-display">Sistem Monitoring Lembur</h1>
+        <p class="text-xs text-slate-500 mt-0.5">PT Cisarua Mountain Dairy</p>
       </div>
+    </div>
 
-      <div class="hidden lg:block mt-7">
-        <span class="login-eyebrow">
-          <span class="w-1.5 h-1.5 rounded-full bg-brand-600"></span>
-          Kendali Operasional &amp; Verifikasi
-        </span>
-        <h1 class="mt-4 text-[30px] font-extrabold text-slate-900 leading-[1.18] tracking-tight font-display">
-          Alur lembur terstruktur dari pengajuan hingga verifikasi.
-        </h1>
-        <p class="mt-3 text-sm text-slate-600 leading-relaxed max-w-[440px]">
-          Satu portal terpadu untuk pengajuan jadwal, validasi geofence lokasi kantor, persetujuan berjenjang, dan pelaporan bukti kerja.
-        </p>
-
-        <ol class="login-rail" aria-label="Tahapan alur lembur">
-          <li class="login-rail-item">
-            <p class="text-xs font-bold text-slate-900">1. Pengajuan &amp; Geofence Kantor</p>
-            <p class="text-xs text-slate-500 mt-0.5">Jadwal otomatis hari kerja/libur dengan validasi radius 100 m.</p>
-          </li>
-          <li class="login-rail-item">
-            <p class="text-xs font-bold text-slate-900">2. Persetujuan Bertingkat</p>
-            <p class="text-xs text-slate-500 mt-0.5">Tinjauan berjenjang Supervisor ke Manager dengan opsi revisi.</p>
-          </li>
-          <li class="login-rail-item">
-            <p class="text-xs font-bold text-slate-900">3. Verifikasi &amp; Rekapitulasi</p>
-            <p class="text-xs text-slate-500 mt-0.5">Penilaian hasil kerja, lampiran bukti, dan ekspor Excel/PDF.</p>
-          </li>
-        </ol>
-      </div>
-    </section>
-
-    <!-- Right anchored authentication surface -->
-    <section aria-label="Autentikasi akun" class="w-full max-w-[416px] mx-auto lg:mx-0">
-      <div class="login-card bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7">
+    <div class="login-card bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-7">
 
         <!-- VIEW 1: LOGIN -->
         <div id="loginView">
@@ -183,7 +150,6 @@
         </div>
 
       </div>
-    </section>
   </main>
 </div>
 
