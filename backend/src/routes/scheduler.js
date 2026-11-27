@@ -4,6 +4,13 @@ import { query } from '../db.js';
 const router = Router();
 
 router.post('/check', async (req, res) => {
+  const expectedSecret = process.env.SCHEDULER_SECRET;
+  if (expectedSecret) {
+    const supplied = req.headers['x-scheduler-secret'] || req.query.secret;
+    if (supplied !== expectedSecret) {
+      return res.status(401).json({ error: 'Unauthorized scheduler trigger' });
+    }
+  }
   const now = new Date();
   const toleranceStart = new Date(now.getTime() - 60000);
 
