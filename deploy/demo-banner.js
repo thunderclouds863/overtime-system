@@ -39,7 +39,7 @@
     box.id = 'demo-akun';
     box.setAttribute('aria-label', 'Akun demo');
 
-    var collapsed = window.innerWidth < 1140;
+    var collapsed = true;
 
     function render() {
       if (collapsed) {

@@ -28,7 +28,7 @@ app.use(cors({
     if (!origin) return callback(null, true);
 
     const allowedPatterns = [
-      /^https?:\/\/localhost(:\d+)?$/,
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
       /\.workers\.dev$/,
       /\.pages\.dev$/,
       /\.onrender\.com$/
@@ -68,6 +68,9 @@ app.get('/health', (req, res) => {
 });
 
 if (DEMO_MODE) {
+  app.get('/demo-banner.js', (req, res) => res.sendFile(path.join(ROOT_DIR, 'deploy/demo-banner.js')));
+}
+if (DEMO_MODE || process.env.SERVE_FRONTEND === '1' || process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(ROOT_DIR, 'frontend')));
 } else {
   app.get('/', (req, res) => {

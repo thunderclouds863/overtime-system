@@ -4,6 +4,18 @@ import { hashPassword, requireAuth, requireAdmin, requireReviewer } from '../aut
 
 const router = Router();
 
+function getAllowedDomains() {
+  const base = ['gmail.com', 'cimory.com'];
+  if (process.env.DEMO_MODE === '1') base.push('demo.local');
+  if (process.env.ALLOWED_EMAIL_DOMAINS) {
+    process.env.ALLOWED_EMAIL_DOMAINS.split(',').forEach(d => {
+      const clean = d.trim().toLowerCase();
+      if (clean && !base.includes(clean)) base.push(clean);
+    });
+  }
+  return base;
+}
+
 // ============================================
 // USER MANAGEMENT (hanya admin)
 // ============================================
@@ -27,23 +39,32 @@ router.get('/users', requireAuth, requireAdmin, async (req, res) => {
 });
 
 router.post('/users', requireAuth, requireAdmin, async (req, res) => {
-  const { email, password, full_name, role, jabatan, level, approver_ids } = req.body;
+  const email = String(req.body?.email || '').trim().toLowerCase();
+  const password = String(req.body?.password || '');
+  const full_name = String(req.body?.full_name || '').trim();
+  const role = req.body?.role;
+  const jabatan = req.body?.jabatan ? String(req.body.jabatan).trim() : null;
+  const level = req.body?.level || null;
+  const approver_ids = Array.isArray(req.body?.approver_ids) ? req.body.approver_ids : [];
 
   if (!email || !password || !full_name || !role) {
-    return res.status(400).json({ error: 'Semua field wajib' });
+    return res.status(400).json({ error: 'Semua field wajib diisi' });
   }
-
+  if (password.length < 6) {
+    return res.status(400).json({ error: 'Kata sandi minimal 6 karakter' });
+  }
   if (!['employee', 'manager', 'admin', 'reviewer'].includes(role)) {
     return res.status(400).json({ error: 'Role tidak valid' });
   }
 
-  const domain = email.split('@')[1]?.toLowerCase();
-  if (!['gmail.com', 'cimory.com'].includes(domain)) {
+  const parts = email.split('@');
+  const domain = parts.length === 2 ? parts[1] : '';
+  if (!domain || !getAllowedDomains().includes(domain)) {
     return res.status(400).json({ error: 'Domain email tidak diizinkan' });
   }
 
   try {
-    const existing = await query('SELECT id FROM users WHERE email = $1', [email]);
+    const existing = await query('SELECT id FROM users WHERE LOWER(email) = $1', [email]);
     if (existing.rows.length > 0) {
       return res.status(400).json({ error: 'Email sudah terdaftar' });
     }
@@ -53,7 +74,7 @@ router.post('/users', requireAuth, requireAdmin, async (req, res) => {
       `INSERT INTO users (email, password_hash, full_name, role, jabatan, level, approver_ids, created_by)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id, email, full_name, role, jabatan, level, approver_ids, is_active, created_at`,
-      [email, hash, full_name, role, jabatan || null, level || null, approver_ids || [], req.user.id]
+      [email, hash, full_name, role, jabatan, level, approver_ids, req.user.id]
     );
 
     res.json(result.rows[0]);
@@ -66,23 +87,30 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { full_name, role, jabatan, is_active, password, level, approver_ids } = req.body;
 
+  if (password !== undefined && password !== '' && String(password).length < 6) {
+    return res.status(400).json({ error: 'Kata sandi minimal 6 karakter' });
+  }
+  if (parseInt(id, 10) === req.user.id && is_active === false) {
+    return res.status(400).json({ error: 'Tidak bisa menonaktifkan akun sendiri' });
+  }
+
   try {
     let sql = `UPDATE users SET updated_at = NOW()`;
     const params = [];
     let idx = 1;
 
-    if (full_name) { sql += `, full_name = $${idx++}`; params.push(full_name); }
+    if (full_name && String(full_name).trim()) { sql += `, full_name = $${idx++}`; params.push(String(full_name).trim()); }
     if (role) {
       if (!['employee', 'manager', 'admin', 'reviewer'].includes(role)) {
         return res.status(400).json({ error: 'Role tidak valid' });
       }
       sql += `, role = $${idx++}`; params.push(role);
     }
-    if (jabatan !== undefined) { sql += `, jabatan = $${idx++}`; params.push(jabatan); }
-    if (is_active !== undefined) { sql += `, is_active = $${idx++}`; params.push(is_active); }
-    if (password) { sql += `, password_hash = $${idx++}`; params.push(hashPassword(password)); }
+    if (jabatan !== undefined) { sql += `, jabatan = $${idx++}`; params.push(jabatan ? String(jabatan).trim() : null); }
+    if (is_active !== undefined) { sql += `, is_active = $${idx++}`; params.push(Boolean(is_active)); }
+    if (password) { sql += `, password_hash = $${idx++}`; params.push(hashPassword(String(password))); }
     if (level !== undefined) { sql += `, level = $${idx++}`; params.push(level); }
-    if (approver_ids !== undefined) { sql += `, approver_ids = $${idx++}`; params.push(approver_ids); }
+    if (approver_ids !== undefined) { sql += `, approver_ids = $${idx++}`; params.push(Array.isArray(approver_ids) ? approver_ids : []); }
 
     sql += ` WHERE id = $${idx} RETURNING id, email, full_name, role, jabatan, level, approver_ids, is_active`;
     params.push(id);
@@ -97,11 +125,12 @@ router.put('/users/:id', requireAuth, requireAdmin, async (req, res) => {
 
 router.delete('/users/:id', requireAuth, requireAdmin, async (req, res) => {
   const { id } = req.params;
-  if (parseInt(id) === req.user.id) {
+  if (parseInt(id, 10) === req.user.id) {
     return res.status(400).json({ error: 'Tidak bisa hapus akun sendiri' });
   }
   try {
-    await query('DELETE FROM users WHERE id = $1', [id]);
+    const result = await query('DELETE FROM users WHERE id = $1 RETURNING id', [id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'User tidak ditemukan' });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -126,6 +155,7 @@ router.get('/approvers', requireAuth, requireAdmin, async (req, res) => {
 // ============================================
 router.get('/records', requireAuth, requireReviewer, async (req, res) => {
   const { status, start_date, end_date, employee_id, limit = 500 } = req.query;
+  const safeLimit = Math.min(Math.max(parseInt(limit, 10) || 500, 1), 2000);
 
   try {
     let sql = `
@@ -151,7 +181,7 @@ router.get('/records', requireAuth, requireReviewer, async (req, res) => {
     if (employee_id) { sql += ` AND r.employee_id = $${idx++}`; params.push(employee_id); }
 
     sql += ` ORDER BY r.date DESC, r.created_at DESC LIMIT $${idx}`;
-    params.push(parseInt(limit));
+    params.push(safeLimit);
 
     const result = await query(sql, params);
     res.json(result.rows);
@@ -176,15 +206,15 @@ router.get('/stats', requireAuth, requireReviewer, async (req, res) => {
       FROM overtime_records
       WHERE status IN ('completed', 'pending_verification')
         AND actual_duration IS NOT NULL
-        AND date_trunc('month', date) = date_trunc('month', CURRENT_DATE)
+        AND date_trunc('month', date) = date_trunc('month', (NOW() AT TIME ZONE 'Asia/Jakarta')::date)
     `);
 
     res.json({
-      total_users: parseInt(totalUsers.rows[0].count),
-      total_records: parseInt(totalRecords.rows[0].count),
-      active_now: parseInt(activeNow.rows[0].count),
-      pending_approval: parseInt(pendingApproval.rows[0].count),
-      pending_verify: parseInt(pendingVerify.rows[0].count),
+      total_users: parseInt(totalUsers.rows[0].count, 10),
+      total_records: parseInt(totalRecords.rows[0].count, 10),
+      active_now: parseInt(activeNow.rows[0].count, 10),
+      pending_approval: parseInt(pendingApproval.rows[0].count, 10),
+      pending_verify: parseInt(pendingVerify.rows[0].count, 10),
       hours_this_month: parseFloat(completedMonth.rows[0].total_hours).toFixed(1)
     });
   } catch (err) {

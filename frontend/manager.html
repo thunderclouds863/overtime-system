@@ -32,6 +32,7 @@
       <p class="text-xs text-slate-500" id="userLevelLabel">-</p>
     </div>
     <div class="avatar" id="userAvatar" aria-hidden="true">–</div>
+    <button type="button" onclick="UI.openChangePasswordModal()" class="btn-quiet inline-flex items-center" title="Ubah kata sandi" aria-label="Ubah kata sandi"><span data-icon="key"></span><span class="hidden lg:inline">Ubah sandi</span></button>
     <button type="button" onclick="logout()" class="btn-quiet inline-flex items-center" aria-label="Keluar"><span data-icon="logout"></span><span class="hidden sm:inline">Keluar</span></button>
   </div>
 </header>
@@ -115,6 +116,26 @@
 
   <section id="tab-mgr-monitor" class="tab-content hidden space-y-4">
     <div><h1 class="text-xl md:text-2xl font-extrabold text-slate-900 font-display">Monitoring Tim</h1><p class="text-xs md:text-sm text-slate-500 mt-0.5">Rekam jejak seluruh pengajuan dan pelaksanaan lembur anggota tim</p></div>
+    <div class="bg-white rounded-2xl border border-slate-200 p-3.5 md:p-4">
+      <div class="grid sm:grid-cols-3 gap-2.5">
+        <div class="search-wrap sm:col-span-2">
+          <span data-icon="search"></span>
+          <input type="search" id="monSearch" oninput="renderMonitorTable()" placeholder="Cari nama karyawan atau kategori…" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs md:text-sm bg-white">
+        </div>
+        <select id="monStatus" onchange="renderMonitorTable()" aria-label="Filter status monitoring" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-xs md:text-sm bg-white">
+          <option value="">Semua status</option>
+          <option value="pending">Menunggu approval</option>
+          <option value="approved">Disetujui</option>
+          <option value="active">Sedang berjalan</option>
+          <option value="pending_verification">Menunggu verifikasi</option>
+          <option value="completed">Selesai</option>
+          <option value="revision">Perlu revisi</option>
+          <option value="proof_revision">Revisi bukti</option>
+          <option value="rejected">Ditolak</option>
+          <option value="cancelled">Dibatalkan</option>
+        </select>
+      </div>
+    </div>
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
@@ -182,8 +203,7 @@
 <div id="toast" class="fixed bottom-24 md:bottom-6 left-4 sm:left-auto right-4 md:right-6 bg-ink-900 text-white px-4 py-3 rounded-2xl text-sm hidden z-[60] shadow-2xl modal-in sm:max-w-xs"></div>
 
 <script>
-// Instance demo (frontend disajikan backend di onrender.com) → pakai origin yang sama
-const API_URL = location.hostname.endsWith('.onrender.com') ? location.origin : 'https://overtime-backend-wd4c.onrender.com';
+const API_URL = UI.apiUrl();
 const token = localStorage.getItem('token');
 let currentUser = JSON.parse(localStorage.getItem('user') || 'null');
 
@@ -295,10 +315,12 @@ async function loadEmployees() {
 function updateMgrStartTime() {
   const dateStr = document.getElementById('mgrDate').value;
   if (!dateStr) return;
-  const holiday = isHoliday(dateStr);
-  const startTime = holiday ? '08:00' : '17:00';
+  const d = new Date(dateStr + 'T00:00:00');
+  const day = d.getDay();
+  const holiday = day === 0 || day === 6;
+  const startTime = holiday ? '08:00' : (day === 5 ? '17:30' : '17:00');
   document.getElementById('mgrStart').value = startTime;
-  document.getElementById('mgrJenisHari').innerHTML = holiday ? '<span class="text-amber-800 font-semibold">Hari Libur · mulai 08:00</span>' : '<span class="text-brand-700 font-semibold">Hari Kerja · mulai 17:00</span>';
+  document.getElementById('mgrJenisHari').innerHTML = holiday ? '<span class="text-amber-800 font-semibold">Hari Libur · mulai 08:00</span>' : `<span class="text-brand-700 font-semibold">${day === 5 ? 'Hari Jumat' : 'Hari Kerja'} · mulai ${startTime}</span>`;
   document.getElementById('mgrJenisHari').className = holiday ? 'w-full mt-1.5 border border-amber-200 rounded-xl px-3 py-2.5 text-sm bg-amber-50' : 'w-full mt-1.5 border border-brand-200 rounded-xl px-3 py-2.5 text-sm bg-brand-50';
 }
 
@@ -358,12 +380,12 @@ function renderStats() {
 function renderRecent() {
   const el = document.getElementById('mgrRecent');
   const recent = records.slice(0, 8);
-  if (recent.length === 0) { el.innerHTML = '<div class="text-center py-8 text-slate-400 text-sm">Belum ada aktivitas</div>'; return; }
+  if (recent.length === 0) { el.innerHTML = UI.emptyState('history', 'Belum ada aktivitas', 'Pengajuan lembur dari anggota tim akan tampil di sini.'); return; }
   el.innerHTML = recent.map(r => `
     <div class="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
       <div class="min-w-0">
-        <p class="text-sm font-semibold text-slate-900 truncate">${r.employee} <span class="font-normal text-slate-500">— ${r.reason}</span>${UI.dayTag(r.isHoliday)}</p>
-        <p class="text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · <span class="font-mono">${r.startTime}</span> · ${r.plannedHours} jam</p>
+        <p class="text-sm font-semibold text-slate-900 truncate">${UI.escapeHtml(r.employee)} <span class="font-normal text-slate-500">— ${UI.escapeHtml(r.reason)}</span>${UI.dayTag(r.isHoliday)}</p>
+        <p class="text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · <span class="font-mono">${UI.escapeHtml(r.startTime)}</span> · ${r.plannedHours} jam</p>
       </div>
       ${statusBadge(r.status)}
     </div>
@@ -375,7 +397,7 @@ function statusBadge(s) { return UI.badge(s); }
 function renderApprovalList() {
   const el = document.getElementById('approvalList');
   const need = records.filter(r => ['pending','rejected','revision'].includes(r.status));
-  if (need.length === 0) { el.innerHTML = '<div class="bg-white rounded-2xl border border-slate-200 text-center py-10 text-slate-400 text-sm">Tidak ada pengajuan yang menunggu review</div>'; return; }
+  if (need.length === 0) { el.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200">${UI.emptyState('inbox', 'Antrean review kosong', 'Semua pengajuan lembur tim sudah diproses.')}</div>`; return; }
   el.innerHTML = need.map(r => {
     const chainLen = r.approvalChain.length;
     const hasDirect = !!r.directApproverId;
@@ -396,16 +418,17 @@ function renderApprovalList() {
     <article class="bg-white rounded-2xl border border-slate-200 ${r.status === 'pending' ? 'border-l-4 border-l-amber-500' : ''} p-4 md:p-5">
       <div class="flex items-start justify-between pb-3 mb-3 border-b border-slate-100 flex-wrap gap-2">
         <div class="min-w-0">
-          <p class="font-bold text-slate-900 text-sm md:text-base">${r.employee} <span class="tag">Level ${r.employeeLevel}</span>${UI.dayTag(r.isHoliday)}</p>
-          <p class="text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · <span class="font-mono">${r.startTime}</span> · Rencana ${r.plannedHours} jam</p>
+          <p class="font-bold text-slate-900 text-sm md:text-base">${UI.escapeHtml(r.employee)} <span class="tag">Level ${UI.escapeHtml(r.employeeLevel)}</span>${UI.dayTag(r.isHoliday)}</p>
+          <p class="text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · <span class="font-mono">${UI.escapeHtml(r.startTime)}</span> · Rencana ${r.plannedHours} jam</p>
         </div>
         ${statusBadge(r.status)}
       </div>
       <dl class="kv">
-        <dt>Kategori</dt><dd class="font-medium">${r.reason}</dd>
-        <dt>Rencana</dt><dd>${r.desc}</dd>
+        <dt>Kategori</dt><dd class="font-medium">${UI.escapeHtml(r.reason)}</dd>
+        <dt>Rencana</dt><dd>${UI.escapeHtml(r.desc)}</dd>
         ${r.revisionCount > 0 ? `<dt>Riwayat</dt><dd class="text-amber-700 font-semibold">Revisi ke-${r.revisionCount}</dd>` : ''}
       </dl>
+      ${UI.approvalStepper(r)}
       ${approvalStatus}
       <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end">
         ${r.status === 'pending'
@@ -478,15 +501,15 @@ function openReview(id) {
   
   document.getElementById('reviewContent').innerHTML = `
     <dl class="kv bg-slate-50 rounded-xl p-4 border border-slate-200">
-      <dt>Karyawan</dt><dd class="font-bold">${r.employee} <span class="tag">Level ${r.employeeLevel}</span></dd>
+      <dt>Karyawan</dt><dd class="font-bold">${UI.escapeHtml(r.employee)} <span class="tag">Level ${UI.escapeHtml(r.employeeLevel)}</span></dd>
       <dt>Tanggal</dt><dd class="font-semibold">${fmtDate(r.date)}${UI.dayTag(r.isHoliday)}</dd>
-      <dt>Waktu</dt><dd class="font-mono font-semibold">${r.startTime} · ${r.plannedHours} jam</dd>
+      <dt>Waktu</dt><dd class="font-mono font-semibold">${UI.escapeHtml(r.startTime)} · ${r.plannedHours} jam</dd>
       <dt>Sumber</dt><dd>${r.source === 'manager' ? 'Ditugaskan atasan' : 'Pengajuan karyawan'}</dd>
-      <dt>Kategori</dt><dd>${r.reason}</dd>
-      <dt>Rencana</dt><dd>${r.desc}</dd>
+      <dt>Kategori</dt><dd>${UI.escapeHtml(r.reason)}</dd>
+      <dt>Rencana</dt><dd>${UI.escapeHtml(r.desc)}</dd>
     </dl>
     ${approvalInfo}
-    ${r.note ? `<div class="note tone-wait"><strong>Catatan sebelumnya:</strong> ${r.note}</div>` : ''}
+    ${r.note ? `<div class="note tone-wait"><strong>Catatan sebelumnya:</strong> ${UI.escapeHtml(r.note)}</div>` : ''}
   `;
   
   document.getElementById('reviewNote').value = '';
@@ -528,7 +551,12 @@ async function doRevision() {
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 async function reopenRecord(id) {
-  if (!confirm('Buka kembali pengajuan ini?')) return;
+  const ok = await UI.confirmDialog({
+    title: 'Buka Kembali Pengajuan?',
+    message: 'Status pengajuan akan dikembalikan ke Menunggu Approval agar dapat ditinjau ulang.',
+    confirmText: 'Buka Kembali'
+  });
+  if (!ok) return;
   try { await api(`/api/approval/${id}/reopen`, { method: 'POST' }); await loadRecords(); toast('Pengajuan dibuka kembali', 'bg-brand-600'); }
   catch (err) { toast(err.message, 'bg-red-600'); }
 }
@@ -536,33 +564,36 @@ async function reopenRecord(id) {
 function renderVerifyList() {
   const el = document.getElementById('verifyList');
   const need = records.filter(r => ['pending_verification','proof_revision'].includes(r.status));
-  if (need.length === 0) { el.innerHTML = '<div class="bg-white rounded-2xl border border-slate-200 text-center py-10 text-slate-400 text-sm">Tidak ada hasil lembur yang menunggu verifikasi</div>'; return; }
-  el.innerHTML = need.map(r => `
+  if (need.length === 0) { el.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200">${UI.emptyState('check', 'Belum ada bukti perlu verifikasi', 'Bukti hasil kerja yang dikirim karyawan akan muncul di sini.')}</div>`; return; }
+  el.innerHTML = need.map(r => {
+    const safeFileUrl = UI.safeUrl(r.proofUrl);
+    const safeExtUrl = UI.safeUrl(r.proofExternalUrl);
+    return `
     <article class="bg-white rounded-2xl border border-slate-200 border-l-4 border-l-amber-500 p-4 md:p-5">
       <div class="flex items-start justify-between pb-3 mb-3 border-b border-slate-100 flex-wrap gap-2">
         <div class="min-w-0">
-          <p class="font-bold text-slate-900 text-sm md:text-base">${r.employee} <span class="tag">Level ${r.employeeLevel}</span>${UI.dayTag(r.isHoliday)}</p>
+          <p class="font-bold text-slate-900 text-sm md:text-base">${UI.escapeHtml(r.employee)} <span class="tag">Level ${UI.escapeHtml(r.employeeLevel)}</span>${UI.dayTag(r.isHoliday)}</p>
           <p class="text-xs text-slate-500 mt-0.5">${fmtDate(r.date)} · <span class="font-mono">${r.start ? fmtTime(r.start) : '-'} – ${r.end ? fmtTime(r.end) : '-'}</span> · <strong class="text-slate-800 font-mono">${r.actualHours.toFixed(2)} jam</strong></p>
         </div>
         ${statusBadge(r.status)}
       </div>
       <dl class="kv">
-        <dt>Rencana</dt><dd>${r.desc}</dd>
-        <dt>Hasil kerja</dt><dd class="font-medium">${r.proof || '-'}</dd>
-        ${r.proofNotes ? `<dt>Catatan</dt><dd class="text-slate-600">${r.proofNotes}</dd>` : ''}
+        <dt>Rencana</dt><dd>${UI.escapeHtml(r.desc)}</dd>
+        <dt>Hasil kerja</dt><dd class="font-medium">${UI.escapeHtml(r.proof || '-')}</dd>
+        ${r.proofNotes ? `<dt>Catatan</dt><dd class="text-slate-600">${UI.escapeHtml(r.proofNotes)}</dd>` : ''}
         ${r.verifyRevisionCount > 0 ? `<dt>Riwayat</dt><dd class="text-amber-700 font-semibold">Revisi bukti ke-${r.verifyRevisionCount}</dd>` : ''}
       </dl>
       <div class="flex items-center justify-between flex-wrap gap-2 mt-4 pt-3 border-t border-slate-100">
         <div class="flex flex-wrap gap-2">
-          ${r.proofUrl ? `<a href="${r.proofUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">${UI.icon('file')}<span>Lihat File${r.proofFile ? ' (' + r.proofFile + ')' : ''}${r.proofSize ? ' · ' + fmtFileSize(r.proofSize) : ''}</span></a>` : ''}
-          ${r.proofExternalUrl ? `<a href="${r.proofExternalUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">${UI.icon('link')}<span>Buka Tautan Bukti</span></a>` : ''}
-          ${!r.proofUrl && !r.proofExternalUrl && r.proofFile ? `<span class="text-xs text-amber-700">File "${r.proofFile}" tidak tersedia di penyimpanan</span>` : ''}
-          ${!r.proofFile && !r.proofUrl && !r.proofExternalUrl ? `<span class="text-xs text-slate-400">Tanpa lampiran file</span>` : ''}
+          ${safeFileUrl ? `<a href="${safeFileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">${UI.icon('file')}<span>Lihat File${r.proofFile ? ' (' + UI.escapeHtml(r.proofFile) + ')' : ''}${r.proofSize ? ' · ' + fmtFileSize(r.proofSize) : ''}</span></a>` : ''}
+          ${safeExtUrl ? `<a href="${safeExtUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">${UI.icon('link')}<span>Buka Tautan Bukti</span></a>` : ''}
+          ${!safeFileUrl && !safeExtUrl && r.proofFile ? `<span class="text-xs text-amber-700">File "${UI.escapeHtml(r.proofFile)}" tidak tersedia di penyimpanan</span>` : ''}
+          ${!r.proofFile && !safeFileUrl && !safeExtUrl ? `<span class="text-xs text-slate-400">Tanpa lampiran file</span>` : ''}
         </div>
         <button type="button" onclick="openVerify(${r.id})" class="btn btn-primary btn-sm">Verifikasi Hasil</button>
       </div>
     </article>
-  `).join('');
+  `}).join('');
 }
 
 function openVerify(id) {
@@ -570,19 +601,21 @@ function openVerify(id) {
   if (!r) return;
   verifyTargetId = id;
   currentRating = r.verifyRating || 0;
+  const safeFileUrl = UI.safeUrl(r.proofUrl);
+  const safeExtUrl = UI.safeUrl(r.proofExternalUrl);
   document.getElementById('verifyContent').innerHTML = `
     <dl class="kv bg-slate-50 rounded-xl p-4 border border-slate-200">
-      <dt>Karyawan</dt><dd class="font-bold">${r.employee} <span class="tag">Level ${r.employeeLevel}</span></dd>
+      <dt>Karyawan</dt><dd class="font-bold">${UI.escapeHtml(r.employee)} <span class="tag">Level ${UI.escapeHtml(r.employeeLevel)}</span></dd>
       <dt>Tanggal</dt><dd class="font-semibold">${fmtDate(r.date)}${UI.dayTag(r.isHoliday)}</dd>
       <dt>Waktu aktual</dt><dd class="font-mono font-semibold">${r.start ? fmtTime(r.start) : '-'} – ${r.end ? fmtTime(r.end) : '-'} (${r.actualHours.toFixed(2)} jam)</dd>
-      <dt>Rencana</dt><dd>${r.desc}</dd>
-      <dt>Hasil kerja</dt><dd class="font-medium">${r.proof || '-'}</dd>
-      ${r.proofNotes ? `<dt>Catatan</dt><dd>${r.proofNotes}</dd>` : ''}
+      <dt>Rencana</dt><dd>${UI.escapeHtml(r.desc)}</dd>
+      <dt>Hasil kerja</dt><dd class="font-medium">${UI.escapeHtml(r.proof || '-')}</dd>
+      ${r.proofNotes ? `<dt>Catatan</dt><dd>${UI.escapeHtml(r.proofNotes)}</dd>` : ''}
     </dl>
     <div class="flex flex-wrap gap-2">
-      ${r.proofUrl ? `<a href="${r.proofUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">${UI.icon('file')}<span>Lihat File${r.proofFile ? ' (' + r.proofFile + ')' : ''}${r.proofSize ? ' · ' + fmtFileSize(r.proofSize) : ''}</span></a>` : ''}
-      ${r.proofExternalUrl ? `<a href="${r.proofExternalUrl}" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">${UI.icon('link')}<span>Buka Tautan Bukti</span></a>` : ''}
-      ${!r.proofUrl && !r.proofExternalUrl ? `<span class="text-xs text-slate-400">Tidak ada lampiran file atau tautan eksternal.</span>` : ''}
+      ${safeFileUrl ? `<a href="${safeFileUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">${UI.icon('file')}<span>Lihat File${r.proofFile ? ' (' + UI.escapeHtml(r.proofFile) + ')' : ''}${r.proofSize ? ' · ' + fmtFileSize(r.proofSize) : ''}</span></a>` : ''}
+      ${safeExtUrl ? `<a href="${safeExtUrl}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">${UI.icon('link')}<span>Buka Tautan Bukti</span></a>` : ''}
+      ${!safeFileUrl && !safeExtUrl ? `<span class="text-xs text-slate-400">Tidak ada lampiran file atau tautan eksternal.</span>` : ''}
     </div>
   `;
   document.getElementById('verifyNote').value = '';
@@ -629,13 +662,20 @@ async function verifyReject() {
 
 function renderMonitorTable() {
   const tb = document.getElementById('monitorTable');
-  if (records.length === 0) { tb.innerHTML = '<tr><td colspan="7" class="text-center py-10 text-slate-400 text-sm">Belum ada data</td></tr>'; return; }
-  tb.innerHTML = records.map(r => `
+  const q = (document.getElementById('monSearch')?.value || '').trim().toLowerCase();
+  const st = document.getElementById('monStatus')?.value || '';
+  const list = records.filter(r => {
+    if (st && r.status !== st) return false;
+    if (q && !(String(r.employee || '').toLowerCase().includes(q) || String(r.reason || '').toLowerCase().includes(q))) return false;
+    return true;
+  });
+  if (list.length === 0) { tb.innerHTML = `<tr><td colspan="7">${UI.emptyState('list', records.length ? 'Tidak ada data yang cocok' : 'Belum ada data lembur', records.length ? 'Ubah filter pencarian atau status.' : 'Pengajuan dan penugasan tim akan muncul di tabel ini.')}</td></tr>`; return; }
+  tb.innerHTML = list.map(r => `
     <tr class="hover:bg-slate-50/80 transition">
-      <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">${r.employee}<p class="text-[11px] text-slate-400 lg:hidden font-normal">Level ${r.employeeLevel}</p></td>
-      <td class="px-3 md:px-4 py-3 text-xs hidden lg:table-cell"><span class="tag font-mono">${r.employeeLevel}</span></td>
-      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm whitespace-nowrap">${fmtDate(r.date)} ${UI.dayTag(r.isHoliday)}<p class="text-[11px] text-slate-400 font-mono lg:hidden mt-0.5">${r.startTime} · ${r.duration ? fmtDurShort(r.duration) : (r.plannedHours + 'j')}</p></td>
-      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs font-mono hidden xl:table-cell">${r.startTime}${r.end ? ' – ' + fmtTime(r.end) : ''}</td>
+      <td class="px-3 md:px-4 py-3 font-semibold text-slate-800 text-xs md:text-sm">${UI.escapeHtml(r.employee)}<p class="text-[11px] text-slate-400 lg:hidden font-normal">Level ${UI.escapeHtml(r.employeeLevel)}</p></td>
+      <td class="px-3 md:px-4 py-3 text-xs hidden lg:table-cell"><span class="tag font-mono">${UI.escapeHtml(r.employeeLevel)}</span></td>
+      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm whitespace-nowrap">${fmtDate(r.date)} ${UI.dayTag(r.isHoliday)}<p class="text-[11px] text-slate-400 font-mono lg:hidden mt-0.5">${UI.escapeHtml(r.startTime)} · ${r.duration ? fmtDurShort(r.duration) : (r.plannedHours + 'j')}</p></td>
+      <td class="px-3 md:px-4 py-3 text-slate-600 text-xs font-mono hidden xl:table-cell">${UI.escapeHtml(r.startTime)}${r.end ? ' – ' + fmtTime(r.end) : ''}</td>
       <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm font-mono hidden lg:table-cell">${r.duration ? fmtDurShort(r.duration) : (r.plannedHours + 'j')}</td>
       <td class="px-3 md:px-4 py-3">${statusBadge(r.status)}</td>
       <td class="px-3 md:px-4 py-3">

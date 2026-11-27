@@ -3,7 +3,14 @@ import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'default-secret-change-me-in-production-min-32-chars';
+const FALLBACK_SECRET = 'dev-only-insecure-secret-change-in-production-32c';
+
+export function getJwtSecret() {
+  if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+    console.warn('⚠️ JWT_SECRET is not set in production environment!');
+  }
+  return process.env.JWT_SECRET || FALLBACK_SECRET;
+}
 
 export function hashPassword(pw) {
   return bcrypt.hashSync(pw, 10);
@@ -22,7 +29,7 @@ export function generateToken(user) {
       name: user.full_name,
       level: user.level
     },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: '7d' }
   );
 }
@@ -34,7 +41,7 @@ export function requireAuth(req, res, next) {
   }
   try {
     const token = header.split(' ')[1];
-    req.user = jwt.verify(token, JWT_SECRET);
+    req.user = jwt.verify(token, getJwtSecret());
     next();
   } catch {
     return res.status(401).json({ error: 'Token tidak valid' });
@@ -44,7 +51,7 @@ export function requireAuth(req, res, next) {
 export function requireManager(req, res, next) {
   const level = levelNum(req.user?.level);
   const allowedRoles = ['manager', 'admin'];
-  
+
   if (allowedRoles.includes(req.user?.role) || level >= 3) {
     return next();
   }
@@ -66,8 +73,8 @@ export function requireReviewer(req, res, next) {
   next();
 }
 
-function levelNum(level) {
+export function levelNum(level) {
   if (!level) return 0;
   const m = String(level).match(/^(\d+)/);
-  return m ? parseInt(m[1]) : 0;
+  return m ? parseInt(m[1], 10) : 0;
 }
