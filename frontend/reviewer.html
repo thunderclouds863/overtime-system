@@ -125,7 +125,8 @@
     </div>
 
     <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden">
-      <div class="overflow-x-auto">
+      <div id="recordsMobileList" class="md:hidden divide-y divide-slate-100"></div>
+      <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-sm">
           <thead class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-200">
             <tr>
@@ -292,12 +293,13 @@ async function loadStats() {
       return;
     }
     el.innerHTML = records.slice(0, 10).map(r => `
-      <div class="flex items-center justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
-        <div class="min-w-0">
-          <p class="text-sm font-semibold text-slate-900 truncate">${UI.escapeHtml(r.employee_name)} <span class="font-normal text-slate-500">— ${UI.escapeHtml(r.reason)}</span>${UI.dayTag(r.is_holiday)}</p>
-          <p class="text-xs text-slate-500 mt-0.5">${new Date(r.date).toLocaleDateString('id-ID')} · <span class="font-mono">${UI.escapeHtml(r.start_time)}</span></p>
+      <div class="py-3 first:pt-0 last:pb-0">
+        <div class="flex items-start justify-between gap-2">
+          <p class="text-sm font-semibold text-slate-900 leading-snug">${UI.escapeHtml(r.employee_name)}${UI.dayTag(r.is_holiday)}</p>
+          <div class="shrink-0">${UI.badge(r.status)}</div>
         </div>
-        ${UI.badge(r.status)}
+        <p class="text-xs text-slate-600 mt-0.5 leading-snug">${UI.escapeHtml(r.reason || '-')}</p>
+        <p class="text-xs text-slate-400 mt-1">${new Date(r.date).toLocaleDateString('id-ID')} · <span class="font-mono">${UI.escapeHtml(String(r.start_time || '').slice(0, 5))}</span></p>
       </div>
     `).join('');
   } catch (err) { toast(err.message, 'bg-red-600'); }
@@ -317,8 +319,11 @@ async function loadRecords() {
   try {
     const records = await api('/api/admin/records?' + params.toString());
     const el = document.getElementById('recordsTable');
+    const mob = document.getElementById('recordsMobileList');
     if (records.length === 0) {
-      el.innerHTML = `<tr><td colspan="7">${UI.emptyState('list', 'Belum ada data record', 'Coba ubah filter status atau rentang tanggal.')}</td></tr>`;
+      const empty = UI.emptyState('list', 'Belum ada data record', 'Coba ubah filter status atau rentang tanggal.');
+      el.innerHTML = `<tr><td colspan="7">${empty}</td></tr>`;
+      if (mob) mob.innerHTML = empty;
       return;
     }
     el.innerHTML = records.map(r => {
@@ -335,7 +340,7 @@ async function loadRecords() {
           <span class="tag font-mono">${UI.escapeHtml(r.employee_level || '-')}</span>
         </td>
         <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm whitespace-nowrap">${new Date(r.date).toLocaleDateString('id-ID')} ${UI.dayTag(r.is_holiday)}<p class="text-[11px] text-slate-400 font-mono lg:hidden mt-0.5">${duration}</p></td>
-        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs font-mono hidden xl:table-cell">${UI.escapeHtml(r.start_time)}${r.actual_end ? ' – ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
+        <td class="px-3 md:px-4 py-3 text-slate-600 text-xs font-mono hidden xl:table-cell">${UI.escapeHtml(String(r.start_time || '').slice(0, 5))}${r.actual_end ? ' – ' + new Date(r.actual_end).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'}) : ''}</td>
         <td class="px-3 md:px-4 py-3 text-slate-600 text-xs md:text-sm font-mono hidden lg:table-cell">${duration}</td>
         <td class="px-3 md:px-4 py-3">
           ${UI.badge(r.status)}
@@ -347,6 +352,26 @@ async function loadRecords() {
         </td>
       </tr>
     `}).join('');
+    if (mob) {
+      mob.innerHTML = records.map(r => {
+        const duration = r.actual_hours ? `${parseFloat(r.actual_hours).toFixed(1)}j` :
+                         (r.planned_hours ? `${r.planned_hours}j` : '-');
+        const canPrint = ['completed', 'verify_rejected', 'pending_verification'].includes(r.status);
+        return `
+          <div class="p-4 space-y-2">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <p class="font-semibold text-sm text-slate-900 leading-snug">${UI.escapeHtml(r.employee_name)}${UI.dayTag(r.is_holiday)}</p>
+                <p class="text-xs text-slate-600 mt-0.5 leading-snug">${UI.escapeHtml(r.reason || '-')}</p>
+              </div>
+              <div class="shrink-0">${UI.badge(r.status)}</div>
+            </div>
+            <p class="text-xs text-slate-500">${new Date(r.date).toLocaleDateString('id-ID')} · <span class="font-mono">${UI.escapeHtml(String(r.start_time || '').slice(0, 5))}</span> · <span class="font-mono">${duration}</span></p>
+            ${canPrint ? `<div class="pt-1"><button type="button" onclick="openBukti(${r.id})" class="btn btn-secondary btn-sm w-full text-brand-700 border-brand-200">Cetak Bukti</button></div>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
   } catch (err) { toast(err.message, 'bg-red-600'); }
 }
 
@@ -517,10 +542,14 @@ async function downloadBuktiPDF() {
 // ============================================
 async function loadRekapEmployees() {
   try {
-    const users = await api('/api/admin/users');
+    const records = await api('/api/admin/records?limit=1000');
+    const seen = new Map();
+    records.forEach(r => {
+      if (r.employee_id && !seen.has(r.employee_id)) seen.set(r.employee_id, r.employee_name || ('Karyawan #' + r.employee_id));
+    });
     const sel = document.getElementById('rekapEmployee');
     sel.innerHTML = '<option value="">Semua Karyawan</option>' +
-      users.filter(u => u.role !== 'admin' && u.role !== 'reviewer').map(u => `<option value="${u.id}">${u.full_name}</option>`).join('');
+      Array.from(seen.entries()).map(([id, name]) => `<option value="${id}">${UI.escapeHtml(name)}</option>`).join('');
   } catch (err) { console.error(err); }
 }
 
