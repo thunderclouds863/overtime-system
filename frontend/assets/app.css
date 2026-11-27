@@ -58,78 +58,25 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline-offs
   white-space: nowrap;
 }
 
-/* ---------- Login canvas & asymmetric editorial layout ---------- */
+/* ---------- Login canvas ---------- */
 .login-canvas {
   position: relative;
-  background-color: #f3f5f9;
+  background-color: #f4f6fa;
   background-image:
-    radial-gradient(ellipse 75% 55% at 15% 15%, rgba(43, 61, 147, 0.085), transparent 65%),
-    radial-gradient(ellipse 65% 50% at 88% 85%, rgba(200, 30, 37, 0.045), transparent 65%),
-    linear-gradient(to right, rgba(24, 32, 58, 0.025) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(24, 32, 58, 0.025) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 36px 36px, 36px 36px;
-}
-.login-shell {
-  width: 100%;
-  max-width: 980px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 28px;
-  align-items: center;
-}
-@media (min-width: 960px) {
-  .login-shell {
-    grid-template-columns: 1.05fr 416px;
-    gap: 56px;
-  }
-}
-.login-editorial {
-  position: relative;
-  padding: 4px 0;
-}
-.login-eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(43, 61, 147, 0.08);
-  color: var(--brand);
-  font-size: 11.5px;
-  font-weight: 650;
-  letter-spacing: .02em;
-}
-.login-rail {
-  margin-top: 28px;
-  border-left: 2px solid #d5dbe8;
-  padding-left: 18px;
-  display: grid;
-  gap: 16px;
-}
-.login-rail-item {
-  position: relative;
-}
-.login-rail-item::before {
-  content: "";
-  position: absolute;
-  left: -23px;
-  top: 5px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--brand);
-  box-shadow: 0 0 0 3px #f3f5f9;
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(43, 61, 147, 0.08), transparent 70%),
+    linear-gradient(to right, rgba(24, 32, 58, 0.024) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(24, 32, 58, 0.024) 1px, transparent 1px);
+  background-size: 100% 100%, 36px 36px, 36px 36px;
 }
 .login-card {
   position: relative;
   overflow: hidden;
-  box-shadow: 0 1px 2px rgba(24, 32, 58, 0.05), 0 18px 40px -16px rgba(24, 32, 58, 0.16);
+  box-shadow: 0 1px 2px rgba(24, 32, 58, 0.05), 0 18px 40px -16px rgba(24, 32, 58, 0.14);
 }
 .login-card::before {
   content: "";
   position: absolute; inset: 0 0 auto 0; height: 3px;
-  background: linear-gradient(90deg, var(--brand) 0%, #3d52a8 72%, #c81e25 100%);
+  background: linear-gradient(90deg, var(--brand) 0%, #3d52a8 74%, #c81e25 100%);
 }
 
 /* ---------- Unified form controls ---------- */
