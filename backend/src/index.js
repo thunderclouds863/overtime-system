@@ -11,6 +11,7 @@ import schedulerRouter from './routes/scheduler.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import pg from 'pg';
 import { pool } from './db.js';
 
 // DEMO_MODE=1: instance portfolio terpisah — schema + akun demo otomatis,
@@ -93,7 +94,20 @@ app.use((err, req, res, next) => {
 async function start() {
   if (DEMO_MODE) {
     const sql = fs.readFileSync(path.join(ROOT_DIR, 'database/demo_schema.sql'), 'utf8');
-    await pool.query(sql);
+    // Advisory lock: beberapa instance (mis. Vercel) bisa start bersamaan; DDL paralel bisa bentrok.
+    // Koneksi langsung (DATABASE_URL_UNPOOLED bila ada) karena lock sesi tidak andal lewat PgBouncer.
+    const lockClient = new pg.Client({
+      connectionString: process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL,
+      ssl: process.env.PGSSL === 'disable' ? false : { rejectUnauthorized: false }
+    });
+    await lockClient.connect();
+    await lockClient.query('SELECT pg_advisory_lock(7350003)');
+    try {
+      await lockClient.query(sql);
+    } finally {
+      await lockClient.query('SELECT pg_advisory_unlock(7350003)');
+      await lockClient.end();
+    }
     console.log('🧪 DEMO_MODE: schema & akun demo siap');
   }
   await pool.query(`
