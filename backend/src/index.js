@@ -31,7 +31,8 @@ app.use(cors({
       /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,
       /\.workers\.dev$/,
       /\.pages\.dev$/,
-      /\.onrender\.com$/
+      /\.onrender\.com$/,
+      /\.vercel\.app$/
     ];
 
     // FRONTEND_URL dari env (kalau ada)

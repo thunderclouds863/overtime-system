@@ -614,7 +614,7 @@ function getBrowserGPS() {
 }
 async function fetchGPS() {
   // Instance demo: simulasikan posisi di kantor supaya penguji dari mana pun bisa mencoba alur
-  if (location.hostname.endsWith('.onrender.com')) {
+  if (location.hostname.endsWith('.onrender.com') || location.hostname.endsWith('.vercel.app')) {
     return { lat: OFFICE.lat + 0.0003, lng: OFFICE.lng + 0.0003, acc: 15, simulated: true };
   }
   try {

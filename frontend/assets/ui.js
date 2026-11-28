@@ -54,7 +54,7 @@
 
   function apiUrl() {
     var h = window.location.hostname;
-    if (h === 'localhost' || h === '127.0.0.1' || h.endsWith('.onrender.com')) {
+    if (h === 'localhost' || h === '127.0.0.1' || h.endsWith('.onrender.com') || h.endsWith('.vercel.app')) {
       return window.location.origin;
     }
     return 'https://overtime-backend-wd4c.onrender.com';
@@ -62,7 +62,7 @@
 
   function appUrl() {
     var h = window.location.hostname;
-    if (h === 'localhost' || h === '127.0.0.1' || h.endsWith('.onrender.com')) {
+    if (h === 'localhost' || h === '127.0.0.1' || h.endsWith('.onrender.com') || h.endsWith('.vercel.app')) {
       return window.location.origin;
     }
     return 'https://overtime-system.desi-arr863.workers.dev';

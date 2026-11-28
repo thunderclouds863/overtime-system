@@ -1,0 +1,13 @@
+# Vercel container: Node API + frontend dalam DEMO_MODE. Database = Postgres eksternal (DATABASE_URL).
+# Schema + akun demo dibuat idempotent saat start (database/demo_schema.sql).
+FROM node:22-bookworm-slim
+WORKDIR /app
+COPY backend/package*.json backend/
+RUN cd backend && npm install --omit=dev --no-audit --no-fund
+COPY backend backend
+COPY frontend frontend
+COPY database database
+COPY deploy deploy
+ENV DEMO_MODE=1 NODE_ENV=production PORT=80
+WORKDIR /app/backend
+CMD ["node", "src/index.js"]
