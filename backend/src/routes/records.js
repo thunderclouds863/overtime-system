@@ -896,6 +896,49 @@ router.post('/:id/extend', requireAuth, async (req, res) => {
 });
 
 // ============================================
+// POST /proof-upload — Demo / Blob fallback saat Supabase key tidak tersedia
+// ============================================
+router.post('/proof-upload', requireAuth, async (req, res) => {
+  const token = process.env.BLOB_READ_WRITE_TOKEN;
+  if (!token) {
+    return res.status(503).json({ error: 'Penyimpanan bukti belum dikonfigurasi (BLOB_READ_WRITE_TOKEN)' });
+  }
+  const { filename, contentType, base64 } = req.body || {};
+  if (!filename || !base64 || typeof base64 !== 'string') {
+    return res.status(400).json({ error: 'Payload file tidak valid' });
+  }
+  const buf = Buffer.from(base64, 'base64');
+  if (buf.length === 0 || buf.length > 2 * 1024 * 1024) {
+    return res.status(400).json({ error: 'Ukuran file harus antara 1 B dan 2 MB' });
+  }
+  const safeName = String(filename).replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 120) || 'proof.bin';
+  const blobPath = `overtime/proofs/${Date.now()}_${safeName}`;
+  const mime = typeof contentType === 'string' && contentType ? contentType : 'application/octet-stream';
+  try {
+    const resp = await fetch(`https://blob.vercel-storage.com/${encodeURIComponent(blobPath).replace(/%2F/g, '/')}`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'x-api-version': '7',
+        'x-add-random-suffix': '1',
+        'x-access': 'public',
+        'x-content-type': mime,
+        'Content-Type': mime
+      },
+      body: buf
+    });
+    if (!resp.ok) {
+      const msg = await resp.text().catch(() => '');
+      return res.status(502).json({ error: `Gagal mengunggah ke storage (${resp.status}): ${msg}` });
+    }
+    const data = await resp.json();
+    res.json({ url: data.url, filename: safeName, size: buf.length });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ============================================
 // POST /:id/upload-proof — Upload / update bukti kapan saja
 // ============================================
 router.post('/:id/upload-proof', requireAuth, async (req, res) => {

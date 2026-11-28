@@ -10,6 +10,7 @@ import approvalRouter from './routes/approval.js';
 import schedulerRouter from './routes/scheduler.js';
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import pg from 'pg';
 import { pool } from './db.js';
@@ -71,6 +72,24 @@ app.get('/health', (req, res) => {
 
 if (DEMO_MODE) {
   app.get('/demo-banner.js', (req, res) => res.sendFile(path.join(ROOT_DIR, 'deploy/demo-banner.js')));
+  app.post('/api/demo/reset', async (req, res) => {
+    const expected = process.env.DEMO_RESET_SECRET || '';
+    if (!expected) return res.status(503).json({ ok: false, error: 'DEMO_RESET_SECRET not configured' });
+    const auth = String(req.headers.authorization || '');
+    const provided = auth.startsWith('Bearer ') ? auth.slice(7).trim() : String(req.headers['x-demo-reset-secret'] || '');
+    const a = Buffer.from(expected);
+    const b = Buffer.from(provided);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return res.status(401).json({ ok: false, error: 'Unauthorized' });
+    }
+    try {
+      await ensureDemoSchema({ force: true });
+      return res.json({ ok: true, app: 'overtime-demo', reset_at: new Date().toISOString() });
+    } catch (err) {
+      console.error('Demo reset failed:', err);
+      return res.status(500).json({ ok: false, error: err.message });
+    }
+  });
 }
 if (DEMO_MODE || process.env.SERVE_FRONTEND === '1' || process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(ROOT_DIR, 'frontend')));
@@ -91,30 +110,62 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-async function start() {
-  if (DEMO_MODE) {
-    const sql = fs.readFileSync(path.join(ROOT_DIR, 'database/demo_schema.sql'), 'utf8');
+async function ensureDemoSchema({ force = false } = {}) {
+  const lockClient = new pg.Client({
+    connectionString: process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL,
+    ssl: process.env.PGSSL === 'disable' ? false : { rejectUnauthorized: false }
+  });
+  await lockClient.connect();
+  try {
+    if (!force) {
+      const check = await lockClient.query(
+        "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '_demo_seeded'"
+      );
+      if (check.rowCount > 0) {
+        console.log('🧪 DEMO_MODE: schema sudah siap (fast start)');
+        return;
+      }
+    }
     // Advisory lock: beberapa instance (mis. Vercel) bisa start bersamaan; DDL paralel bisa bentrok.
     // Koneksi langsung (DATABASE_URL_UNPOOLED bila ada) karena lock sesi tidak andal lewat PgBouncer.
-    const lockClient = new pg.Client({
-      connectionString: process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL,
-      ssl: process.env.PGSSL === 'disable' ? false : { rejectUnauthorized: false }
-    });
-    await lockClient.connect();
     await lockClient.query('SELECT pg_advisory_lock(7350003)');
     try {
+      if (!force) {
+        const recheck = await lockClient.query(
+          "SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = '_demo_seeded'"
+        );
+        if (recheck.rowCount > 0) return;
+      } else {
+        await lockClient.query('DROP TABLE IF EXISTS password_reset_tokens, activity_logs, overtime_records, users, _demo_seeded CASCADE');
+      }
+      const sql = fs.readFileSync(path.join(ROOT_DIR, 'database/demo_schema.sql'), 'utf8');
       await lockClient.query(sql);
+      await lockClient.query(`
+        ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS last_heartbeat_at TIMESTAMPTZ;
+        ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS extension_count INTEGER DEFAULT 0;
+        ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS auto_ended_reason TEXT;
+      `);
+      await lockClient.query('CREATE TABLE IF NOT EXISTS _demo_seeded (seeded_at TIMESTAMPTZ DEFAULT NOW())');
+      await lockClient.query('INSERT INTO _demo_seeded DEFAULT VALUES');
     } finally {
       await lockClient.query('SELECT pg_advisory_unlock(7350003)');
-      await lockClient.end();
     }
-    console.log('🧪 DEMO_MODE: schema & akun demo siap');
+    console.log(force ? '🧪 DEMO_MODE: data demo berhasil direset' : '🧪 DEMO_MODE: schema & akun demo siap');
+  } finally {
+    await lockClient.end();
   }
-  await pool.query(`
-    ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS last_heartbeat_at TIMESTAMPTZ;
-    ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS extension_count INTEGER DEFAULT 0;
-    ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS auto_ended_reason TEXT;
-  `).catch(err => console.warn('Schema sync note:', err.message));
+}
+
+async function start() {
+  if (DEMO_MODE) {
+    await ensureDemoSchema({ force: false });
+  } else {
+    await pool.query(`
+      ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS last_heartbeat_at TIMESTAMPTZ;
+      ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS extension_count INTEGER DEFAULT 0;
+      ALTER TABLE overtime_records ADD COLUMN IF NOT EXISTS auto_ended_reason TEXT;
+    `).catch(err => console.warn('Schema sync note:', err.message));
+  }
 
   setInterval(() => { reconcileActiveSessions(); }, 60000);
 

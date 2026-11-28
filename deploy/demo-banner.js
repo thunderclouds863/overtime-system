@@ -65,7 +65,7 @@
       box.innerHTML =
         '<div class="da-panel">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">' +
-        '<div><strong style="font-size:13px">Akun Demo</strong><span style="color:#5b6478"> · data contoh</span></div>' +
+        '<div><strong style="font-size:13px">Akun Demo</strong><span style="color:#5b6478"> · data contoh · reset tiap minggu</span></div>' +
         '<div style="display:flex;align-items:center;gap:2px">' +
         '<button type="button" class="da-icon-btn" data-act="min" aria-label="Perkecil" title="Perkecil">&minus;</button>' +
         '<button type="button" class="da-icon-btn" data-act="close" aria-label="Tutup" title="Tutup">&times;</button>' +
